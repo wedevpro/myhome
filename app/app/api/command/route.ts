@@ -47,6 +47,8 @@ export async function POST(request:Request) {
     const previous=c.id?await findRecord(c.id,h):null;
     if(previous && previous.kind!==c.kind) throw new ApiError(400,"Le type d’élément ne peut pas changer.");
     if(previous && (!c.expectedRevision||previous.revision!==c.expectedRevision)) throw new ApiError(409,"Cet élément a été modifié sur un autre appareil. Rouvrez-le pour récupérer la dernière version.");
+    // Only reorderChecklist may change ordering; editors must preserve it.
+    if(previous?.kind==="checklist" && Array.isArray(previous.data.itemOrder)) data.itemOrder=[...previous.data.itemOrder];
     const e=previous?{...previous,data,updatedBy:user.id,updatedAt:now,revision:crypto.randomUUID()}:fresh(c.kind,data,h);
     if(c.kind==="product") {
      const codes=[...new Set(data.barcodes||[])];e.data.barcodes=codes;
@@ -88,6 +90,28 @@ export async function POST(request:Request) {
     await db.prepare("UPDATE households SET name=?,updated_by=?,updated_at=? WHERE id=?").bind(c.name,user.id,now,h).run();
    } else if(c.action==="rotateCode") {
     await db.prepare("UPDATE households SET code=?,updated_by=?,updated_at=? WHERE id=?").bind(crypto.randomUUID().replaceAll("-","").slice(0,20).toUpperCase(),user.id,now,h).run();
+   } else if(c.action==="reorderChecklist") {
+    if(!c.listId || !c.itemIds) throw new ApiError(400,"Choisissez une checklist et indiquez l’ordre complet de ses tâches.");
+    const list=await findRecord(c.listId,h);
+    if(list.kind!=="checklist") throw new ApiError(400,"Seules les checklists peuvent être réordonnées.");
+    if(!c.expectedRevision || list.revision!==c.expectedRevision) throw new ApiError(409,"Cette checklist a changé. Actualisez-la avant de réordonner ses tâches.");
+    const order=JSON.stringify(c.itemIds),revision=crypto.randomUUID();
+    // The complete set, revision and access are checked inside the write.
+    // SQLite serializes this statement with concurrent inserts and deletes.
+    const result=await db.prepare(`
+     WITH requested(id) AS (SELECT value FROM json_each(?)),
+          current_items(id) AS (
+           SELECT id FROM records
+           WHERE household_id=? AND kind='item' AND json_extract(data,'$.listId')=?
+          )
+     UPDATE records SET data=json_set(data,'$.itemOrder',json(?)),updated_by=?,updated_at=?,revision=?
+     WHERE id=? AND household_id=? AND kind='checklist' AND revision=?
+      AND EXISTS(SELECT 1 FROM memberships WHERE household_id=? AND user_id=? AND status='active')
+      AND (SELECT COUNT(*) FROM requested)=(SELECT COUNT(*) FROM current_items)
+      AND (SELECT COUNT(*) FROM requested)=(SELECT COUNT(DISTINCT id) FROM requested)
+      AND NOT EXISTS(SELECT id FROM current_items EXCEPT SELECT id FROM requested)
+    `).bind(order,h,list.id,order,user.id,now,revision,list.id,h,c.expectedRevision,h,user.id).run();
+    if(result.meta.changes!==1) throw new ApiError(409,"Cette checklist ou ses tâches ont changé. Actualisez-la avant de réordonner ses tâches.");
    } else if(c.action==="reset") {
     const list=await findRecord(c.listId||"",h);if(list.kind!=="checklist"||!list.data.reusable) throw new ApiError(400,"Cette liste n’est pas réutilisable.");
     await db.prepare("UPDATE records SET data=json_set(data,'$.checked',json('false')),updated_by=?,updated_at=?,revision=? WHERE household_id=? AND kind='item' AND json_extract(data,'$.listId')=?").bind(user.id,now,crypto.randomUUID(),h,list.id).run();

@@ -81,6 +81,22 @@ Dans Container Manager, sélectionnez le projet et faites **Action → Arrêter*
 
 La sauvegarde contient les comptes, les données des foyers et les clés Push. Pour restaurer, arrêtez le projet, remplacez `data/` par sa sauvegarde et rétablissez ses permissions pour `1000:1000`, ainsi que le fichier `.env`, puis redémarrez. Les données de l'ancienne publication Cloudflare ne sont pas importées automatiquement dans cette installation.
 
+## Trier, déplacer et filtrer une checklist
+
+Ces commandes sont disponibles dans les checklists, sur le tableau de bord et en mode cuisine :
+
+- **A–Z** et **Z–A** trient toute la checklist par nom, avec un classement français tenant compte des nombres.
+- Les **flèches** montent ou descendent un élément d'une position. Cliquez sur son **numéro** pour choisir directement une position entre 1 et le nombre d'éléments.
+- **Filtrer les éléments…** recherche dans les noms sans tenir compte des majuscules ni des accents. Le compteur indique le nombre de résultats ; effacez le filtre pour revoir toute la checklist.
+
+L'ordre est enregistré sur le NAS et partagé avec les membres du foyer. Le tri et les déplacements concernent toujours la liste complète, même lorsqu'un filtre est actif. Les nouveaux éléments arrivent à la fin ; le filtre ne supprime ni ne modifie les tâches. Le renommage et « Tout décocher » conservent l'ordre. En mode cuisine avec rotation, une fenêtre ouverte ou un champ de saisie actif suspend le changement de liste.
+
+## Choisir le mode d'affichage
+
+MyHomeIA s'affiche en mode clair par défaut, même si l'appareil est configuré en sombre. Dans **Paramètres → Apparence → Mode d'affichage**, choisissez **Mode Clair**, **Mode Sombre** ou **Appliquer le mode de l'appareil**.
+
+Le choix s'applique immédiatement et reste mémorisé dans ce navigateur sur cet appareil. Le troisième choix suit automatiquement les changements d'apparence de l'appareil. Vous pouvez ainsi garder la tablette de cuisine en clair et le téléphone en sombre. Les couleurs personnalisées des heures d'électricité sont conservées.
+
 ## Mettre à jour
 
 Sauvegardez d'abord comme ci-dessus. Arrêtez le projet, remplacez les fichiers applicatifs par ceux du nouveau package et **conservez `data/` et votre `.env`**. Dans Container Manager, reconstruisez le projet puis démarrez-le. Si nécessaire, utilisez l'action de redéploiement/recréation des conteneurs pour que la nouvelle image soit prise en compte ; un simple redémarrage ne reconstruit pas l'image.

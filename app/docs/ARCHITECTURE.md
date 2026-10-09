@@ -11,7 +11,7 @@ Le déploiement, le proxy HTTPS et les sauvegardes sont décrits dans [GUIDE-SYN
 | Courses | Plusieurs listes, nom et icône, quantités, cases à cocher et suppression. |
 | Produits | Catalogue du foyer, plusieurs codes-barres par produit, unicité d'un code dans le foyer. Un nouveau produit peut être conservé au catalogue ou ajouté uniquement à la liste. |
 | Scan | Caméra avant/arrière avec ZXing, douchette clavier USB/Bluetooth et saisie manuelle. Produit reconnu ajouté directement ; code inconnu associé à un produit existant ou nouveau. |
-| Checklists | Listes éphémères : tâche terminée supprimée. Listes réutilisables : éléments conservés et remise à zéro collective. |
+| Checklists | Listes éphémères : tâche terminée supprimée. Listes réutilisables : éléments conservés et remise à zéro collective. Tri A–Z/Z–A, déplacement par flèches ou position numérique, filtre ignorant casse et accents. Ordre partagé et persistant. |
 | Notes | Création, édition, suppression, recherche et trois couleurs. Texte simple ; dessin, pièces jointes et synchronisation Samsung Notes ne sont pas intégrés. |
 | Contacts | Nom, téléphone, email et adresse. Catégories imbriquées sans limite configurée de profondeur ; le filtre d'une catégorie inclut ses descendants. |
 | Électricité | Plusieurs plages avec choix des jours et passage de minuit. État heures pleines/creuses et couleurs personnelles. Calculs dans le fuseau Europe/Paris. |
@@ -49,6 +49,8 @@ Pour modifier le schéma, ajouter une nouvelle migration SQL versionnée ; ne pa
 Tables de données : `users`, `households`, `memberships`, `records`, `barcodes`, `preferences`, `accounts`, `sessions`, `auth_rate_limits`, `push_settings`, `push_subscriptions`, `push_deliveries` et `app_migrations`. Les données des modules sont en JSON dans `records` ; les données partagées appartiennent au foyer et les préférences au couple foyer/utilisateur.
 
 Les triggers SQLite contrôlent les références entre listes, produits et catégories lors de l'écriture. Ils interdisent les références entre foyers, les orphelins et les cycles de catégories. La table des codes-barres impose l'unicité `(household_id, code)` et conserve les zéros initiaux. Les clés Push privées restent dans une table serveur absente des réponses de lecture.
+
+L'ordre d'une checklist est un tableau d'IDs `itemOrder` dans le JSON de sa liste. La commande `reorderChecklist` écrit une permutation exacte des tâches, en contrôlant atomiquement leur ensemble, la révision de la liste et l'adhésion active au foyer. Les formulaires de renommage préservent cet ordre serveur. Le client ignore les IDs supprimés et place les nouveaux éléments en fin ; la recherche filtre uniquement l'affichage. Aucun changement de schéma n'est requis.
 
 ## Build et supervision
 
