@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.pnp
+.pnp.*
+
+# Generated builds, caches and test coverage
+.next/
+.vinext/
+dist/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+/app/runtime/
+
+# Secrets; keep the configuration templates
+.env*
+!.env.example
+*.pem
+*.key
+
+# Local application data and SQLite journals
+data/
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+
+# Local tools and deployment state
+/.runtime/
+/.docker-local/
+.sites-runtime/
+.wrangler/
+.vercel/
+.agents/
+.codex/
+outputs/
+work/
+
+# Generated delivery packages
+/myhomeia-*.zip
+/myhomeia-*.zip.sha256
+/myhomeia-*.tar.gz
+
+# Logs and operating system files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.DS_Store
+Thumbs.db
+Desktop.ini
