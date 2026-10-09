@@ -9,7 +9,7 @@
     "dev": "next dev --webpack --hostname 127.0.0.1",
     "build": "node scripts/build-nas.mjs",
     "start": "node scripts/nas-entrypoint.mjs",
-    "test": "node --test tests/domain.test.mjs tests/nas.test.mjs tests/auth.test.mjs tests/reminders.test.mjs tests/checklist.test.mjs",
+    "test": "node --test tests/domain.test.mjs tests/nas.test.mjs tests/auth.test.mjs tests/reminders.test.mjs tests/checklist.test.mjs tests/shopping-item.test.mjs",
     "test:api": "node tests/api-smoke.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },

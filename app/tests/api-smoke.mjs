@@ -157,6 +157,110 @@ async function checkChecklistOrdering({ admin, member, outsider, command, househ
   assert.deepEqual({ createdBy: findChecklist(response.json).createdBy, createdAt: findChecklist(response.json).createdAt }, originalAudit);
   return { id: checklist.id, itemOrder: finalOrder, itemIds: originalIds, updatedBy: memberId };
 }
+async function checkShoppingItemEdits({ admin, member, outsider, command, household, shoppingList, productId, memberId }) {
+  const expectStatus = (response, status, label) => assert.equal(response.status, status, `${label}: ${JSON.stringify(response.json)}`);
+  let response = await admin("/api/state?household=" + household.id);
+  expectStatus(response, 200, "Read shopping items before editing");
+  const relatedItems = response.json.entities.filter(entity => entity.kind === "item" && entity.data.listId === shoppingList.id && entity.data.productId === productId);
+  assert.equal(relatedItems.length, 2);
+  let item = relatedItems[0];
+  const sibling = relatedItems[1], product = response.json.entities.find(entity => entity.id === productId);
+  const originalRevision = item.revision, originalAudit = { createdBy: item.createdBy, createdAt: item.createdAt };
+  const findItem = state => state.entities.find(entity => entity.id === item.id);
+  const assertUnrelatedUnchanged = state => {
+    assert.deepEqual(state.entities.find(entity => entity.id === sibling.id), sibling, "Another item using the same product is unchanged");
+    assert.deepEqual(state.entities.find(entity => entity.id === productId), product, "Catalog product is unchanged");
+  };
+  const initialComment = "Sans lactose, si possible.\nFormat familial.";
+  response = await command({ action: "save", kind: "item", id: item.id, expectedRevision: item.revision, data: { ...item.data, quantity: 2.5, comment: initialComment } });
+  expectStatus(response, 200, "Edit item quantity and comment");
+  item = findItem(response.json);
+  assert.equal(item.data.quantity, 2.5);
+  assert.equal(item.data.comment, initialComment);
+  assert.notEqual(item.revision, originalRevision);
+  assert.equal(item.data.productId, productId);
+  assert.equal(item.data.listId, shoppingList.id);
+  assert.deepEqual({ createdBy: item.createdBy, createdAt: item.createdAt }, originalAudit);
+  assertUnrelatedUnchanged(response.json);
+  response = await member("/api/state?household=" + household.id);
+  expectStatus(response, 200, "Item edits shared with household member");
+  assert.equal(findItem(response.json).data.quantity, 2.5);
+  assert.equal(findItem(response.json).data.comment, initialComment);
+
+  response = await command({ action: "save", kind: "item", id: item.id, expectedRevision: item.revision, data: { ...item.data, checked: true } });
+  expectStatus(response, 200, "Checking an item preserves its comment");
+  item = findItem(response.json);
+  assert.equal(item.data.checked, true);
+  assert.equal(item.data.comment, initialComment);
+  assert.equal(item.data.quantity, 2.5);
+  response = await command({ action: "save", kind: "item", id: item.id, expectedRevision: item.revision, data: { ...item.data, comment: "" } });
+  expectStatus(response, 200, "Clear item comment");
+  item = findItem(response.json);
+  assert.equal(item.data.comment, "");
+  assert.equal(item.data.checked, true);
+  assert.equal(item.data.quantity, 2.5);
+  const finalComment = "Pour le petit-déjeuner partagé.\nPrendre le grand format.";
+  response = await member("/api/command", { householdId: household.id, action: "save", kind: "item", id: item.id, expectedRevision: item.revision, data: { ...item.data, quantity: 3.75, comment: finalComment, checked: false } });
+  expectStatus(response, 200, "Simple member can edit shopping item");
+  item = findItem(response.json);
+  assert.equal(item.updatedBy, memberId);
+  assert.equal(item.data.quantity, 3.75);
+  assert.equal(item.data.comment, finalComment);
+  assert.deepEqual({ createdBy: item.createdBy, createdAt: item.createdAt }, originalAudit);
+  assertUnrelatedUnchanged(response.json);
+  const latest = item;
+
+  response = await command({ action: "save", kind: "item", id: item.id, expectedRevision: originalRevision, data: { ...item.data, quantity: 9, comment: "Ancienne version" } });
+  expectStatus(response, 409, "Stale item revision cannot overwrite member edits");
+  for (const [changes, label] of [
+    [{ quantity: 0, comment: "Ne doit pas être enregistré" }, "Zero quantity rejected"],
+    [{ quantity: -1 }, "Negative quantity rejected"],
+    [{ quantity: 10001 }, "Quantity above limit rejected"],
+    [{ comment: "a".repeat(2001), quantity: 8 }, "Oversized comment rejected"],
+  ]) {
+    response = await command({ action: "save", kind: "item", id: item.id, expectedRevision: item.revision, data: { ...item.data, ...changes } });
+    expectStatus(response, 400, label);
+  }
+  response = await outsider("/api/command", { householdId: household.id, action: "save", kind: "item", id: item.id, expectedRevision: item.revision, data: { ...item.data, quantity: 7, comment: "Interdit" } });
+  expectStatus(response, 403, "Non-member cannot edit shopping item");
+  response = await admin("/api/state?household=" + household.id);
+  expectStatus(response, 200, "Read item after rejected edits");
+  assert.deepEqual(findItem(response.json), latest, "Rejected saves leave item data, revision and audit unchanged");
+  assertUnrelatedUnchanged(response.json);
+
+  // Reusing a catalog product must not reuse a previous item's comment or quantity.
+  const originalIds = new Set(response.json.entities.filter(entity => entity.kind === "item").map(entity => entity.id));
+  response = await command({ action: "addItem", listId: shoppingList.id, barcode: "0001234567890" });
+  expectStatus(response, 200, "Add same product later without copying comment");
+  const laterItem = response.json.entities.find(entity => entity.kind === "item" && entity.data.listId === shoppingList.id && !originalIds.has(entity.id));
+  assert.equal(laterItem.data.productId, productId);
+  assert.equal(laterItem.data.comment ?? "", "");
+  assert.equal(laterItem.data.quantity, 1);
+  assert.equal(findItem(response.json).data.comment, finalComment);
+  assertUnrelatedUnchanged(response.json);
+  response = await command({ action: "save", kind: "shopping", data: { name: "Courses ponctuelles", icon: "bag" } });
+  expectStatus(response, 200, "Create another shopping list");
+  const otherList = response.json.entities.find(entity => entity.kind === "shopping" && entity.data.name === "Courses ponctuelles");
+  response = await command({ action: "addItem", listId: otherList.id, productId });
+  expectStatus(response, 200, "Add product to another list without copying comment");
+  const otherListItem = response.json.entities.find(entity => entity.kind === "item" && entity.data.listId === otherList.id);
+  assert.equal(otherListItem.data.comment ?? "", "");
+  assert.equal(otherListItem.data.quantity, 1);
+  assert.equal(otherListItem.data.productId, productId);
+  assertUnrelatedUnchanged(response.json);
+
+  response = await outsider("/api/state");
+  expectStatus(response, 200, "Read isolated household item");
+  const foreignItem = response.json.entities.find(entity => entity.kind === "item");
+  assert.ok(foreignItem, "Checklist scenario created an item in the outsider household");
+  const foreignHouseholdId = response.json.household.id;
+  response = await command({ action: "save", kind: "item", id: foreignItem.id, expectedRevision: foreignItem.revision, data: { ...foreignItem.data, quantity: 4, comment: "Interdit" } });
+  expectStatus(response, 404, "An item from another household cannot be edited");
+  response = await outsider("/api/state?household=" + foreignHouseholdId);
+  expectStatus(response, 200, "Foreign household stays intact");
+  assert.deepEqual(response.json.entities.find(entity => entity.id === foreignItem.id), foreignItem);
+  return { id: item.id, quantity: 3.75, comment: finalComment, updatedBy: memberId, product, sibling, otherListItem };
+}
 try {
   await start();
   const admin = client(), member = client(), outsider = client(), anonymous = client();
@@ -166,6 +270,8 @@ try {
   assert.match(demoPage.text, /Trier la checklist de Z à A/);
   assert.match(demoPage.text, /Filtrer les éléments de Les petites choses à faire/);
   assert.match(demoPage.text, /Choisir la position de Arroser les plantes, position actuelle 1/);
+  assert.match(demoPage.text, /aria-label="Modifier la quantit(?:é|&eacute;|&#0*233;|&#x0*[eE]9;) de Avocats"/);
+  assert.match(demoPage.text, /aria-label="Modifier la quantit(?:é|&eacute;|&#0*233;|&#x0*[eE]9;) et la note de Avocats"/);
   let recovery = await anonymous("/deconnexion"); assert.equal(recovery.status, 200); assert.match(recovery.text, /Fermer votre session/);
   let r = await anonymous("/api/state"); assert.equal(r.status, 401);
   r = await anonymous("/api/state", undefined, { "oai-authenticated-user-id": "local_seedy", "oai-authenticated-user-email": "admin@example.fr" }); assert.equal(r.status, 401);
@@ -192,6 +298,7 @@ try {
   r = await member("/api/command", { action: "member", householdId: household.id, userId: memberId, role: "admin" }); assert.equal(r.status, 403);
   r = await member("/api/command", { action: "save", householdId: household.id, kind: "electricity", data: { start: "22:00", end: "06:00", days: [1] } }); assert.equal(r.status, 403);
   const orderedChecklist = await checkChecklistOrdering({ admin, member, outsider, command, household, shoppingList: list, adminId, memberId });
+  const editedShoppingItem = await checkShoppingItemEdits({ admin, member, outsider, command, household, shoppingList: list, productId: product.id, memberId });
   r = await outsider("/api/state?household=" + household.id); assert.equal(r.status, 403);
   r = await admin("/api/command", { action: "renameHousehold", householdId: household.id, name: "Forbidden" }, { Origin: "https://attacker.example" }); assert.equal(r.status, 403);
   r = await admin("/api/auth/logout", {}, { Origin: "https://attacker.example" }); assert.equal(r.status, 403);
@@ -202,6 +309,13 @@ try {
   assert.deepEqual(persistedChecklist.data.itemOrder, orderedChecklist.itemOrder, "Checklist order survives server restart");
   assert.equal(persistedChecklist.updatedBy, orderedChecklist.updatedBy);
   assert.deepEqual(r.json.entities.filter(e => e.kind === "item" && e.data.listId === orderedChecklist.id).map(e => e.id).sort(), [...orderedChecklist.itemIds].sort());
+  const persistedShoppingItem = r.json.entities.find(e => e.id === editedShoppingItem.id);
+  assert.equal(persistedShoppingItem.data.quantity, editedShoppingItem.quantity, "Edited quantity survives server restart");
+  assert.equal(persistedShoppingItem.data.comment, editedShoppingItem.comment, "Item comment survives server restart");
+  assert.equal(persistedShoppingItem.updatedBy, editedShoppingItem.updatedBy);
+  assert.deepEqual(r.json.entities.find(e => e.id === product.id), editedShoppingItem.product);
+  assert.deepEqual(r.json.entities.find(e => e.id === editedShoppingItem.sibling.id), editedShoppingItem.sibling);
+  assert.deepEqual(r.json.entities.find(e => e.id === editedShoppingItem.otherListItem.id), editedShoppingItem.otherListItem);
   r = await admin("/"); assert.equal(r.status, 200); assert.doesNotMatch(r.text, /929290566|Only plain objects|:E\{/);
   r = await admin("/api/auth/logout", {}); assert.equal(r.status, 200);
   r = await admin("/api/state"); assert.equal(r.status, 401);
@@ -212,7 +326,7 @@ try {
   r = await member("/api/state?household=" + household.id); assert.equal(r.status, 403);
   r = await member("/api/command", { action: "joinHousehold", code: household.code }); assert.equal(r.status, 403);
   r = await command({ action: "delete", id: list.id, expectedRevision: list.revision }); assert.equal(r.status, 200); assert.equal(r.json.entities.filter(e => e.kind === "item" && e.data.listId === list.id).length, 0); assert.equal(r.json.entities.filter(e => e.kind === "product").length, 1); assert.equal(r.json.entities.filter(e => e.kind === "item" && e.data.listId === orderedChecklist.id).length, orderedChecklist.itemIds.length);
-  console.log("NAS API/pages passed: authenticated dashboard after signup/login/restart, logout recovery page, secure sessions, household sharing/isolation, roles, barcodes, checklist ordering/sharing/audits/conflicts/reset/rename, preferences, CSRF and persistence.");
+  console.log("NAS API/pages passed: authenticated dashboard after signup/login/restart, logout recovery page, secure sessions, household sharing/isolation, roles, barcodes, shopping item quantities/comments/validation/isolation, checklist ordering/sharing/audits/conflicts/reset/rename, preferences, CSRF and persistence.");
 } catch (error) { console.error(logs); throw error; }
 finally {
   await stop();

@@ -2,6 +2,14 @@
 
 9 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
 
+## Quantité et note des articles de courses
+
+La quantité et le bouton crayon ouvrent maintenant un formulaire d'édition propre à l'article. Il accepte des quantités décimales positives jusqu'à 10 000 et une note facultative de 2 000 caractères, affichée sous le nom dans la liste. Vider le champ retire la note. Les commandes sont disponibles dans les listes de courses, le tableau de bord et le mode cuisine, avec des cibles tactiles adaptées.
+
+La note est partagée dans le foyer mais reste attachée uniquement à cette ligne : aucune modification de la fiche produit ni propagation aux autres articles, y compris lors d'un nouvel ajout du même produit. Cocher l'article conserve la note ; supprimer sa ligne la retire. La sauvegarde préserve les références, l'unité et l'état coché, avec audit et contrôle de révision. Les anciens articles restent compatibles et aucune migration SQL n'est nécessaire.
+
+Validation : **29 tests unitaires réussis**, TypeScript, lint des composants modifiés et compilation de production réussis. Le scénario API sur le serveur de production valide édition, décimales, effacement, partage/audit, conflits, valeurs invalides, isolation, catalogue et autres lignes inchangés, absence de recopie lors d'un ajout ultérieur, et persistance après redémarrage. Le rendu HTML de démonstration contient les deux nouveaux contrôles. La vérification visuelle reste indisponible dans le navigateur intégré.
+
 ## Tri, ordre et recherche dans les checklists
 
 Ajout des boutons **A–Z / Z–A**, des flèches de déplacement, d'une position numérique cliquable pour déplacer un élément directement, et d'un filtre ignorant casse et accents. Les commandes sont disponibles dans la page Checklists, le tableau de bord et le mode cuisine. Le filtre agit uniquement sur l'affichage ; les tris et déplacements concernent toujours la liste complète. La rotation cuisine est suspendue pendant une fenêtre ouverte ou une saisie dans le panneau.
@@ -50,8 +58,8 @@ La synchronisation reste une actualisation toutes les **2,5 secondes**, après m
 - Installation propre des dépendances depuis le lockfile : réussie, 552 packages.
 - Compilation Next.js de production et génération du worker de rappels : réussies.
 - Validation Docker Compose : réussie.
-- Tests de domaine, checklists, authentification, SQLite et rappels : **25 tests réussis** (7 domaine, 5 checklists, 5 authentification, 7 stockage NAS, 1 rappels avec plusieurs scénarios).
-- Intégration sur serveur de production : affichage du tableau de bord authentifié après inscription, connexion et redémarrage ; accès à `/deconnexion` ; ordre partagé des checklists, audit, conflits, conservation après renommage/remise à zéro et redémarrage ; partage et isolation des foyers, rôles, codes-barres, préférences et contrôle d'origine : réussie.
+- Tests de domaine, articles de courses, checklists, authentification, SQLite et rappels : **29 tests réussis** (7 domaine, 4 articles de courses, 5 checklists, 5 authentification, 7 stockage NAS, 1 rappels avec plusieurs scénarios).
+- Intégration sur serveur de production : affichage du tableau de bord authentifié après inscription, connexion et redémarrage ; accès à `/deconnexion` ; quantités et notes des articles, validations, partage/audit, conflits, isolation, catalogue inchangé et absence de recopie ; ordre partagé des checklists, audit, conflits, conservation après renommage/remise à zéro et redémarrage ; partage et isolation des foyers, rôles, codes-barres, préférences et contrôle d'origine : réussie.
 
 Le moteur Docker local n'est pas démarré : **la construction et l'exécution du conteneur Linux n'ont pas été testées**. Aucun accès direct à votre NAS n'a été utilisé. La vérification visuelle dans Browser était indisponible ; caméras, douchette et réception réelle des notifications restent à vérifier sur vos appareils. Les tests des rappels utilisent les vrais calculs et payloads chiffrés, avec des réponses réseau simulées.
 

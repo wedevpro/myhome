@@ -81,6 +81,12 @@ Dans Container Manager, sélectionnez le projet et faites **Action → Arrêter*
 
 La sauvegarde contient les comptes, les données des foyers et les clés Push. Pour restaurer, arrêtez le projet, remplacez `data/` par sa sauvegarde et rétablissez ses permissions pour `1000:1000`, ainsi que le fichier `.env`, puis redémarrez. Les données de l'ancienne publication Cloudflare ne sont pas importées automatiquement dans cette installation.
 
+## Modifier un article de la liste de courses
+
+Cliquez sur la **quantité** ou sur le **crayon** de l'article pour modifier sa quantité et ajouter une **Note pour cet article**. Les quantités décimales sont acceptées ; la valeur doit être supérieure à zéro, dans la limite de 10 000. Pour retirer une note, videz son champ puis enregistrez.
+
+La note s'affiche sous le nom de l'article et est partagée avec les membres du foyer. Elle appartient uniquement à cette ligne de courses : elle ne modifie pas la fiche produit et n'est pas recopiée lors d'un nouvel ajout du même produit, dans cette liste ou une autre. Cocher l'article conserve sa note ; supprimer la ligne la supprime également. Ces commandes sont disponibles dans les listes de courses, le tableau de bord et le mode cuisine.
+
 ## Trier, déplacer et filtrer une checklist
 
 Ces commandes sont disponibles dans les checklists, sur le tableau de bord et en mode cuisine :

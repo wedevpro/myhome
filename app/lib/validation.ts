@@ -7,7 +7,7 @@ const icon=z.enum(["basket","home","carrot","plane","check","heart","bag"]);
 export const dataSchemas={
  shopping:z.object({name,icon:icon.default("basket")}),
  checklist:z.object({name,icon:icon.default("check"),reusable:z.boolean().default(false)}),
- item:z.object({name,listId:z.string().min(1),productId:z.string().optional(),checked:z.boolean().default(false),quantity:z.number().positive().max(10000).default(1),unit:z.string().max(50).default(""),category:z.string().max(100).default("")}),
+ item:z.object({name,listId:z.string().min(1),productId:z.string().optional(),checked:z.boolean().default(false),quantity:z.number().positive().max(10000).default(1),comment:z.string().max(2000).default(""),unit:z.string().max(50).default(""),category:z.string().max(100).default("")}),
  product:z.object({name,category:z.string().max(100).default(""),barcodes:z.array(barcode).max(100).default([])}),
  note:z.object({name,content:z.string().max(100000).default(""),color:z.enum(["purple","yellow","blue"]).default("purple")}),
  category:z.object({name,parentId:z.string().optional()}),

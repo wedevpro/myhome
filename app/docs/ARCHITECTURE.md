@@ -8,7 +8,7 @@ Le déploiement, le proxy HTTPS et les sauvegardes sont décrits dans [GUIDE-SYN
 
 | Module | Comportement |
 | --- | --- |
-| Courses | Plusieurs listes, nom et icône, quantités, cases à cocher et suppression. |
+| Courses | Plusieurs listes, nom et icône, quantités modifiables (décimales acceptées), commentaire propre à chaque article, cases à cocher et suppression. Le commentaire n'est pas enregistré au catalogue ni recopié sur d'autres articles. |
 | Produits | Catalogue du foyer, plusieurs codes-barres par produit, unicité d'un code dans le foyer. Un nouveau produit peut être conservé au catalogue ou ajouté uniquement à la liste. |
 | Scan | Caméra avant/arrière avec ZXing, douchette clavier USB/Bluetooth et saisie manuelle. Produit reconnu ajouté directement ; code inconnu associé à un produit existant ou nouveau. |
 | Checklists | Listes éphémères : tâche terminée supprimée. Listes réutilisables : éléments conservés et remise à zéro collective. Tri A–Z/Z–A, déplacement par flèches ou position numérique, filtre ignorant casse et accents. Ordre partagé et persistant. |
@@ -51,6 +51,8 @@ Tables de données : `users`, `households`, `memberships`, `records`, `barcodes`
 Les triggers SQLite contrôlent les références entre listes, produits et catégories lors de l'écriture. Ils interdisent les références entre foyers, les orphelins et les cycles de catégories. La table des codes-barres impose l'unicité `(household_id, code)` et conserve les zéros initiaux. Les clés Push privées restent dans une table serveur absente des réponses de lecture.
 
 L'ordre d'une checklist est un tableau d'IDs `itemOrder` dans le JSON de sa liste. La commande `reorderChecklist` écrit une permutation exacte des tâches, en contrôlant atomiquement leur ensemble, la révision de la liste et l'adhésion active au foyer. Les formulaires de renommage préservent cet ordre serveur. Le client ignore les IDs supprimés et place les nouveaux éléments en fin ; la recherche filtre uniquement l'affichage. Aucun changement de schéma n'est requis.
+
+Le commentaire temporaire d'un article de courses est stocké dans le champ JSON `comment` de son enregistrement `item`, avec une limite de 2 000 caractères. Les anciens articles sans ce champ restent compatibles. La quantité et le commentaire utilisent la commande `save` ciblée sur l'article, avec audit et contrôle de révision ; les références de liste et de produit ainsi que l'état coché sont conservés. Le schéma produit exclut ce commentaire. La suppression de l'article retire sa note ; aucune migration SQL n'est nécessaire.
 
 ## Build et supervision
 
@@ -101,7 +103,7 @@ Références : [getUserMedia](https://developer.mozilla.org/en-US/docs/Web/API/M
 
 ## Vérifications et limites de livraison
 
-`npm test` couvre le domaine, les migrations, la réouverture de SQLite, les rollbacks, les références, les droits et l'authentification. `npm run test:api` démarre une instance standalone avec une base temporaire, vérifie les comptes, les sessions, le partage et l'isolation des foyers, les rôles, les codes-barres, les conflits de révision, les préférences et la persistance après un arrêt/redémarrage.
+`npm test` couvre le domaine, les migrations, la réouverture de SQLite, les rollbacks, les références, les droits, l'authentification, les checklists et la validation des quantités/commentaires des articles. `npm run test:api` démarre une instance standalone avec une base temporaire, vérifie les comptes, les sessions, le partage et l'isolation des foyers, les rôles, les codes-barres, l'ordre des checklists, l'édition des articles sans modification du catalogue ni propagation aux autres lignes, les conflits de révision, les préférences et la persistance après un arrêt/redémarrage.
 
 La compilation Next.js en production et la validation de la configuration Docker Compose ont réussi sur le poste de préparation. Les résultats définitifs des suites de tests sont précisés à la livraison.
 

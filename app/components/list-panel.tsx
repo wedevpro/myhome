@@ -22,6 +22,7 @@ type Props = {
   onAdd: (text: string) => Promise<void>;
   onToggle: (item: Entity) => Promise<void>;
   onDelete: (item: Entity) => void;
+  onEditItem: (item: Entity) => void;
   onReorder: (itemIds: string[]) => Promise<void>;
   onScan: () => void;
   onNew: () => void;
@@ -30,7 +31,7 @@ type Props = {
   onReset: () => void;
 };
 
-export default function ListPanel({ list, kind, snapshot, busy, showPicker, onSelect, onAdd, onToggle, onDelete, onReorder, onScan, onNew, onEdit, onRemove, onReset }: Props) {
+export default function ListPanel({ list, kind, snapshot, busy, showPicker, onSelect, onAdd, onToggle, onDelete, onEditItem, onReorder, onScan, onNew, onEdit, onRemove, onReset }: Props) {
   const [text, setText] = useState("");
   const [query, setQuery] = useState("");
   const [moveTarget, setMoveTarget] = useState<{ id: string; position: string } | null>(null);
@@ -121,8 +122,11 @@ export default function ListPanel({ list, kind, snapshot, busy, showPicker, onSe
             const index = itemPositions.get(item.id) ?? 0;
             return <div key={item.id} className={`item-row ${item.data.checked ? "completed" : ""}`}>
               <Checkbox checked={!!item.data.checked} disabled={busy} onCheckedChange={() => void onToggle(item).catch(() => {})} aria-label={(shopping ? "Acheter " : "Terminer ") + item.data.name}/>
-              <div className="item-label"><span>{item.data.name}</span>{shopping && !item.data.checked && item.data.category && <small>{item.data.category}</small>}</div>
-              {shopping ? <span className="quantity">{item.data.quantity || 1} {item.data.unit || ""}</span> : <div className="checklist-item-actions">
+              <div className="item-label"><span>{item.data.name}</span>{shopping && !item.data.checked && item.data.category && <small>{item.data.category}</small>}{shopping && item.data.comment && <p className="shopping-item-comment">{item.data.comment}</p>}</div>
+              {shopping ? <>
+                <button type="button" className="quantity quantity-button" disabled={busy} aria-label={`Modifier la quantité de ${item.data.name}`} title="Modifier la quantité et la note" onClick={() => onEditItem(item)}>{item.data.quantity ?? 1} {item.data.unit || ""}</button>
+                <button type="button" className="icon-button shopping-item-edit" disabled={busy} aria-label={`Modifier la quantité et la note de ${item.data.name}`} title="Modifier cet article" onClick={() => onEditItem(item)}><Pencil size={15}/></button>
+              </> : <div className="checklist-item-actions">
                 <button type="button" className="icon-button" disabled={busy || index === 0} aria-label={`Monter ${item.data.name}, position ${index + 1}`} title="Monter d’une position" onClick={() => void move(item, "up")}><ArrowUp size={15}/></button>
                 <button type="button" className="checklist-position" disabled={busy} aria-label={`Choisir la position de ${item.data.name}, position actuelle ${index + 1}`} title="Choisir une position dans la liste" onClick={() => setMoveTarget({ id: item.id, position: String(index + 1) })}>{index + 1}</button>
                 <button type="button" className="icon-button" disabled={busy || index === items.length - 1} aria-label={`Descendre ${item.data.name}, position ${index + 1}`} title="Descendre d’une position" onClick={() => void move(item, "down")}><ArrowDown size={15}/></button>

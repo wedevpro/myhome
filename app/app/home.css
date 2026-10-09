@@ -415,3 +415,44 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
   .tasks-panel .item-row { gap: 6px; }
   .checklist-item-actions .icon-button, .checklist-position { min-width: 30px; min-height: 44px; }
 }
+
+.shopping-item-comment {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  color: var(--muted-foreground);
+}
+
+.shopping-panel .item-row.completed .item-label { text-decoration: none; }
+.shopping-panel .item-row.completed .item-label > span { text-decoration: line-through; }
+
+.quantity-button {
+  flex-shrink: 0;
+  min-width: 32px;
+  min-height: 36px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--background);
+}
+
+.quantity-button:hover { background: var(--accent); color: var(--foreground); }
+.quantity-button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.shopping-item-edit { flex-shrink: 0; min-width: 32px; min-height: 36px; }
+.shopping-panel .item-delete { min-width: 28px; min-height: 36px; }
+.wall-mode .shopping-item-comment { font-size: 14px; }
+.wall-mode .quantity-button, .wall-mode .shopping-item-edit { min-width: 44px; min-height: 44px; }
+
+@media(max-width:767px) {
+  .shopping-panel .item-row { gap: 6px; }
+  .shopping-item-comment { font-size: 12px; }
+  .quantity-button, .shopping-item-edit { min-width: 44px; min-height: 44px; }
+  .shopping-panel .item-delete { min-height: 44px; }
+}
+
+@media(pointer:coarse) {
+  .quantity-button, .shopping-item-edit { min-width: 44px; min-height: 44px; }
+  .shopping-panel .item-delete { min-height: 44px; }
+}
