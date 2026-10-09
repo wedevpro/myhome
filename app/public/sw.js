@@ -1,0 +1,4 @@
+self.addEventListener('install',event=>{self.skipWaiting();});
+self.addEventListener('activate',event=>{event.waitUntil(self.clients.claim());});
+self.addEventListener('push',event=>{let message={title:'MyHomeIA',body:'Un rappel pour votre foyer.',url:'/'};try{message={...message,...event.data.json()};}catch{}event.waitUntil(self.registration.showNotification(message.title,{body:message.body,icon:'/icon-192.png',badge:'/icon-192.png',tag:message.tag,data:{url:message.url||'/'}}));});
+self.addEventListener('notificationclick',event=>{event.notification.close();const path=event.notification.data?.url||'/';const target=new URL(path,self.location.origin);if(target.origin!==self.location.origin)return;event.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(async clients=>{for(const client of clients){if(new URL(client.url).origin===self.location.origin){await client.focus();return;}}await self.clients.openWindow(target.href);}));});
