@@ -5,7 +5,7 @@ import ts from 'typescript';
 
 const source = fs.readFileSync(new URL('../lib/checklist.ts', import.meta.url), 'utf8');
 const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
-const { getChecklistItems, sortChecklistItems, filterChecklistItems, moveChecklistItem } = await import('data:text/javascript;base64,' + Buffer.from(compiled).toString('base64'));
+const { getChecklistItems, sortChecklistItems, filterChecklistItems, moveChecklistItem, completedItemsLast } = await import('data:text/javascript;base64,' + Buffer.from(compiled).toString('base64'));
 const entity = (id, kind, data, householdId = 'h1') => Object.freeze({ id, kind, householdId, data: Object.freeze(data), revision: 'revision-' + id, createdBy: 'user', createdAt: '2026-10-09T12:00:00Z', updatedBy: 'user', updatedAt: '2026-10-09T12:00:00Z' });
 const item = (id, name, listId = 'list') => entity(id, 'item', { name, listId, checked: false });
 const ids = items => items.map(value => value.id);
@@ -51,4 +51,31 @@ test('Checklist : déplacements adjacents avec bornes et identifiant absent', ()
   assert.deepEqual(moveChecklistItem(values, 'missing', 'up'), ['a', 'b', 'c']);
   assert.deepEqual(moveChecklistItem([], 'missing', 'down'), []);
   assert.deepEqual(ids(values), ['a', 'b', 'c']);
+});
+test('Listes : éléments cochés à la fin, partition stable et absence de mutation', () => {
+  const values = Object.freeze([
+    entity('done-a', 'item', { name: 'Terminé A', listId: 'list', checked: true }),
+    item('pending-a', 'À faire A'),
+    entity('done-b', 'item', { name: 'Terminé B', listId: 'list', checked: true }),
+    entity('legacy-pending', 'item', { name: 'Ancien article', listId: 'list' }),
+    item('pending-b', 'À faire B'),
+  ]);
+  assert.deepEqual(ids(completedItemsLast(values)), ['pending-a', 'legacy-pending', 'pending-b', 'done-a', 'done-b']);
+  assert.deepEqual(ids(values), ['done-a', 'pending-a', 'done-b', 'legacy-pending', 'pending-b']);
+  assert.deepEqual(completedItemsLast([]), []);
+  assert.deepEqual(ids(completedItemsLast(values.filter(value => value.data.checked))), ['done-a', 'done-b']);
+});
+test('Checklist : affichage cochés en bas sans perdre l’ordre historique en décochant', () => {
+  const list = entity('list', 'checklist', { name: 'Ordre personnel', itemOrder: ['done-a', 'pending-a', 'done-b', 'pending-b'] });
+  const values = Object.freeze([
+    item('pending-b', 'À faire B'),
+    entity('done-b', 'item', { name: 'Terminé B', listId: 'list', checked: true }),
+    item('pending-a', 'À faire A'),
+    entity('done-a', 'item', { name: 'Terminé A', listId: 'list', checked: true }),
+  ]);
+  assert.deepEqual(ids(completedItemsLast(getChecklistItems(values, list))), ['pending-a', 'pending-b', 'done-a', 'done-b']);
+  const unchecked = values.map(value => value.id === 'done-a' ? entity(value.id, value.kind, { ...value.data, checked: false }) : value);
+  assert.deepEqual(ids(completedItemsLast(getChecklistItems(unchecked, list))), ['done-a', 'pending-a', 'pending-b', 'done-b']);
+  assert.deepEqual(list.data.itemOrder, ['done-a', 'pending-a', 'done-b', 'pending-b']);
+  assert.deepEqual(ids(values), ['pending-b', 'done-b', 'pending-a', 'done-a']);
 });

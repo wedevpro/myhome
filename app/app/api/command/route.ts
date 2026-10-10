@@ -4,11 +4,12 @@ import { audit, Entity, Data } from "@/lib/model";
 import { readJson } from "@/lib/json-body";
 import { requestOriginAllowed } from "@/lib/auth";
 export const dynamic="force-dynamic";
+const commandBodyLimit=1_200_000;
 export async function POST(request:Request) {
  try {
   if(!requestOriginAllowed(request)) throw new ApiError(403,"Origine de la requête refusée.");
-  if(Number(request.headers.get("content-length")||0)>150000) throw new ApiError(413,"Le contenu est trop volumineux.");
-  const parsed=commandSchema.safeParse(await readJson(request));
+  if(Number(request.headers.get("content-length")||0)>commandBodyLimit) throw new ApiError(413,"Le contenu est trop volumineux.");
+  const parsed=commandSchema.safeParse(await readJson(request,commandBodyLimit));
   if(!parsed.success) throw new ApiError(400,parsed.error.issues[0].message);
   const c=parsed.data,user=await identity(),db=database(),now=new Date().toISOString();
   const fresh=(kind:Entity["kind"],data:Data,h:string):Entity=>({...audit(crypto.randomUUID(),kind,data,h),createdBy:user.id,updatedBy:user.id,createdAt:now,updatedAt:now});
@@ -77,6 +78,36 @@ export async function POST(request:Request) {
     if(["shopping","checklist"].includes(e.kind)) statements.push(db.prepare("DELETE FROM records WHERE household_id=? AND json_extract(data,'$.listId')=? AND EXISTS(SELECT 1 FROM records WHERE id=? AND revision=?) AND EXISTS(SELECT 1 FROM memberships WHERE household_id=? AND user_id=? AND status='active')").bind(h,e.id,e.id,c.expectedRevision,h,user.id));
     statements.push(db.prepare("DELETE FROM records WHERE id=? AND household_id=? AND revision=? AND EXISTS(SELECT 1 FROM memberships WHERE household_id=? AND user_id=? AND status='active' AND (? NOT IN ('electricity','waste') OR role='admin'))").bind(e.id,h,c.expectedRevision,h,user.id,e.kind));
     const results=await db.batch(statements);if(results.at(-1)?.meta.changes!==1) throw new ApiError(409,"Cet élément a changé. Actualisez-le.");
+   } else if(c.action==="clearCompleted") {
+    if(!c.listId || !c.completedItems) throw new ApiError(400,"Choisissez une liste et indiquez les éléments terminés à supprimer.");
+    const list=await findRecord(c.listId,h);
+    if(!["shopping","checklist"].includes(list.kind)) throw new ApiError(400,"Cette action concerne les listes de courses et les checklists éphémères.");
+    if(list.kind==="checklist" && list.data.reusable) throw new ApiError(400,"Les éléments d’une checklist réutilisable doivent être conservés.");
+    // Materialize the complete eligibility check before deleting the first row.
+    // No count can change midway through the DELETE, and concurrent writes are
+    // serialized with this statement. Newly checked items outside the request stay.
+    const result=await db.prepare(`
+     WITH requested(id,revision) AS MATERIALIZED (
+           SELECT json_extract(value,'$.id'),json_extract(value,'$.revision') FROM json_each(?)
+          ),
+          matching(id) AS MATERIALIZED (
+           SELECT r.id FROM records r JOIN requested q ON q.id=r.id AND q.revision=r.revision
+           WHERE r.household_id=? AND r.kind='item' AND json_extract(r.data,'$.listId')=?
+            AND json_type(r.data,'$.checked')='true'
+          ),
+          allowed(ok) AS MATERIALIZED (
+           SELECT 1
+           WHERE (SELECT COUNT(*) FROM requested)=(SELECT COUNT(*) FROM matching)
+            AND (SELECT COUNT(*) FROM requested)=(SELECT COUNT(DISTINCT id) FROM requested)
+            AND EXISTS(SELECT 1 FROM memberships WHERE household_id=? AND user_id=? AND status='active')
+            AND EXISTS(SELECT 1 FROM records WHERE id=? AND household_id=?
+             AND (kind='shopping' OR (kind='checklist' AND COALESCE(json_extract(data,'$.reusable'),0)=0)))
+          )
+     DELETE FROM records WHERE household_id=? AND kind='item'
+      AND id IN (SELECT id FROM matching) AND EXISTS(SELECT 1 FROM allowed)
+    `).bind(JSON.stringify(c.completedItems),h,list.id,h,user.id,list.id,h,h).run();
+    if(result.meta.changes!==c.completedItems.length) throw new ApiError(409,"Un élément terminé ou la liste a changé. Actualisez les données avant de réessayer.");
+    // Keep the list's audit/revision and itemOrder: readers ignore deleted IDs.
    } else if(c.action==="preferences") {
     const p=preferenceSchema.safeParse(c.data);if(!p.success) throw new ApiError(400,p.error.issues[0].message);
     for(const [key,kind] of [["shoppingId","shopping"],["checklistId","checklist"]] as const) {const id=p.data[key];if(id && (await findRecord(id,h)).kind!==kind) throw new ApiError(400,"Liste de tableau de bord invalide.");}

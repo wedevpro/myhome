@@ -1,6 +1,14 @@
 # État de livraison — MyHomeIA sur Synology
 
-9 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
+10 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
+
+## Organisation et nettoyage des listes
+
+Les commandes d'ajout sont en haut des courses et des checklists, avec le scan pour les courses. Les longues listes disposent d'une zone d'éléments défilante, séparée de ces commandes. Tous les éléments cochés apparaissent en bas ; l'ordre relatif reste conservé dans les groupes à faire/terminés. Les actions d'une tâche sont regroupées derrière un bouton ⋯ : modification du libellé, monter/descendre, choix de position et suppression. Les déplacements restent dans le groupe de même état. La rotation cuisine se suspend pendant un menu ouvert.
+
+Les tâches des checklists éphémères restent désormais cochées jusqu'à leur suppression. Le bouton **Supprimer les éléments terminés** est disponible dans les courses et les checklists éphémères, avec confirmation du nombre de cibles. Le nettoyage porte sur la liste complète, même sous filtre. Une commande atomique contrôle chaque ID/révision et l'accès au foyer : aucune suppression partielle en cas de conflit, aucun effacement des nouveaux cochés hors de la confirmation. Les éléments à faire, les fiches produits, les autres listes et les checklists réutilisables sont conservés. Le renommage d'une tâche garde ses autres champs, son ordre et son audit de création.
+
+Validation : **31 tests unitaires réussis**, TypeScript, lint ciblé et compilation de production réussis. Le scénario API valide purge par un membre, conflits bloquant toute suppression, validations, isolation, refus sur liste réutilisable, renommage/audit, gros lots et plafond HTTP, puis suppressions et survivants après redémarrage. Le HTML de démonstration confirme les commandes avant les éléments et les boutons de menu. `home-app.tsx` conserve cinq erreurs de lint préexistantes (six dans l'archive précédente) ; le lint global n'est donc pas entièrement validé. Le navigateur intégré reste indisponible pour le contrôle visuel.
 
 ## Quantité et note des articles de courses
 
@@ -12,11 +20,11 @@ Validation : **29 tests unitaires réussis**, TypeScript, lint des composants mo
 
 ## Tri, ordre et recherche dans les checklists
 
-Ajout des boutons **A–Z / Z–A**, des flèches de déplacement, d'une position numérique cliquable pour déplacer un élément directement, et d'un filtre ignorant casse et accents. Les commandes sont disponibles dans la page Checklists, le tableau de bord et le mode cuisine. Le filtre agit uniquement sur l'affichage ; les tris et déplacements concernent toujours la liste complète. La rotation cuisine est suspendue pendant une fenêtre ouverte ou une saisie dans le panneau.
+Ajout des boutons **A–Z / Z–A**, des déplacements par flèches ou position numérique (maintenant dans le menu de l'élément), et d'un filtre ignorant casse et accents. Les commandes sont disponibles dans la page Checklists, le tableau de bord et le mode cuisine. Le filtre agit uniquement sur l'affichage ; les tris et déplacements concernent toujours la liste complète, avec regroupement des cochés en bas. La rotation cuisine est suspendue pendant un menu, une fenêtre ouverte ou une saisie dans le panneau.
 
 L'ordre est enregistré dans les données JSON de la checklist et partagé avec le foyer, avec audit et révision. Une permutation incomplète, des IDs étrangers ou un état périmé sont refusés sans perte de tâches. Les anciens éléments gardent leur ordre tant que la liste n'est pas réordonnée ; les nouveaux arrivent à la fin. Renommer et remettre à zéro préservent l'ordre. Aucune migration ni suppression de données n'est nécessaire.
 
-Validation : 25 tests unitaires réussis, compilation de production et scénario API complet de partage/persistance/conflits/audit/renommage/remise à zéro réussis. Le rendu HTML de démonstration contient les nouveaux contrôles. Le lint des nouveaux composants/helpers et de la route de commande passe ; `home-app.tsx` conserve six erreurs de lint préexistantes, confirmées par comparaison avec l'archive précédente. La vérification visuelle reste indisponible dans le navigateur intégré.
+Validation initiale : 25 tests unitaires réussis, compilation de production et scénario API complet de partage/persistance/conflits/audit/renommage/remise à zéro réussis. Le rendu HTML de démonstration contient les nouveaux contrôles. Le lint des nouveaux composants/helpers et de la route de commande passe. La vérification visuelle reste indisponible dans le navigateur intégré.
 
 ## Modes d'affichage
 
@@ -58,8 +66,8 @@ La synchronisation reste une actualisation toutes les **2,5 secondes**, après m
 - Installation propre des dépendances depuis le lockfile : réussie, 552 packages.
 - Compilation Next.js de production et génération du worker de rappels : réussies.
 - Validation Docker Compose : réussie.
-- Tests de domaine, articles de courses, checklists, authentification, SQLite et rappels : **29 tests réussis** (7 domaine, 4 articles de courses, 5 checklists, 5 authentification, 7 stockage NAS, 1 rappels avec plusieurs scénarios).
-- Intégration sur serveur de production : affichage du tableau de bord authentifié après inscription, connexion et redémarrage ; accès à `/deconnexion` ; quantités et notes des articles, validations, partage/audit, conflits, isolation, catalogue inchangé et absence de recopie ; ordre partagé des checklists, audit, conflits, conservation après renommage/remise à zéro et redémarrage ; partage et isolation des foyers, rôles, codes-barres, préférences et contrôle d'origine : réussie.
+- Tests de domaine, articles de courses, checklists, authentification, SQLite et rappels : **31 tests réussis** (7 domaine, 4 articles de courses, 7 checklists/ordre des cochés, 5 authentification, 7 stockage NAS, 1 rappels avec plusieurs scénarios).
+- Intégration sur serveur de production : affichage du tableau de bord authentifié après inscription, connexion et redémarrage ; accès à `/deconnexion` ; quantités et notes des articles, validations, partage/audit, conflits, isolation, catalogue inchangé et absence de recopie ; ordre et libellés des checklists, conservation après renommage/remise à zéro ; purge atomique des terminés, permissions, isolation, checklists réutilisables protégées, commandes en haut et persistance après redémarrage ; partage et isolation des foyers, rôles, codes-barres, préférences et contrôle d'origine : réussie.
 
 Le moteur Docker local n'est pas démarré : **la construction et l'exécution du conteneur Linux n'ont pas été testées**. Aucun accès direct à votre NAS n'a été utilisé. La vérification visuelle dans Browser était indisponible ; caméras, douchette et réception réelle des notifications restent à vérifier sur vos appareils. Les tests des rappels utilisent les vrais calculs et payloads chiffrés, avec des réponses réseau simulées.
 

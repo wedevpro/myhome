@@ -44,6 +44,13 @@ export function filterChecklistItems(items: Entity[], query: string): Entity[] {
   return items.filter(item => searchableName(item.data.name || "").includes(search));
 }
 
+export function completedItemsLast(items: Entity[]): Entity[] {
+  const pending: Entity[] = [];
+  const completed: Entity[] = [];
+  for (const item of items) (item.data.checked ? completed : pending).push(item);
+  return [...pending, ...completed];
+}
+
 export function moveChecklistItem(items: Entity[], itemId: string, direction: "up" | "down"): string[] {
   const ids = items.map(item => item.id);
   const index = ids.indexOf(itemId);

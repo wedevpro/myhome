@@ -382,38 +382,40 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
 }
 
 .checklist-order-help { margin-top: 8px; font-size: 10px; }
-.checklist-item-actions { display: flex; align-items: center; flex-shrink: 0; gap: 2px; }
-.checklist-item-actions .icon-button { min-width: 32px; min-height: 36px; }
-
-.checklist-position {
-  min-width: 32px;
-  min-height: 36px;
-  padding: 3px 6px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: var(--background);
-  color: var(--foreground);
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-}
-
-.checklist-position:hover { background: var(--accent); }
-.checklist-position:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
-.checklist-item-actions button:disabled, .checklist-sort button:disabled { opacity: .4; cursor: default; }
+.checklist-sort button:disabled { opacity: .4; cursor: default; }
 .checklist-no-results { display: grid; justify-items: center; gap: 12px; padding: 28px 0; }
-.tasks-panel .item-delete { min-width: 28px; min-height: 36px; }
 
 .wall-mode .checklist-filter input { font-size: 15px; height: 44px; }
 .wall-mode .checklist-sort .secondary-button { min-height: 44px; font-size: 13px; }
-.wall-mode .checklist-item-actions button { min-width: 38px; min-height: 44px; }
-.wall-mode .checklist-position { font-size: 13px; }
 
 @media(max-width:767px) {
   .checklist-filter { flex-basis: 100%; }
   .checklist-sort { width: 100%; }
   .checklist-sort .secondary-button { flex: 1; min-height: 44px; }
   .tasks-panel .item-row { gap: 6px; }
-  .checklist-item-actions .icon-button, .checklist-position { min-width: 30px; min-height: 44px; }
+}
+
+.list-entry-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.list-entry-controls .add-item, .list-entry-controls .scan-button { margin-top: 0; }
+.clear-completed-button { align-self: flex-start; min-height: 36px; white-space: normal; text-align: left; }
+.clear-completed-button:disabled { opacity: .4; cursor: default; }
+.shopping-items, .task-items { max-height: 56vh; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.shopping-items:focus-visible, .task-items:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.checklist-actions-trigger { flex-shrink: 0; min-width: 36px; min-height: 36px; border: 1px solid var(--border); }
+.checklist-actions-trigger:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.checklist-actions-menu [role=menuitem] { min-height: 40px; }
+.wall-mode .checklist-actions-trigger, .wall-mode .clear-completed-button { min-width: 44px; min-height: 44px; }
+
+@media(max-width:767px), (pointer:coarse) {
+  .checklist-actions-trigger, .clear-completed-button { min-width: 44px; min-height: 44px; }
+  .checklist-actions-menu [role=menuitem] { min-height: 44px; }
 }
 
 .shopping-item-comment {

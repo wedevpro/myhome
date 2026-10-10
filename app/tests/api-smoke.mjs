@@ -261,6 +261,145 @@ async function checkShoppingItemEdits({ admin, member, outsider, command, househ
   assert.deepEqual(response.json.entities.find(entity => entity.id === foreignItem.id), foreignItem);
   return { id: item.id, quantity: 3.75, comment: finalComment, updatedBy: memberId, product, sibling, otherListItem };
 }
+async function checkCompletedPurge({ admin, member, outsider, household, productId, memberId }) {
+  const expectStatus = (response, status, label) => assert.equal(response.status, status, `${label}: ${JSON.stringify(response.json)}`);
+  const target = item => ({ id: item.id, revision: item.revision });
+  let response = await admin("/api/state?household=" + household.id);
+  expectStatus(response, 200, "Read records before completed-item tests");
+  let state = response.json;
+  const protectedEntities = state.entities, protectedMembers = state.members;
+  const find = id => state.entities.find(entity => entity.id === id);
+  const run = async (data, label, actor = admin) => {
+    const result = await actor("/api/command", { householdId: household.id, ...data });
+    expectStatus(result, 200, label); state = result.json; return state;
+  };
+  const createList = async (kind, name, reusable = false) => {
+    await run({ action: "save", kind, data: { name, icon: kind === "shopping" ? "basket" : "check", ...(kind === "checklist" ? { reusable } : {}) } }, "Create purge fixture " + name);
+    return state.entities.find(entity => entity.kind === kind && entity.data.name === name);
+  };
+  const add = async (list, name, knownProduct = false, quantity = 1) => {
+    const existingIds = new Set(state.entities.map(entity => entity.id));
+    await run({ action: "addItem", listId: list.id, name, quantity, ...(knownProduct ? { productId } : {}) }, "Add purge fixture item");
+    return state.entities.find(entity => entity.kind === "item" && !existingIds.has(entity.id));
+  };
+  const edit = async (id, changes, actor = admin) => {
+    const before = find(id);
+    await run({ action: "save", kind: "item", id, expectedRevision: before.revision, data: { ...before.data, ...changes } }, "Edit purge fixture item", actor);
+    return find(id);
+  };
+  const shopping = await createList("shopping", "Courses pour tester la purge");
+  const shoppingIds = [];
+  for (const quantity of [1, 2, 3, 4]) shoppingIds.push((await add(shopping, "Lait", true, quantity)).id);
+  const ephemeral = await createList("checklist", "Tâches éphémères pour tester la purge");
+  const ephemeralIds = [];
+  for (const name of ["Appeler", "Classer", "Réserver"]) ephemeralIds.push((await add(ephemeral, name)).id);
+  const ephemeralOrder = [ephemeralIds[2], ephemeralIds[0], ephemeralIds[1]];
+  await run({ action: "reorderChecklist", listId: ephemeral.id, itemIds: ephemeralOrder, expectedRevision: find(ephemeral.id).revision }, "Record ephemeral checklist order");
+  const orderedListRevision = find(ephemeral.id).revision;
+  await edit(ephemeralIds[0], { checked: true, quantity: 2, comment: "À conserver en renommant" });
+  const beforeRename = find(ephemeralIds[0]);
+  await edit(ephemeralIds[0], { name: "Appeler le plombier" }, member);
+  const renamed = find(ephemeralIds[0]);
+  assert.equal(renamed.data.name, "Appeler le plombier");
+  assert.equal(renamed.data.checked, true, "Checking an ephemeral task retains it until explicit purge");
+  assert.equal(renamed.data.quantity, 2);
+  assert.equal(renamed.data.comment, "À conserver en renommant");
+  assert.equal(renamed.data.listId, ephemeral.id);
+  assert.equal(renamed.updatedBy, memberId);
+  assert.notEqual(renamed.revision, beforeRename.revision);
+  assert.equal(renamed.createdBy, beforeRename.createdBy);
+  assert.equal(renamed.createdAt, beforeRename.createdAt);
+  assert.deepEqual(find(ephemeral.id).data.itemOrder, ephemeralOrder);
+  assert.equal(find(ephemeral.id).revision, orderedListRevision, "Label edit leaves checklist order revision unchanged");
+  response = await admin("/api/command", { householdId: household.id, action: "save", kind: "item", id: renamed.id, expectedRevision: beforeRename.revision, data: { ...beforeRename.data, name: "Ancien libellé" } });
+  expectStatus(response, 409, "Stale task label edit rejected");
+  await edit(ephemeralIds[2], { checked: true });
+  const reusable = await createList("checklist", "Tâches réutilisables protégées", true);
+  const reusableItemId = (await add(reusable, "Ne pas supprimer")).id;
+  await edit(reusableItemId, { checked: true });
+
+  await edit(shoppingIds[0], { checked: true });
+  await edit(shoppingIds[1], { checked: true });
+  const staleRequested = [target(find(shoppingIds[0])), target(find(shoppingIds[1]))];
+  await edit(shoppingIds[1], { quantity: 2.5, comment: "Version plus récente" }, member);
+  const shoppingBeforeRejection = shoppingIds.map(find);
+  const ephemeralBeforeRejection = ephemeralIds.map(find);
+  const largePurgeRequest = {
+    householdId: household.id, action: "clearCompleted", listId: shopping.id,
+    completedItems: Array.from({ length: 2000 }, (_, index) => ({
+      id: "00000000-0000-4000-8000-" + String(index).padStart(12, "0"),
+      revision: "11111111-1111-4111-8111-" + String(index).padStart(12, "0"),
+    })),
+  };
+  const largePurgeBytes = Buffer.byteLength(JSON.stringify(largePurgeRequest), "utf8");
+  assert.ok(largePurgeBytes > 150000 && largePurgeBytes < 1200000, "Large purge crosses the former request limit");
+  response = await admin("/api/command", largePurgeRequest);
+  expectStatus(response, 409, "A purge over 150 KB reaches item validation instead of 413");
+  const oversizedRequest = {
+    ...largePurgeRequest,
+    completedItems: Array.from({ length: 3000 }, (_, index) => ({ id: String(index).padStart(12, "0") + "x".repeat(188), revision: "r".repeat(200) })),
+  };
+  assert.ok(Buffer.byteLength(JSON.stringify(oversizedRequest), "utf8") > 1200000, "Oversized request exceeds the new byte limit");
+  response = await admin("/api/command", oversizedRequest);
+  expectStatus(response, 413, "Requests over 1.2 MB are rejected before any deletion");
+  for (const [listId, completedItems, expected, label] of [
+    [shopping.id, staleRequested, 409, "One stale target prevents deleting every requested item"],
+    [shopping.id, [target(find(shoppingIds[0])), target(find(shoppingIds[3]))], 409, "One unchecked target prevents partial purge"],
+    [shopping.id, [target(find(shoppingIds[0])), target(find(ephemeralIds[0]))], 409, "Target in another list prevents partial purge"],
+    [shopping.id, [target(find(shoppingIds[0])), target(find(shoppingIds[0]))], 400, "Duplicate purge targets rejected"],
+    [reusable.id, [target(find(reusableItemId))], 400, "Reusable checklist cannot be purged"],
+  ]) {
+    response = await admin("/api/command", { householdId: household.id, action: "clearCompleted", listId, completedItems });
+    expectStatus(response, expected, label);
+  }
+  response = await outsider("/api/command", { householdId: household.id, action: "clearCompleted", listId: shopping.id, completedItems: [target(find(shoppingIds[0]))] });
+  expectStatus(response, 403, "Non-member cannot purge household items");
+  response = await outsider("/api/state");
+  expectStatus(response, 200, "Read foreign purge target");
+  const foreignHousehold = response.json.household;
+  const foreignItem = response.json.entities.find(entity => entity.kind === "item");
+  response = await admin("/api/command", { householdId: household.id, action: "clearCompleted", listId: foreignItem.data.listId, completedItems: [target(foreignItem)] });
+  expectStatus(response, 404, "Foreign household list is inaccessible to purge");
+  response = await admin("/api/command", { householdId: household.id, action: "clearCompleted", listId: shopping.id, completedItems: [target(find(shoppingIds[0])), target(foreignItem)] });
+  expectStatus(response, 409, "Foreign household target cannot cause a partial purge");
+  response = await member("/api/state?household=" + household.id);
+  expectStatus(response, 200, "Inspect unsuccessful purges"); state = response.json;
+  assert.deepEqual(shoppingIds.map(find), shoppingBeforeRejection, "Every shopping target and pending item survives rejected purge");
+  assert.deepEqual(ephemeralIds.map(find), ephemeralBeforeRejection);
+  assert.ok(find(reusableItemId)?.data.checked, "Reusable checked task is retained");
+  assert.deepEqual(find(ephemeralIds[0]), renamed, "Rejected label edit preserves the renamed task");
+
+  // Purge only the checked snapshot the user requested; a later checked task remains.
+  const requested = [target(find(shoppingIds[0])), target(find(shoppingIds[1]))];
+  await edit(shoppingIds[2], { checked: true });
+  const newlyChecked = find(shoppingIds[2]), pendingShopping = find(shoppingIds[3]);
+  await run({ action: "clearCompleted", listId: shopping.id, completedItems: requested }, "Member purges requested shopping items", member);
+  assert.equal(find(shoppingIds[0]), undefined);
+  assert.equal(find(shoppingIds[1]), undefined);
+  assert.deepEqual(find(shoppingIds[2]), newlyChecked, "Newly checked item outside the request remains");
+  assert.deepEqual(find(shoppingIds[3]), pendingShopping, "Pending shopping item remains");
+  assert.equal(state.entities.filter(entity => entity.kind === "item" && entity.data.listId === shopping.id).length, 2);
+  const pendingEphemeral = find(ephemeralIds[1]);
+  await run({ action: "clearCompleted", listId: ephemeral.id, completedItems: [target(find(ephemeralIds[0])), target(find(ephemeralIds[2]))] }, "Member purges completed ephemeral tasks", member);
+  assert.equal(find(ephemeralIds[0]), undefined);
+  assert.equal(find(ephemeralIds[2]), undefined);
+  assert.deepEqual(find(ephemeralIds[1]), pendingEphemeral);
+  assert.equal(state.entities.filter(entity => entity.kind === "item" && entity.data.listId === ephemeral.id).length, 1);
+  assert.ok(find(reusableItemId)?.data.checked);
+  for (const entity of protectedEntities) assert.deepEqual(find(entity.id), entity, "Purge leaves other lists and catalog untouched: " + entity.id);
+  assert.deepEqual(state.members, protectedMembers, "Purge does not change household memberships");
+  response = await admin("/api/state?household=" + household.id);
+  expectStatus(response, 200, "Purge results are shared with administrator");
+  assert.equal(response.json.entities.some(entity => entity.id === shoppingIds[0] || entity.id === ephemeralIds[0]), false);
+  assert.deepEqual(response.json.entities.find(entity => entity.id === shoppingIds[3]), pendingShopping);
+  response = await outsider("/api/state?household=" + foreignHousehold.id);
+  expectStatus(response, 200, "Foreign household survives purge attempts");
+  assert.deepEqual(response.json.entities.find(entity => entity.id === foreignItem.id), foreignItem);
+  return {
+    deletedIds: [shoppingIds[0], shoppingIds[1], ephemeralIds[0], ephemeralIds[2]],
+    survivors: [newlyChecked, pendingShopping, pendingEphemeral, find(reusableItemId)],
+  };
+}
 try {
   await start();
   const admin = client(), member = client(), outsider = client(), anonymous = client();
@@ -269,9 +408,16 @@ try {
   assert.match(demoPage.text, /Trier la checklist de A à Z/);
   assert.match(demoPage.text, /Trier la checklist de Z à A/);
   assert.match(demoPage.text, /Filtrer les éléments de Les petites choses à faire/);
-  assert.match(demoPage.text, /Choisir la position de Arroser les plantes, position actuelle 1/);
+  assert.match(demoPage.text, /aria-label="Actions pour Arroser les plantes, position 1"/);
   assert.match(demoPage.text, /aria-label="Modifier la quantit(?:é|&eacute;|&#0*233;|&#x0*[eE]9;) de Avocats"/);
   assert.match(demoPage.text, /aria-label="Modifier la quantit(?:é|&eacute;|&#0*233;|&#x0*[eE]9;) et la note de Avocats"/);
+  const indexOfClass = className => {
+    const match = new RegExp('class="[^"]*\\b' + className + '\\b[^"]*"').exec(demoPage.text);
+    assert.ok(match, "SSR element missing class " + className); return match.index;
+  };
+  assert.ok(indexOfClass("add-item") < indexOfClass("shopping-items"), "Shopping entry appears before the items");
+  assert.ok(indexOfClass("scan-button") < indexOfClass("shopping-items"), "Barcode scanner appears before the shopping items");
+  assert.ok(indexOfClass("add-task") < indexOfClass("task-items"), "Task entry appears before the task items");
   let recovery = await anonymous("/deconnexion"); assert.equal(recovery.status, 200); assert.match(recovery.text, /Fermer votre session/);
   let r = await anonymous("/api/state"); assert.equal(r.status, 401);
   r = await anonymous("/api/state", undefined, { "oai-authenticated-user-id": "local_seedy", "oai-authenticated-user-email": "admin@example.fr" }); assert.equal(r.status, 401);
@@ -299,12 +445,15 @@ try {
   r = await member("/api/command", { action: "save", householdId: household.id, kind: "electricity", data: { start: "22:00", end: "06:00", days: [1] } }); assert.equal(r.status, 403);
   const orderedChecklist = await checkChecklistOrdering({ admin, member, outsider, command, household, shoppingList: list, adminId, memberId });
   const editedShoppingItem = await checkShoppingItemEdits({ admin, member, outsider, command, household, shoppingList: list, productId: product.id, memberId });
+  const purgedItems = await checkCompletedPurge({ admin, member, outsider, household, productId: product.id, memberId });
   r = await outsider("/api/state?household=" + household.id); assert.equal(r.status, 403);
   r = await admin("/api/command", { action: "renameHousehold", householdId: household.id, name: "Forbidden" }, { Origin: "https://attacker.example" }); assert.equal(r.status, 403);
   r = await admin("/api/auth/logout", {}, { Origin: "https://attacker.example" }); assert.equal(r.status, 403);
   r = await admin("/api/push/run", {}); assert.equal(r.status, 403);
   await stop(); await start();
   r = await admin("/api/state?household=" + household.id); assert.equal(r.status, 200, "Session survives restart"); assert.equal(r.json.preferences.rotation, 10); assert.equal(r.json.entities.find(e => e.id === product.id).data.name, "Lait modifié");
+  for (const id of purgedItems.deletedIds) assert.equal(r.json.entities.some(entity => entity.id === id), false, "Purged item remains deleted after restart: " + id);
+  for (const survivor of purgedItems.survivors) assert.deepEqual(r.json.entities.find(entity => entity.id === survivor.id), survivor, "Purge survivor data and revision survive restart: " + survivor.id);
   const persistedChecklist = r.json.entities.find(e => e.id === orderedChecklist.id);
   assert.deepEqual(persistedChecklist.data.itemOrder, orderedChecklist.itemOrder, "Checklist order survives server restart");
   assert.equal(persistedChecklist.updatedBy, orderedChecklist.updatedBy);
@@ -326,7 +475,7 @@ try {
   r = await member("/api/state?household=" + household.id); assert.equal(r.status, 403);
   r = await member("/api/command", { action: "joinHousehold", code: household.code }); assert.equal(r.status, 403);
   r = await command({ action: "delete", id: list.id, expectedRevision: list.revision }); assert.equal(r.status, 200); assert.equal(r.json.entities.filter(e => e.kind === "item" && e.data.listId === list.id).length, 0); assert.equal(r.json.entities.filter(e => e.kind === "product").length, 1); assert.equal(r.json.entities.filter(e => e.kind === "item" && e.data.listId === orderedChecklist.id).length, orderedChecklist.itemIds.length);
-  console.log("NAS API/pages passed: authenticated dashboard after signup/login/restart, logout recovery page, secure sessions, household sharing/isolation, roles, barcodes, shopping item quantities/comments/validation/isolation, checklist ordering/sharing/audits/conflicts/reset/rename, preferences, CSRF and persistence.");
+  console.log("NAS API/pages passed: authenticated dashboard after signup/login/restart, logout recovery page, secure sessions, household sharing/isolation, roles, barcodes, shopping item quantities/comments/validation/isolation, checklist ordering/sharing/audits/conflicts/reset/rename, completed-item purge/atomicity/isolation, task label edits, entry placement, preferences, CSRF and persistence.");
 } catch (error) { console.error(logs); throw error; }
 finally {
   await stop();

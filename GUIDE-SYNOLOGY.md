@@ -81,6 +81,14 @@ Dans Container Manager, sélectionnez le projet et faites **Action → Arrêter*
 
 La sauvegarde contient les comptes, les données des foyers et les clés Push. Pour restaurer, arrêtez le projet, remplacez `data/` par sa sauvegarde et rétablissez ses permissions pour `1000:1000`, ainsi que le fichier `.env`, puis redémarrez. Les données de l'ancienne publication Cloudflare ne sont pas importées automatiquement dans cette installation.
 
+## Ajouter et nettoyer les listes
+
+Les champs **Ajouter un produit…** et **Ajouter une tâche…** se trouvent maintenant en haut de leur liste, avec **Scanner un code-barres** pour les courses. Les éléments des longues listes défilent dans leur propre zone ; les commandes d'ajout restent au-dessus.
+
+Dans les courses et toutes les checklists, les éléments cochés passent en bas et les éléments à faire restent en haut. Une tâche éphémère cochée est désormais conservée jusqu'à sa suppression : vous pouvez la décocher si besoin.
+
+Le bouton **Supprimer les éléments terminés** est disponible pour les listes de courses et les checklists **éphémères**, avec confirmation et indication du nombre d'éléments concernés. Il s'applique à toute la liste, même si un filtre est actif. Les éléments à faire et les fiches produits sont conservés. Une modification concurrente d'un élément visé bloque l'opération entière ; actualisez la liste et relancez-la. Les éléments cochés après l'ouverture de la confirmation restent dans la liste. Les checklists réutilisables conservent leurs éléments pour la prochaine utilisation.
+
 ## Modifier un article de la liste de courses
 
 Cliquez sur la **quantité** ou sur le **crayon** de l'article pour modifier sa quantité et ajouter une **Note pour cet article**. Les quantités décimales sont acceptées ; la valeur doit être supérieure à zéro, dans la limite de 10 000. Pour retirer une note, videz son champ puis enregistrez.
@@ -92,10 +100,10 @@ La note s'affiche sous le nom de l'article et est partagée avec les membres du 
 Ces commandes sont disponibles dans les checklists, sur le tableau de bord et en mode cuisine :
 
 - **A–Z** et **Z–A** trient toute la checklist par nom, avec un classement français tenant compte des nombres.
-- Les **flèches** montent ou descendent un élément d'une position. Cliquez sur son **numéro** pour choisir directement une position entre 1 et le nombre d'éléments.
+- Le bouton **⋯** de chaque élément ouvre son menu : **Modifier le libellé**, **Monter d'une position**, **Choisir la position**, **Descendre d'une position** et **Supprimer cet élément**. Les déplacements se font parmi les éléments du même état (à faire ou terminés), pour garder les éléments cochés en bas.
 - **Filtrer les éléments…** recherche dans les noms sans tenir compte des majuscules ni des accents. Le compteur indique le nombre de résultats ; effacez le filtre pour revoir toute la checklist.
 
-L'ordre est enregistré sur le NAS et partagé avec les membres du foyer. Le tri et les déplacements concernent toujours la liste complète, même lorsqu'un filtre est actif. Les nouveaux éléments arrivent à la fin ; le filtre ne supprime ni ne modifie les tâches. Le renommage et « Tout décocher » conservent l'ordre. En mode cuisine avec rotation, une fenêtre ouverte ou un champ de saisie actif suspend le changement de liste.
+L'ordre est enregistré sur le NAS et partagé avec les membres du foyer. Le tri s'applique séparément aux éléments à faire et terminés, même lorsqu'un filtre est actif. Les nouveaux éléments arrivent après les autres éléments à faire, avant les éléments terminés ; le filtre ne supprime ni ne modifie les tâches. Modifier un libellé ou renommer la liste conserve l'ordre enregistré. « Tout décocher » remet une checklist réutilisable à zéro. En mode cuisine avec rotation, un menu, une fenêtre ouverte ou un champ de saisie actif suspend le changement de liste.
 
 ## Choisir le mode d'affichage
 
