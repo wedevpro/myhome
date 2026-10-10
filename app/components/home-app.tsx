@@ -114,7 +114,7 @@ export default function HomeApp({user}:{user:User|null}) {
  const checklist=snapshot.entities.find(e=>e.kind==="checklist"&&e.id===(view==="checklist"?checkSelection:snapshot.preferences.checklistId))||allCheck[0];
  const electricity=getElectricity(snapshot.entities,now),waste=upcomingWaste(snapshot.entities,now),nextWaste=waste[0],isAdmin=snapshot.household?.role==="admin";
  const notes=snapshot.entities.filter(e=>e.kind==="note"&&`${e.data.name} ${e.data.content}`.toLocaleLowerCase("fr").includes(search.toLocaleLowerCase("fr")));
- const rotatingLists=[...(shopping?[shopping]:[]),...(checklist?[checklist]:[]),...allShopping.filter(e=>e.id!==shopping?.id),...allCheck.filter(e=>e.id!==checklist?.id)];
+ const rotatingLists=[...(shopping?[shopping]:[]),...(checklist?[checklist]:[])];
  const rotated=rotatingLists[rotation%Math.max(rotatingLists.length,1)];
  const name=(snapshot.user?.name||user?.name||"Antoine").split(" ")[0];
  const title=view==="dashboard"?`Bonjour ${name}`:[...menus,...houseMenus].find(m=>m.id===view)?.name||"Votre foyer";

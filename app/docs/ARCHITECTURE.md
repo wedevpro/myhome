@@ -16,7 +16,7 @@ Le déploiement, le proxy HTTPS et les sauvegardes sont décrits dans [GUIDE-SYN
 | Contacts | Nom, téléphone, email et adresse. Catégories imbriquées sans limite configurée de profondeur ; le filtre d'une catégorie inclut ses descendants. |
 | Électricité | Plusieurs plages avec choix des jours et passage de minuit. État heures pleines/creuses et couleurs personnelles. Calculs dans le fuseau Europe/Paris. |
 | Poubelles | Type, couleur, jour de sortie, heure du rappel, récurrence hebdomadaire ou toutes les 2–4 semaines et date de référence. Décompte fondé sur le jour de sortie. |
-| Tableau de bord | Liste de courses et checklist choisies par utilisateur et par foyer. Affichage côte à côte ou rotation de toutes les listes en mode cuisine ; délai de 5 à 300 secondes. Plein écran et Wake Lock selon navigateur. |
+| Tableau de bord | Liste de courses et checklist choisies par utilisateur et par foyer. Affichage côte à côte ou rotation limitée aux deux listes sélectionnées en mode cuisine ; délai de 5 à 300 secondes. Textes électricité/poubelles agrandis en mode cuisine. Plein écran et Wake Lock selon navigateur. |
 | Foyers | Création, adhésion par code, sélection, renommage et renouvellement du code. Le créateur est administrateur ; un nouveau membre est utilisateur simple. |
 | Administration | Promotion, rétrogradation et retrait de membres. Protection atomique du dernier administrateur. Un membre retiré ne peut pas revenir avec le même code. |
 | Traçabilité | `created_by`, `created_at`, `updated_by`, `updated_at` fixés côté serveur. UUID de révision pour rejeter les écrasements concurrents. |

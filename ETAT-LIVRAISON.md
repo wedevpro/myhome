@@ -2,6 +2,14 @@
 
 10 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
 
+## Tableau de bord en mode cuisine
+
+La rotation alterne maintenant uniquement entre la liste de courses et la checklist choisies dans **Paramètres → Mon tableau de bord**. Les autres listes du foyer ne sont plus ajoutées à la rotation. Lorsqu'un seul type de liste est disponible, il reste affiché. Le délai configuré et les pauses pendant menus, fenêtres et saisies sont conservés.
+
+Les cartes électricité et poubelles utilisent des textes plus grands en mode cuisine : état/type de bac à 26–30 px, descriptions et rappels à 14–16 px, décompte des jours à 48–52 px. Les libellés et badges sont également agrandis, avec retour à la ligne des textes longs et adaptation aux petits écrans.
+
+Validation : compilation de production avec TypeScript et scénario API complet réussis. La sélection personnelle par foyer et les cas de liste unique ont été revus. Le contrôle visuel dans le navigateur intégré reste indisponible.
+
 ## Organisation et nettoyage des listes
 
 Les commandes d'ajout sont en haut des courses et des checklists, avec le scan pour les courses. Les longues listes disposent d'une zone d'éléments défilante, séparée de ces commandes. Tous les éléments cochés apparaissent en bas ; l'ordre relatif reste conservé dans les groupes à faire/terminés. Les actions d'une tâche sont regroupées derrière un bouton ⋯ : modification du libellé, monter/descendre, choix de position et suppression. Les déplacements restent dans le groupe de même état. La rotation cuisine se suspend pendant un menu ouvert.

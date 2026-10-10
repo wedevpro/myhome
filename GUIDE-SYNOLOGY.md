@@ -105,6 +105,12 @@ Ces commandes sont disponibles dans les checklists, sur le tableau de bord et en
 
 L'ordre est enregistré sur le NAS et partagé avec les membres du foyer. Le tri s'applique séparément aux éléments à faire et terminés, même lorsqu'un filtre est actif. Les nouveaux éléments arrivent après les autres éléments à faire, avant les éléments terminés ; le filtre ne supprime ni ne modifie les tâches. Modifier un libellé ou renommer la liste conserve l'ordre enregistré. « Tout décocher » remet une checklist réutilisable à zéro. En mode cuisine avec rotation, un menu, une fenêtre ouverte ou un champ de saisie actif suspend le changement de liste.
 
+## Configurer le tableau de bord en mode cuisine
+
+Dans **Paramètres → Mon tableau de bord**, choisissez votre **Liste de courses** et votre **Checklist**, puis **Une liste à la fois, avec rotation** pour les afficher en alternance en mode cuisine. La rotation concerne uniquement ces deux listes ; le délai reste réglable de 5 à 300 secondes. Si un type de liste est absent du foyer, seule l'autre liste est affichée. Les choix sont personnels à votre compte et à ce foyer.
+
+Le mode cuisine agrandit les textes des cartes d'électricité et de poubelles : état heures pleines/creuses, prochaine sortie, horaire du rappel et décompte des jours.
+
 ## Choisir le mode d'affichage
 
 MyHomeIA s'affiche en mode clair par défaut, même si l'appareil est configuré en sombre. Dans **Paramètres → Apparence → Mode d'affichage**, choisissez **Mode Clair**, **Mode Sombre** ou **Appliquer le mode de l'appareil**.
