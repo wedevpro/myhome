@@ -5,7 +5,7 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $packageRoot = [System.IO.Path]::GetFullPath($PSScriptRoot)
 $archivePath = Join-Path $packageRoot 'myhomeia-synology.zip'
 $sourceFiles = [System.Collections.Generic.List[string]]::new()
-$rootFiles = @('Dockerfile', 'docker-compose.yml', '.dockerignore', '.env.example', 'GUIDE-SYNOLOGY.md', 'ETAT-LIVRAISON.md', 'PREPARER-PACKAGE.ps1')
+$rootFiles = @('Dockerfile', 'docker-compose.yml', '.dockerignore', '.env.example', 'GUIDE-SYNOLOGY.md', 'ETAT-LIVRAISON.md', 'METTRE-A-JOUR-SYNOLOGY.sh', 'PREPARER-PACKAGE.ps1')
 $appFiles = @('package.json', 'package-lock.json', 'tsconfig.json', 'next.config.ts', 'postcss.config.mjs', 'eslint.config.mjs', 'components.json', 'README.md', '.env.example', '.gitignore')
 $appFolders = @('app', 'components', 'db', 'drizzle', 'hooks', 'lib', 'public', 'tests', 'vendor', 'docs')
 $appScripts = @('build-nas.mjs', 'nas-entrypoint.mjs', 'reminder-worker.ts')

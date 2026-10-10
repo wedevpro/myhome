@@ -490,3 +490,10 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
   .wall-mode .status-grid { grid-template-columns: 1fr; }
   .wall-mode .status-text { flex-basis: 100%; }
 }
+
+.kitchen-rotation { min-width: 0; touch-action: pan-y pinch-zoom; }
+.rotation-navigation { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.rotation-navigation > span { text-align: center; color: var(--muted-foreground); font-size: 13px; }
+.rotation-navigation small { display: block; margin-top: 2px; }
+.rotation-navigation button { min-width: 48px; min-height: 44px; }
+.wall-mode .electricity-transition { margin-top: 7px; }

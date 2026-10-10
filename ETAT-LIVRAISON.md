@@ -2,13 +2,29 @@
 
 10 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
 
+## Script de mise à jour Synology
+
+[METTRE-A-JOUR-SYNOLOGY.sh](METTRE-A-JOUR-SYNOLOGY.sh), inclus dans le ZIP, automatise la mise à jour de `/volume1/docker/myhomeia`. Il se lance avec `sudo sh` depuis un emplacement hors de l'installation, avec le chemin du ZIP en argument facultatif. Avant toute interruption, il vérifie le package, le projet/service Compose et le volume de données réellement utilisé.
+
+Le conteneur est arrêté avant la copie de `.env` et de tout `data/`. La sauvegarde datée est conservée dans `/volume1/docker/myhomeia-backups/`, avec accès restreint et marqueur de copie terminée. L'ancien `app/` est déplacé dans cette sauvegarde avant extraction, ce qui retire aussi les routes/fichiers applicatifs supprimés du nouveau ZIP. Le script restaure `.env` et le contenu de `data/` sans imbrication, conserve les permissions, reprend le projet Compose existant et lance la reconstruction/recréation du service. Il détecte les deux commandes Compose et attend le contrôle de santé.
+
+En cas d'échec avant remplacement, le conteneur auparavant actif est relancé ; après remplacement ou déploiement, la sauvegarde reste disponible et la restauration est laissée explicite pour éviter d'écraser une base éventuellement migrée. Le script est en LF sans BOM, avec une règle Git pour conserver ce format. Aucun script n'a été exécuté sur votre NAS.
+
+Validation du script : syntaxe `sh -n` réussie et **19 tests d'intégration réussis** dans `tests/synology-update.test.mjs`, avec vrais ZIP/CRC/extractions et Docker/Compose simulés. Ils couvrent chemins avec espaces, sauvegarde/restauration sans `data/data`, arrêt confirmé avant copie, projet Compose réel, mode Compose historique, retrait des anciens fichiers applicatifs, refus des archives incomplètes/corrompues/contenant `.env` ou `data`, `.dockerignore` obligatoire, volume/labels incohérents, configuration invalide, échecs de copie/build, nettoyage des fichiers temporaires et absence de secrets dans la sortie. Cette validation est distincte des 63 tests applicatifs précédents ; aucune mise à jour réelle du NAS n'a été lancée.
+
 ## Tableau de bord en mode cuisine
 
 La rotation alterne maintenant uniquement entre la liste de courses et la checklist choisies dans **Paramètres → Mon tableau de bord**. Les autres listes du foyer ne sont plus ajoutées à la rotation. Lorsqu'un seul type de liste est disponible, il reste affiché. Le délai configuré et les pauses pendant menus, fenêtres et saisies sont conservés.
 
+Un swipe horizontal permet de changer immédiatement de liste ; des flèches proposent aussi la navigation au clic/clavier. Les gestes verticaux gardent leur défilement natif. Chaque interaction avec la liste, chaque swipe et la fin d'un enregistrement réinitialisent le délai complet. Les enregistrements suspendent la rotation ; après une pause à l'échéance (menu, fenêtre, saisie ou application masquée), elle repart avec un délai complet. Un seul minuteur reste actif.
+
+La carte électrique affiche la prochaine bascule HP/HC, son horaire et le temps restant, en précisant demain ou la date si nécessaire. Le calcul fusionne les plages adjacentes/chevauchantes, respecte leur jour de début la nuit et les changements d'heure Europe/Paris. Une couverture permanente indique qu'aucun changement n'est prévu ; sans règle, l'invitation à configurer les horaires reste affichée.
+
+Sur mobile, la navigation ferme le menu latéral. Le wrapper partagé des menus attend un tap tactile complet : un mouvement de plus de 8 px, une annulation ou plusieurs doigts empêche l'ouverture, sans bloquer le défilement natif. Souris, clavier, focus et références Radix sont conservés.
+
 Les cartes électricité et poubelles utilisent des textes plus grands en mode cuisine : état/type de bac à 26–30 px, descriptions et rappels à 14–16 px, décompte des jours à 48–52 px. Les libellés et badges sont également agrandis, avec retour à la ligne des textes longs et adaptation aux petits écrans.
 
-Validation : compilation de production avec TypeScript et scénario API complet réussis. La sélection personnelle par foyer et les cas de liste unique ont été revus. Le contrôle visuel dans le navigateur intégré reste indisponible.
+Validation : **63 tests unitaires réussis**, dont 15 nouveaux cas de prochaine bascule électrique (nuit, semaine, chevauchements, changements d'heure), 9 tests de rotation avec horloge simulée et 8 tests de tap/défilement/annulation. TypeScript, lint ciblé des nouveaux composants/helpers et des wrappers sidebar/menu, compilation de production et scénario API complet réussis. La sélection personnelle par foyer et les cas de liste unique ont été revus. `home-app.tsx` conserve quatre erreurs de lint préexistantes ; le lint global ne passe donc pas entièrement. Le navigateur intégré reste indisponible : swipe, défilement tactile, fermeture du drawer et rendu des cartes n'ont pas été vérifiés visuellement sur appareil.
 
 ## Organisation et nettoyage des listes
 
@@ -74,7 +90,7 @@ La synchronisation reste une actualisation toutes les **2,5 secondes**, après m
 - Installation propre des dépendances depuis le lockfile : réussie, 552 packages.
 - Compilation Next.js de production et génération du worker de rappels : réussies.
 - Validation Docker Compose : réussie.
-- Tests de domaine, articles de courses, checklists, authentification, SQLite et rappels : **31 tests réussis** (7 domaine, 4 articles de courses, 7 checklists/ordre des cochés, 5 authentification, 7 stockage NAS, 1 rappels avec plusieurs scénarios).
+- Tests de domaine, rotation/gestes, articles de courses, checklists, authentification, SQLite et rappels : **63 tests réussis** (22 domaine, 9 rotation/swipe, 8 menus tactiles, 4 articles de courses, 7 checklists/ordre des cochés, 5 authentification, 7 stockage NAS, 1 rappels avec plusieurs scénarios).
 - Intégration sur serveur de production : affichage du tableau de bord authentifié après inscription, connexion et redémarrage ; accès à `/deconnexion` ; quantités et notes des articles, validations, partage/audit, conflits, isolation, catalogue inchangé et absence de recopie ; ordre et libellés des checklists, conservation après renommage/remise à zéro ; purge atomique des terminés, permissions, isolation, checklists réutilisables protégées, commandes en haut et persistance après redémarrage ; partage et isolation des foyers, rôles, codes-barres, préférences et contrôle d'origine : réussie.
 
 Le moteur Docker local n'est pas démarré : **la construction et l'exécution du conteneur Linux n'ont pas été testées**. Aucun accès direct à votre NAS n'a été utilisé. La vérification visuelle dans Browser était indisponible ; caméras, douchette et réception réelle des notifications restent à vérifier sur vos appareils. Les tests des rappels utilisent les vrais calculs et payloads chiffrés, avec des réponses réseau simulées.

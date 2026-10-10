@@ -68,6 +68,12 @@ Une seule instance du conteneur est prévue. Pour sauvegarder, arrêter le proje
 
 ## Synchronisation
 
+Le mode cuisine alterne uniquement entre les deux listes choisies dans les préférences personnelles. Un minuteur relatif réinitialisable accorde le délai complet après un swipe, une interaction ou la fin d'une mutation ; les pauses pour saisie/menu/fenêtre/application masquée sont surveillées toutes les 250 ms à partir de l'échéance, puis suivies d'un délai complet. Les swipes horizontaux n'annulent pas le défilement vertical ; des boutons permettent aussi la navigation au clavier. Le menu mobile est contrôlé par l'application et fermé lors de la navigation.
+
+Les déclencheurs de menus Radix conservent leurs handlers souris/clavier, ARIA et refs. Un relais écarte seulement le handler `pointerdown` tactile de Radix, qui ouvrait le menu et empêchait le défilement. Des observateurs passifs valident le tap à la fin du geste et rejettent déplacement, annulation ou plusieurs doigts.
+
+`getElectricity` et `getNextElectricityTransition` partagent la fusion des intervalles hebdomadaires en Europe/Paris. La prochaine bascule est calculée aux frontières effectives et aux changements d'offset du fuseau, sans parcours de chaque minute ni création répétée de formatter. Le tableau de bord affiche l'état futur, la date/heure locale et le délai réel, actualisés toutes les 15 secondes.
+
 Les données sont persistées sur le NAS. Les mutations sont ciblées par élément. Le client relit l'état toutes les **2,5 secondes** lorsque l'application est visible, après chaque mutation et au retour sur la fenêtre. Cette synchronisation se fait donc en quelques secondes. Une modification fondée sur une ancienne révision est rejetée avec HTTP 409.
 
 Le navigateur conserve des états propres à l'appareil, comme le foyer actif et les marqueurs des rappels locaux. Les préférences de tableau de bord restent en base, par utilisateur et par foyer. Il n'existe pas de file d'écritures hors ligne synchronisée au retour du réseau.
@@ -105,7 +111,7 @@ Références : [getUserMedia](https://developer.mozilla.org/en-US/docs/Web/API/M
 
 ## Vérifications et limites de livraison
 
-`npm test` couvre le domaine, les migrations, la réouverture de SQLite, les rollbacks, les références, les droits, l'authentification, les checklists, le regroupement des cochés et la validation des quantités/commentaires des articles. `npm run test:api` démarre une instance standalone avec une base temporaire, vérifie les comptes, les sessions, le partage et l'isolation des foyers, les rôles, les codes-barres, l'ordre et les libellés des checklists, l'édition des articles sans modification du catalogue ni propagation aux autres lignes, la purge atomique des terminés et la protection des listes réutilisables, les conflits de révision, les préférences et la persistance après un arrêt/redémarrage. Le HTML de démonstration est vérifié pour la position des commandes et les boutons d'actions.
+`npm test` couvre le domaine (dont la prochaine bascule électrique et les changements d'heure), les minuteurs de rotation avec horloge simulée, les gestes swipe/tap/scroll/annulation, les migrations, la réouverture de SQLite, les rollbacks, les références, les droits, l'authentification, les checklists, le regroupement des cochés et la validation des quantités/commentaires des articles. `npm run test:api` démarre une instance standalone avec une base temporaire, vérifie les comptes, les sessions, le partage et l'isolation des foyers, les rôles, les codes-barres, l'ordre et les libellés des checklists, l'édition des articles sans modification du catalogue ni propagation aux autres lignes, la purge atomique des terminés et la protection des listes réutilisables, les conflits de révision, les préférences et la persistance après un arrêt/redémarrage. Le HTML de démonstration est vérifié pour la position des commandes et les boutons d'actions.
 
 La compilation Next.js en production et la validation de la configuration Docker Compose ont réussi sur le poste de préparation. Les résultats définitifs des suites de tests sont précisés à la livraison.
 

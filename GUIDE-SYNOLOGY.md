@@ -111,6 +111,12 @@ Dans **Paramètres → Mon tableau de bord**, choisissez votre **Liste de course
 
 Le mode cuisine agrandit les textes des cartes d'électricité et de poubelles : état heures pleines/creuses, prochaine sortie, horaire du rappel et décompte des jours.
 
+En rotation, **balayez horizontalement la liste** pour afficher immédiatement l'autre liste, ou utilisez les flèches précédente/suivante. Le défilement vertical reste disponible pour les longues listes. Un swipe ou une action (ajout, coche, modification, suppression, tri, filtre…) relance le délai complet avant le prochain changement. La rotation attend pendant un enregistrement, un menu, une fenêtre ou une saisie ; après une pause atteignant l'échéance, elle accorde de nouveau le délai complet.
+
+La carte électrique indique la **prochaine bascule vers les heures creuses ou pleines**, avec son horaire et le temps restant. Pour une bascule un autre jour, elle précise demain ou la date. Le calcul suit les horaires du foyer en Europe/Paris, y compris les plages de nuit, les chevauchements et les changements d'heure. L'indication s'actualise avec le tableau de bord, toutes les 15 secondes.
+
+Sur mobile, choisir une page ferme automatiquement le menu latéral. Pour ouvrir un menu ⋯, touchez puis relâchez le bouton ; commencer un défilement sur ce bouton laisse défiler la liste sans ouvrir son menu.
+
 ## Choisir le mode d'affichage
 
 MyHomeIA s'affiche en mode clair par défaut, même si l'appareil est configuré en sombre. Dans **Paramètres → Apparence → Mode d'affichage**, choisissez **Mode Clair**, **Mode Sombre** ou **Appliquer le mode de l'appareil**.
@@ -118,6 +124,32 @@ MyHomeIA s'affiche en mode clair par défaut, même si l'appareil est configuré
 Le choix s'applique immédiatement et reste mémorisé dans ce navigateur sur cet appareil. Le troisième choix suit automatiquement les changements d'apparence de l'appareil. Vous pouvez ainsi garder la tablette de cuisine en clair et le téléphone en sombre. Les couleurs personnalisées des heures d'électricité sont conservées.
 
 ## Mettre à jour
+
+### Avec le script de mise à jour
+
+Copiez [METTRE-A-JOUR-SYNOLOGY.sh](METTRE-A-JOUR-SYNOLOGY.sh) sur le NAS **hors de l'installation**, par exemple dans `/volume1/docker/`. Déposez aussi le nouveau ZIP dans `/volume1/docker/myhomeia-synology.zip`. Le script est inclus à la racine du package ; vous pouvez le copier depuis le PC avant de lancer la mise à jour.
+
+En SSH, exécutez :
+
+```sh
+sudo sh /volume1/docker/METTRE-A-JOUR-SYNOLOGY.sh /volume1/docker/myhomeia-synology.zip
+```
+
+Le chemin du ZIP est facultatif si le fichier est à cet emplacement. Le script utilise `/volume1/docker/myhomeia` comme installation. Il :
+
+1. Vérifie le package, le projet/service Compose existant et le volume `data/` réellement monté.
+2. Arrête le conteneur avant de copier `.env` et tout `data/`, pour sauvegarder SQLite et ses fichiers associés de manière cohérente.
+3. Conserve la sauvegarde dans `/volume1/docker/myhomeia-backups/AAAAMMJJ-HHMMSS-PID/`, avec accès restreint. L'ancien dossier `app/` y est également déplacé avant remplacement, afin de retirer les fichiers applicatifs disparus du nouveau package.
+4. Extrait le ZIP dans l'installation et recopie `.env` puis le contenu de `data/`, en conservant leurs permissions et sans créer `data/data`.
+5. Lance `up -d --build --force-recreate myhomeia` avec le nom du projet existant, puis attend le contrôle de santé du conteneur pendant au maximum 120 secondes.
+
+Le script détecte `docker compose` ou `docker-compose`. Il ne demande pas de recopier la sauvegarde manuellement et la conserve après succès. Le fichier `SAUVEGARDE-TERMINEE.txt` confirme que la copie de `.env` et `data/` a abouti avant remplacement. Les valeurs de `.env` ne sont pas affichées.
+
+En cas d'échec avant le remplacement des sources, le conteneur précédemment actif est redémarré. Après le début du remplacement ou du déploiement, le script conserve la sauvegarde et affiche le diagnostic à consulter ; il ne restaure pas automatiquement une base qui aurait déjà été migrée. Après une interruption brutale, le dossier `.myhomeia-update.lock` peut rester présent : vérifiez qu'aucune mise à jour n'est en cours avant de le retirer.
+
+Pour une installation différente, les variables `MYHOMEIA_DIR` et `MYHOMEIA_BACKUP_DIR` permettent de changer les chemins. Elles doivent désigner respectivement l'installation existante et un dossier de sauvegarde situé hors de celle-ci.
+
+### Mise à jour manuelle
 
 Sauvegardez d'abord comme ci-dessus. Arrêtez le projet, remplacez les fichiers applicatifs par ceux du nouveau package et **conservez `data/` et votre `.env`**. Dans Container Manager, reconstruisez le projet puis démarrez-le. Si nécessaire, utilisez l'action de redéploiement/recréation des conteneurs pour que la nouvelle image soit prise en compte ; un simple redémarrage ne reconstruit pas l'image.
 

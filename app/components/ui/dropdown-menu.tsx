@@ -2,14 +2,36 @@
 
 import * as React from "react"
 import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
-import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui"
+import { DropdownMenu as DropdownMenuPrimitive, Slot } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { TouchMenuGesture } from "@/lib/menu-gesture"
+
+const TouchMenuContext = React.createContext<(() => void) | null>(null)
 
 function DropdownMenu({
+  open: controlledOpen,
+  defaultOpen = false,
+  onOpenChange,
+  children,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen)
+  const open = controlledOpen ?? uncontrolledOpen
+  const changeOpen = React.useCallback((nextOpen: boolean) => {
+    if (nextOpen === open) return
+    if (controlledOpen === undefined) setUncontrolledOpen(nextOpen)
+    onOpenChange?.(nextOpen)
+  }, [controlledOpen, onOpenChange, open])
+  const toggle = React.useCallback(() => changeOpen(!open), [changeOpen, open])
+
+  return (
+    <TouchMenuContext.Provider value={toggle}>
+      <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} open={open} onOpenChange={changeOpen}>
+        {children}
+      </DropdownMenuPrimitive.Root>
+    </TouchMenuContext.Provider>
+  )
 }
 
 function DropdownMenuPortal({
@@ -21,15 +43,106 @@ function DropdownMenuPortal({
 }
 
 function DropdownMenuTrigger({
+  asChild = false,
+  children,
+  onPointerDown,
+  onClick,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
   return (
     <DropdownMenuPrimitive.Trigger
       data-slot="dropdown-menu-trigger"
       {...props}
-    />
+      asChild
+    >
+      <TouchMenuTrigger asChild={asChild} onTriggerPointerDown={onPointerDown} onTriggerClick={onClick}>
+        {children}
+      </TouchMenuTrigger>
+    </DropdownMenuPrimitive.Trigger>
   )
 }
+
+type TouchMenuTriggerProps = React.ComponentPropsWithoutRef<"button"> & {
+  asChild: boolean
+  onTriggerPointerDown?: React.PointerEventHandler<HTMLButtonElement>
+  onTriggerClick?: React.MouseEventHandler<HTMLButtonElement>
+}
+
+// Radix's Trigger injects its handlers and refs into this relay via asChild.
+// Keep its mouse/keyboard handlers, but omit its touch pointerdown handler:
+// that handler opens immediately and prevents the browser from scrolling.
+const TouchMenuTrigger = React.forwardRef<HTMLButtonElement, TouchMenuTriggerProps>(function TouchMenuTrigger({
+  asChild,
+  onPointerDown: radixPointerDown,
+  onClick: radixClick,
+  onTriggerPointerDown,
+  onTriggerClick,
+  disabled,
+  ...props
+}, forwardedRef) {
+  const toggle = React.useContext(TouchMenuContext)
+  const gesture = React.useRef(new TouchMenuGesture())
+  const releaseTracking = React.useRef<(() => void) | null>(null)
+  React.useEffect(() => () => releaseTracking.current?.(), [])
+
+  const handlePointerDown: React.PointerEventHandler<HTMLButtonElement> = event => {
+    onTriggerPointerDown?.(event)
+    if (event.pointerType !== "touch" || !toggle) {
+      releaseTracking.current?.()
+      gesture.current.reset()
+      radixPointerDown?.(event)
+      return
+    }
+    releaseTracking.current?.()
+    if (disabled || event.defaultPrevented || event.button !== 0 || event.ctrlKey) {
+      gesture.current.cancel()
+      return
+    }
+    if (!gesture.current.start(event)) return
+
+    const doc = event.currentTarget.ownerDocument
+    const pointerId = event.pointerId
+    const move = (pointer: PointerEvent) => gesture.current.move(pointer)
+    const end = (pointer: PointerEvent) => {
+      if (gesture.current.end(pointer)) releaseTracking.current?.()
+    }
+    const cancel = (pointer: PointerEvent) => {
+      if (pointer.pointerId !== pointerId) return
+      gesture.current.cancel()
+      releaseTracking.current?.()
+    }
+    const additionalTouch = (pointer: PointerEvent) => {
+      if (pointer.pointerType !== "touch" || pointer.pointerId === pointerId) return
+      gesture.current.cancel()
+      releaseTracking.current?.()
+    }
+    // Passive capture listeners observe the whole gesture, including a second
+    // finger or a pointerup outside the trigger, without claiming touch input.
+    const options = { capture: true, passive: true }
+    doc.addEventListener("pointermove", move, options)
+    doc.addEventListener("pointerup", end, options)
+    doc.addEventListener("pointercancel", cancel, options)
+    doc.addEventListener("pointerdown", additionalTouch, options)
+    releaseTracking.current = () => {
+      doc.removeEventListener("pointermove", move, true)
+      doc.removeEventListener("pointerup", end, true)
+      doc.removeEventListener("pointercancel", cancel, true)
+      doc.removeEventListener("pointerdown", additionalTouch, true)
+      releaseTracking.current = null
+    }
+  }
+
+  const handleClick: React.MouseEventHandler<HTMLButtonElement> = event => {
+    releaseTracking.current?.()
+    const pointerType = "pointerType" in event.nativeEvent ? String(event.nativeEvent.pointerType) : ""
+    const activate = gesture.current.consumeClick(event.detail, pointerType)
+    onTriggerClick?.(event)
+    radixClick?.(event)
+    if (activate && !disabled && !event.defaultPrevented) toggle?.()
+  }
+  const Comp = asChild ? Slot.Root : "button"
+  return <Comp {...props} disabled={disabled} ref={forwardedRef} onPointerDown={handlePointerDown} onClick={handleClick}/>
+})
 
 function DropdownMenuContent({
   className,

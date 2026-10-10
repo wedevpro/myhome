@@ -5,7 +5,7 @@ import { DatabaseSync } from 'node:sqlite';
 import ts from 'typescript';
 const source=fs.readFileSync(new URL('../lib/model.ts',import.meta.url),'utf8');
 const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
-const {getElectricity,upcomingWaste,audit}=await import('data:text/javascript;base64,'+Buffer.from(compiled).toString('base64'));
+const {getElectricity,getNextElectricityTransition,upcomingWaste,audit}=await import('data:text/javascript;base64,'+Buffer.from(compiled).toString('base64'));
 test('Heures creuses : plage traversant minuit et jour de début',()=>{
  const rules=[audit('e','electricity',{start:'22:00',end:'06:00',days:[1]})];
  assert.equal(getElectricity(rules,new Date('2026-10-05T21:00:00Z')).offPeak,true);
@@ -17,6 +17,113 @@ test('Heures creuses : heure locale lors du changement hiver',()=>{
  const rules=[audit('e','electricity',{start:'01:00',end:'04:00',days:[0]})];
  assert.equal(getElectricity(rules,new Date('2026-10-25T00:30:00Z')).offPeak,true);
  assert.equal(getElectricity(rules,new Date('2026-10-25T01:30:00Z')).offPeak,true);
+});
+
+const electricityRule=(id,start,end,days=[0,1,2,3,4,5,6])=>audit(id,'electricity',{start,end,days});
+function assertTransition(rules,now,at,offPeak,minutesRemaining){
+ const date=new Date(now),next=getNextElectricityTransition(rules,date);
+ assert.ok(next,'Une transition effective doit être trouvée');
+ assert.equal(next.at.toISOString(),at);
+ assert.equal(next.offPeak,offPeak);
+ assert.equal(next.minutesRemaining,minutesRemaining??Math.ceil((Date.parse(at)-date.getTime())/60000));
+ assert.equal(getElectricity(rules,new Date(next.at.getTime()-1)).offPeak,!offPeak);
+ assert.equal(getElectricity(rules,next.at).offPeak,offPeak);
+ return next;
+}
+
+test('Prochaine bascule : bornes inclusives/exclusives et arrondi des secondes',()=>{
+ const rules=[electricityRule('e','22:00','06:00',[1])];
+ assertTransition(rules,'2026-10-05T19:59:30.001Z','2026-10-05T20:00:00.000Z',true,1);
+ assertTransition(rules,'2026-10-05T20:00:00.000Z','2026-10-06T04:00:00.000Z',false,480);
+ assertTransition(rules,'2026-10-06T04:00:00.000Z','2026-10-12T20:00:00.000Z',true,9600);
+});
+
+test('Prochaine bascule : nuit du samedi, passage de semaine et jour de début',()=>{
+ const rules=[electricityRule('e','22:00','06:00',[6])];
+ assertTransition(rules,'2026-10-10T21:00:00Z','2026-10-11T04:00:00.000Z',false);
+ assertTransition(rules,'2026-10-11T04:00:00Z','2026-10-17T20:00:00.000Z',true);
+});
+
+test('Prochaine bascule : prochain jour configuré la semaine suivante',()=>{
+ const rules=[electricityRule('e','14:00','16:00',[5])];
+ assertTransition(rules,'2026-10-10T12:00:00Z','2026-10-16T12:00:00.000Z',true,8640);
+});
+
+test('Prochaine bascule : chevauchements et plages adjacentes ne coupent pas les HC',()=>{
+ const rules=[electricityRule('a','08:00','12:00',[1]),electricityRule('b','10:00','14:00',[1]),electricityRule('c','14:00','15:00',[1])];
+ assertTransition(rules,'2026-10-05T05:55:00Z','2026-10-05T06:00:00.000Z',true);
+ assertTransition(rules,'2026-10-05T07:00:00Z','2026-10-05T13:00:00.000Z',false);
+ assertTransition(rules,'2026-10-05T12:00:00Z','2026-10-05T13:00:00.000Z',false);
+});
+
+test('Prochaine bascule : union adjacente à la frontière samedi/dimanche',()=>{
+ const rules=[electricityRule('a','22:00','00:00',[6]),electricityRule('b','00:00','06:00',[0])];
+ assertTransition(rules,'2026-10-10T21:00:00Z','2026-10-11T04:00:00.000Z',false);
+});
+
+test('Prochaine bascule : aucun horaire et couverture HC permanente',()=>{
+ assert.equal(getNextElectricityTransition([],new Date('2026-10-10T10:00:00Z')),null);
+ assert.equal(getNextElectricityTransition([audit('n','note',{name:'Notes'})],new Date('2026-10-10T10:00:00Z')),null);
+ const allDay=[electricityRule('a','00:00','12:00'),electricityRule('b','12:00','00:00')];
+ for(const now of ['2026-03-29T00:30:00Z','2026-10-25T00:30:00Z']){
+  assert.equal(getElectricity(allDay,new Date(now)).offPeak,true);
+  assert.equal(getNextElectricityTransition(allDay,new Date(now)),null);
+ }
+});
+
+test('Prochaine bascule : passage printemps réduit la durée réelle de la nuit',()=>{
+ const rules=[electricityRule('e','01:00','04:00',[0])];
+ assertTransition(rules,'2026-03-29T00:30:00Z','2026-03-29T02:00:00.000Z',false,90);
+});
+
+test('Prochaine bascule : début inexistant au printemps déclenché par le saut',()=>{
+ const rules=[electricityRule('e','02:30','04:00',[0])];
+ assertTransition(rules,'2026-03-29T00:50:00Z','2026-03-29T01:00:00.000Z',true,10);
+ assertTransition(rules,'2026-03-29T01:00:00Z','2026-03-29T02:00:00.000Z',false,60);
+});
+
+test('Prochaine bascule : fin inexistante au printemps déclenchée par le saut',()=>{
+ const rules=[electricityRule('e','01:00','02:30',[0])];
+ assertTransition(rules,'2026-03-29T00:50:00Z','2026-03-29T01:00:00.000Z',false,10);
+});
+
+test('Prochaine bascule : plage entièrement sautée au printemps attend la semaine suivante',()=>{
+ const rules=[electricityRule('e','02:10','02:20',[0])];
+ assertTransition(rules,'2026-03-23T00:00:00Z','2026-04-05T00:10:00.000Z',true);
+ assertTransition(rules,'2026-03-29T00:50:00Z','2026-04-05T00:10:00.000Z',true);
+});
+
+test('Prochaine bascule : heure répétée en automne contient deux occurrences',()=>{
+ const rules=[electricityRule('e','02:10','02:20',[0])];
+ assertTransition(rules,'2026-10-24T23:50:00Z','2026-10-25T00:10:00.000Z',true);
+ assertTransition(rules,'2026-10-25T00:10:00Z','2026-10-25T00:20:00.000Z',false);
+ assertTransition(rules,'2026-10-25T00:20:00Z','2026-10-25T01:10:00.000Z',true);
+ assertTransition(rules,'2026-10-25T01:10:00Z','2026-10-25T01:20:00.000Z',false);
+});
+
+test('Prochaine bascule : retour automne peut quitter une plage puis y revenir',()=>{
+ const rules=[electricityRule('e','02:30','03:30',[0])];
+ assertTransition(rules,'2026-10-25T00:50:00Z','2026-10-25T01:00:00.000Z',false,10);
+ assertTransition(rules,'2026-10-25T01:00:00Z','2026-10-25T01:30:00.000Z',true,30);
+ assertTransition(rules,'2026-10-25T01:30:00Z','2026-10-25T02:30:00.000Z',false,60);
+});
+
+test('Prochaine bascule : retour automne peut entrer dans une plage à nouveau',()=>{
+ const rules=[electricityRule('e','02:00','02:30',[0])];
+ assertTransition(rules,'2026-10-25T00:40:00Z','2026-10-25T01:00:00.000Z',true,20);
+});
+
+test('Prochaine bascule : aucune fausse bascule automne quand une autre plage couvre',()=>{
+ const rules=[electricityRule('a','01:00','04:00',[0]),electricityRule('b','02:30','03:30',[0])];
+ assertTransition(rules,'2026-10-25T00:50:00Z','2026-10-25T03:00:00.000Z',false,130);
+});
+
+test('Prochaine bascule : calcul sans mutation des horaires',()=>{
+ const rules=[electricityRule('b','10:00','14:00',[1,2]),electricityRule('a','08:00','12:00',[1])];
+ const before=JSON.stringify(rules),now=new Date('2026-10-05T07:00:00Z'),timestamp=now.getTime();
+ assertTransition(rules,now,'2026-10-05T12:00:00.000Z',false);
+ assert.equal(JSON.stringify(rules),before);
+ assert.equal(now.getTime(),timestamp);
 });
 test('Poubelles : aujourd’hui, quinzaine et fuseau Paris',()=>{
  const rule=audit('w','waste',{weekday:5,frequency:2,anchorDate:'2026-10-02',reminder:'19:00'});
