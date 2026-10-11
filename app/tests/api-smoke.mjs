@@ -409,8 +409,20 @@ try {
   assert.match(demoPage.text, /Trier la checklist de Z à A/);
   assert.match(demoPage.text, /Filtrer les éléments de Les petites choses à faire/);
   assert.match(demoPage.text, /aria-label="Actions pour Arroser les plantes, position 1"/);
-  assert.match(demoPage.text, /aria-label="Modifier la quantit(?:é|&eacute;|&#0*233;|&#x0*[eE]9;) de Avocats"/);
-  assert.match(demoPage.text, /aria-label="Modifier la quantit(?:é|&eacute;|&#0*233;|&#x0*[eE]9;) et la note de Avocats"/);
+  const renderedButtons = demoPage.text.match(/<button\b[^>]*>[\s\S]*?<\/button>/g) || [];
+  const avocadoQuantity = renderedButtons.find(button => /aria-label="Modifier la quantit(?:é|&eacute;|&#0*233;|&#x0*[eE]9;) de Avocats"/.test(button));
+  assert.ok(avocadoQuantity, "Shopping quantity stays directly editable outside its menu");
+  assert.match(avocadoQuantity, /\bquantity-button\b/);
+  assert.match(avocadoQuantity.replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]*>/g, ""), /\b2\s+pi(?:è|&egrave;|&#0*232;|&#x0*[eE]8;)ces\b/, "Shopping quantity and unit stay visible");
+  // Closed Radix menus use a portal: verify their visible triggers in SSR, not hidden menu content.
+  for (const name of ["Avocats", "Pain de campagne"]) {
+    const actions = renderedButtons.find(button => button.includes(`aria-label="Actions pour ${name}"`));
+    assert.ok(actions, "Shopping actions menu is present for " + name);
+    assert.match(actions, /\bitem-actions-trigger\b/);
+    assert.match(actions, /\bshopping-actions-trigger\b/);
+    assert.match(actions, /\blucide-ellipsis\b/);
+  }
+  assert.doesNotMatch(renderedButtons.join(""), /\bshopping-item-edit\b|\bitem-delete\b|aria-label="Retirer /, "Individual shopping pencil and remove buttons are replaced by the menu");
   const indexOfClass = className => {
     const match = new RegExp('class="[^"]*\\b' + className + '\\b[^"]*"').exec(demoPage.text);
     assert.ok(match, "SSR element missing class " + className); return match.index;

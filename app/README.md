@@ -48,7 +48,7 @@ Le réglage HTTP ci-dessus concerne uniquement le développement local. La produ
 | `npm run dev` | Lance Next.js en développement. |
 | `npm run build` | Compile Next.js en standalone, copie les assets et génère `runtime/reminders.mjs`. |
 | `npm start` | Démarre le serveur standalone et le processus supervisé de rappels. Configurer au préalable l'environnement de production, notamment `SITE_ORIGIN`. |
-| `npm test` | Vérifie les calculs électriques, la rotation et les gestes tactiles, les listes, l'authentification et le stockage SQLite sur des bases de test isolées. |
+| `npm test` | Vérifie les calculs électriques, la rotation et les gestes tactiles, les préférences propres à l'appareil, les listes, l'authentification et le stockage SQLite sur des bases de test isolées. |
 | `npm run test:api` | Démarre une instance standalone isolée, teste les API et vérifie la persistance après redémarrage. Nécessite un build préalable. |
 
 Ordre de vérification :

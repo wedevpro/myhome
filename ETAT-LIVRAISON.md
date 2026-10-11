@@ -2,6 +2,16 @@
 
 10 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
 
+## Cartes du tableau de bord et actions des courses
+
+**Paramètres → Tableau de bord sur cet appareil** propose deux interrupteurs pour afficher/masquer séparément les cartes électricité et poubelles. Les deux sont visibles par défaut. Le choix est immédiat et mémorisé dans le navigateur de cet appareil, pour tous les foyers et pour les modes classique/cuisine. Il ne part pas dans les préférences serveur et ne se propage pas aux autres appareils. Une carte seule prend toute la ligne ; avec les deux masquées, la zone disparaît. Les réglages du foyer et les rappels continuent de fonctionner.
+
+Si le stockage du navigateur est bloqué, les choix restent utilisables en mémoire pour la session. Les accès existants mémorisant le foyer actif et les marqueurs des rappels locaux sont également protégés pour ne pas interrompre le chargement ou le changement de foyer.
+
+Les articles de courses ont maintenant un menu **⋯** avec **Modifier la quantité et la note** et **Supprimer l’article**. La quantité/unité s'affiche hors du menu uniquement lorsque la quantité est strictement supérieure à 1 et reste alors cliquable ; une unité longue revient à la ligne pour tenir sur mobile. Le menu reste accessible quelle que soit la quantité et reprend la gestion du focus et des gestes tactiles des checklists ; les actions et leur protection de révision restent celles de l'API existante.
+
+Validation : **71 tests unitaires réussis**, dont 8 tests des préférences locales (valeurs par défaut, SSR sans stockage, lecture initiale, persistance, onglets, appareils indépendants et stockage bloqué). TypeScript, lint ciblé des nouveaux composants/helpers et du panneau de listes, compilation de production et scénario API complet réussis. Le HTML de démonstration confirme la quantité/unité hors menu et les boutons ⋯ des articles cochés/non cochés. Le navigateur intégré reste indisponible pour la vérification visuelle et tactile ; le lint global conserve les quatre erreurs préexistantes de `home-app.tsx`.
+
 ## Script de mise à jour Synology
 
 [METTRE-A-JOUR-SYNOLOGY.sh](METTRE-A-JOUR-SYNOLOGY.sh), inclus dans le ZIP, automatise la mise à jour de `/volume1/docker/myhomeia`. Il se lance avec `sudo sh` depuis un emplacement hors de l'installation, avec le chemin du ZIP en argument facultatif. Avant toute interruption, il vérifie le package, le projet/service Compose et le volume de données réellement utilisé.
@@ -36,7 +46,7 @@ Validation : **31 tests unitaires réussis**, TypeScript, lint ciblé et compila
 
 ## Quantité et note des articles de courses
 
-La quantité et le bouton crayon ouvrent maintenant un formulaire d'édition propre à l'article. Il accepte des quantités décimales positives jusqu'à 10 000 et une note facultative de 2 000 caractères, affichée sous le nom dans la liste. Vider le champ retire la note. Les commandes sont disponibles dans les listes de courses, le tableau de bord et le mode cuisine, avec des cibles tactiles adaptées.
+L'action **Modifier la quantité et la note** du menu ⋯ ouvre un formulaire d'édition propre à l'article, quelle que soit sa quantité. La quantité et son unité s'affichent uniquement lorsque la quantité est strictement supérieure à 1 ; cliquer sur cette quantité ouvre aussi le formulaire. Il accepte des quantités décimales positives jusqu'à 10 000 et une note facultative de 2 000 caractères, affichée sous le nom dans la liste. Vider le champ retire la note. Les commandes sont disponibles dans les listes de courses, le tableau de bord et le mode cuisine, avec des cibles tactiles adaptées.
 
 La note est partagée dans le foyer mais reste attachée uniquement à cette ligne : aucune modification de la fiche produit ni propagation aux autres articles, y compris lors d'un nouvel ajout du même produit. Cocher l'article conserve la note ; supprimer sa ligne la retire. La sauvegarde préserve les références, l'unité et l'état coché, avec audit et contrôle de révision. Les anciens articles restent compatibles et aucune migration SQL n'est nécessaire.
 
@@ -90,7 +100,7 @@ La synchronisation reste une actualisation toutes les **2,5 secondes**, après m
 - Installation propre des dépendances depuis le lockfile : réussie, 552 packages.
 - Compilation Next.js de production et génération du worker de rappels : réussies.
 - Validation Docker Compose : réussie.
-- Tests de domaine, rotation/gestes, articles de courses, checklists, authentification, SQLite et rappels : **63 tests réussis** (22 domaine, 9 rotation/swipe, 8 menus tactiles, 4 articles de courses, 7 checklists/ordre des cochés, 5 authentification, 7 stockage NAS, 1 rappels avec plusieurs scénarios).
+- Tests de domaine, rotation/gestes, préférences de l'appareil, articles de courses, checklists, authentification, SQLite et rappels : **71 tests réussis** (22 domaine, 9 rotation/swipe, 8 menus tactiles, 8 préférences locales, 4 articles de courses, 7 checklists/ordre des cochés, 5 authentification, 7 stockage NAS, 1 rappels avec plusieurs scénarios).
 - Intégration sur serveur de production : affichage du tableau de bord authentifié après inscription, connexion et redémarrage ; accès à `/deconnexion` ; quantités et notes des articles, validations, partage/audit, conflits, isolation, catalogue inchangé et absence de recopie ; ordre et libellés des checklists, conservation après renommage/remise à zéro ; purge atomique des terminés, permissions, isolation, checklists réutilisables protégées, commandes en haut et persistance après redémarrage ; partage et isolation des foyers, rôles, codes-barres, préférences et contrôle d'origine : réussie.
 
 Le moteur Docker local n'est pas démarré : **la construction et l'exécution du conteneur Linux n'ont pas été testées**. Aucun accès direct à votre NAS n'a été utilisé. La vérification visuelle dans Browser était indisponible ; caméras, douchette et réception réelle des notifications restent à vérifier sur vos appareils. Les tests des rappels utilisent les vrais calculs et payloads chiffrés, avec des réponses réseau simulées.

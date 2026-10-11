@@ -91,7 +91,7 @@ Le bouton **Supprimer les éléments terminés** est disponible pour les listes 
 
 ## Modifier un article de la liste de courses
 
-Cliquez sur la **quantité** ou sur le **crayon** de l'article pour modifier sa quantité et ajouter une **Note pour cet article**. Les quantités décimales sont acceptées ; la valeur doit être supérieure à zéro, dans la limite de 10 000. Pour retirer une note, videz son champ puis enregistrez.
+Le bouton **⋯** de chaque article ouvre les actions **Modifier la quantité et la note** et **Supprimer l’article**. La quantité et son unité s'affichent hors du menu uniquement lorsque la quantité est strictement supérieure à 1 ; cliquer sur la quantité affichée ouvre aussi l'édition. Le menu reste accessible quelle que soit la quantité. Les quantités décimales sont acceptées ; la valeur doit être supérieure à zéro, dans la limite de 10 000. Pour retirer une note, videz son champ puis enregistrez.
 
 La note s'affiche sous le nom de l'article et est partagée avec les membres du foyer. Elle appartient uniquement à cette ligne de courses : elle ne modifie pas la fiche produit et n'est pas recopiée lors d'un nouvel ajout du même produit, dans cette liste ou une autre. Cocher l'article conserve sa note ; supprimer la ligne la supprime également. Ces commandes sont disponibles dans les listes de courses, le tableau de bord et le mode cuisine.
 
@@ -116,6 +116,14 @@ En rotation, **balayez horizontalement la liste** pour afficher immédiatement l
 La carte électrique indique la **prochaine bascule vers les heures creuses ou pleines**, avec son horaire et le temps restant. Pour une bascule un autre jour, elle précise demain ou la date. Le calcul suit les horaires du foyer en Europe/Paris, y compris les plages de nuit, les chevauchements et les changements d'heure. L'indication s'actualise avec le tableau de bord, toutes les 15 secondes.
 
 Sur mobile, choisir une page ferme automatiquement le menu latéral. Pour ouvrir un menu ⋯, touchez puis relâchez le bouton ; commencer un défilement sur ce bouton laisse défiler la liste sans ouvrir son menu.
+
+## Afficher ou masquer les cartes du tableau de bord
+
+Dans **Paramètres → Tableau de bord sur cet appareil**, activez ou désactivez séparément **Afficher la carte électricité** et **Afficher la carte poubelles**. Les deux cartes sont visibles par défaut. Le changement est immédiat, sans bouton d'enregistrement, et concerne le tableau de bord classique comme le mode cuisine.
+
+Si une seule carte est affichée, elle prend toute la largeur de sa ligne. Si les deux sont masquées, les listes remontent à la place de cette ligne. Les pages Électricité/Poubelles et les rappels restent disponibles.
+
+Ces choix restent mémorisés **dans ce navigateur sur cet appareil**, pour tous les foyers qui y sont consultés. Vous pouvez donc garder les deux cartes sur la tablette et les masquer sur le téléphone. Ils ne sont pas synchronisés avec les préférences du compte. Effacer les données du navigateur rétablit l'affichage par défaut.
 
 ## Choisir le mode d'affichage
 

@@ -408,14 +408,14 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
 .clear-completed-button:disabled { opacity: .4; cursor: default; }
 .shopping-items, .task-items { max-height: 56vh; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
 .shopping-items:focus-visible, .task-items:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
-.checklist-actions-trigger { flex-shrink: 0; min-width: 36px; min-height: 36px; border: 1px solid var(--border); }
-.checklist-actions-trigger:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
-.checklist-actions-menu [role=menuitem] { min-height: 40px; }
-.wall-mode .checklist-actions-trigger, .wall-mode .clear-completed-button { min-width: 44px; min-height: 44px; }
+.item-actions-trigger { flex-shrink: 0; min-width: 36px; min-height: 36px; border: 1px solid var(--border); }
+.item-actions-trigger:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.item-actions-menu [role=menuitem] { min-height: 40px; }
+.wall-mode .item-actions-trigger, .wall-mode .clear-completed-button { min-width: 44px; min-height: 44px; }
 
 @media(max-width:767px), (pointer:coarse) {
-  .checklist-actions-trigger, .clear-completed-button { min-width: 44px; min-height: 44px; }
-  .checklist-actions-menu [role=menuitem] { min-height: 44px; }
+  .item-actions-trigger, .clear-completed-button { min-width: 44px; min-height: 44px; }
+  .item-actions-menu [role=menuitem] { min-height: 44px; }
 }
 
 .shopping-item-comment {
@@ -433,7 +433,10 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
 .quantity-button {
   flex-shrink: 0;
   min-width: 32px;
+  max-width: 40%;
   min-height: 36px;
+  white-space: normal;
+  overflow-wrap: anywhere;
   padding: 4px 6px;
   border: 1px solid var(--border);
   border-radius: 7px;
@@ -442,21 +445,17 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
 
 .quantity-button:hover { background: var(--accent); color: var(--foreground); }
 .quantity-button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
-.shopping-item-edit { flex-shrink: 0; min-width: 32px; min-height: 36px; }
-.shopping-panel .item-delete { min-width: 28px; min-height: 36px; }
 .wall-mode .shopping-item-comment { font-size: 14px; }
-.wall-mode .quantity-button, .wall-mode .shopping-item-edit { min-width: 44px; min-height: 44px; }
+.wall-mode .quantity-button { min-width: 44px; min-height: 44px; }
 
 @media(max-width:767px) {
   .shopping-panel .item-row { gap: 6px; }
   .shopping-item-comment { font-size: 12px; }
-  .quantity-button, .shopping-item-edit { min-width: 44px; min-height: 44px; }
-  .shopping-panel .item-delete { min-height: 44px; }
+  .quantity-button { min-width: 44px; min-height: 44px; }
 }
 
 @media(pointer:coarse) {
-  .quantity-button, .shopping-item-edit { min-width: 44px; min-height: 44px; }
-  .shopping-panel .item-delete { min-height: 44px; }
+  .quantity-button { min-width: 44px; min-height: 44px; }
 }
 
 /* Larger status text for a kitchen tablet viewed from a distance. */
@@ -497,3 +496,8 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
 .rotation-navigation small { display: block; margin-top: 2px; }
 .rotation-navigation button { min-width: 48px; min-height: 44px; }
 .wall-mode .electricity-transition { margin-top: 7px; }
+
+.status-grid.status-grid-single { grid-template-columns: minmax(0, 1fr); }
+.status-grid[data-device-pending=true] { visibility: hidden; }
+.device-card-option { display: flex; align-items: center; gap: 16px; }
+.device-card-option > label { flex: 1; display: flex; align-items: center; min-height: 44px; font-size: 13px; cursor: pointer; }

@@ -8,7 +8,7 @@ Le déploiement, le proxy HTTPS et les sauvegardes sont décrits dans [GUIDE-SYN
 
 | Module | Comportement |
 | --- | --- |
-| Courses | Plusieurs listes, nom et icône, ajout et scan en haut, zone d'éléments défilante. Quantités modifiables (décimales acceptées), commentaire propre à chaque article, cochés en bas et suppression collective des terminés avec confirmation. Le commentaire n'est pas enregistré au catalogue ni recopié sur d'autres articles. |
+| Courses | Plusieurs listes, nom et icône, ajout et scan en haut, zone d'éléments défilante. Quantités modifiables (décimales acceptées), quantité/unité affichée uniquement si la quantité est strictement supérieure à 1, commentaire propre à chaque article, cochés en bas et suppression collective des terminés avec confirmation. Le commentaire n'est pas enregistré au catalogue ni recopié sur d'autres articles. |
 | Produits | Catalogue du foyer, plusieurs codes-barres par produit, unicité d'un code dans le foyer. Un nouveau produit peut être conservé au catalogue ou ajouté uniquement à la liste. |
 | Scan | Caméra avant/arrière avec ZXing, douchette clavier USB/Bluetooth et saisie manuelle. Produit reconnu ajouté directement ; code inconnu associé à un produit existant ou nouveau. |
 | Checklists | Ajout en haut, cochés en bas et libellés modifiables. Listes éphémères : tâches terminées conservées jusqu'à suppression individuelle ou collective. Listes réutilisables : remise à zéro, sans purge collective. Tri A–Z/Z–A, filtre ignorant casse et accents, menu par élément pour renommer, déplacer par flèches ou position et supprimer. Ordre partagé et persistant. |
@@ -16,7 +16,7 @@ Le déploiement, le proxy HTTPS et les sauvegardes sont décrits dans [GUIDE-SYN
 | Contacts | Nom, téléphone, email et adresse. Catégories imbriquées sans limite configurée de profondeur ; le filtre d'une catégorie inclut ses descendants. |
 | Électricité | Plusieurs plages avec choix des jours et passage de minuit. État heures pleines/creuses et couleurs personnelles. Calculs dans le fuseau Europe/Paris. |
 | Poubelles | Type, couleur, jour de sortie, heure du rappel, récurrence hebdomadaire ou toutes les 2–4 semaines et date de référence. Décompte fondé sur le jour de sortie. |
-| Tableau de bord | Liste de courses et checklist choisies par utilisateur et par foyer. Affichage côte à côte ou rotation limitée aux deux listes sélectionnées en mode cuisine ; délai de 5 à 300 secondes. Textes électricité/poubelles agrandis en mode cuisine. Plein écran et Wake Lock selon navigateur. |
+| Tableau de bord | Liste de courses et checklist choisies par utilisateur et par foyer. Affichage côte à côte ou rotation limitée aux deux listes sélectionnées en mode cuisine ; délai de 5 à 300 secondes. Visibilité électricité/poubelles réglable séparément dans le navigateur de chaque appareil ; textes agrandis en mode cuisine. Plein écran et Wake Lock selon navigateur. |
 | Foyers | Création, adhésion par code, sélection, renommage et renouvellement du code. Le créateur est administrateur ; un nouveau membre est utilisateur simple. |
 | Administration | Promotion, rétrogradation et retrait de membres. Protection atomique du dernier administrateur. Un membre retiré ne peut pas revenir avec le même code. |
 | Traçabilité | `created_by`, `created_at`, `updated_by`, `updated_at` fixés côté serveur. UUID de révision pour rejeter les écrasements concurrents. |
@@ -56,6 +56,8 @@ La commande `clearCompleted` reçoit une liste et les couples ID/révision des �
 
 Le commentaire temporaire d'un article de courses est stocké dans le champ JSON `comment` de son enregistrement `item`, avec une limite de 2 000 caractères. Les anciens articles sans ce champ restent compatibles. La quantité et le commentaire utilisent la commande `save` ciblée sur l'article, avec audit et contrôle de révision ; les références de liste et de produit ainsi que l'état coché sont conservés. Le schéma produit exclut ce commentaire. La suppression de l'article retire sa note ; aucune migration SQL n'est nécessaire.
 
+Les lignes de courses affichent la quantité/unité uniquement lorsque la quantité est strictement supérieure à 1 ; la quantité affichée est éditable au clic. Les actions modification/suppression restent accessibles pour chaque article dans le menu ⋯, avec le même wrapper tactile et la même gestion du focus vers l'éditeur que les checklists. Les actions utilisent les commandes existantes ; aucune nouvelle écriture de catalogue n'est ajoutée.
+
 ## Build et supervision
 
 `npm run build` compile Next.js avec `output: standalone`, copie les assets publics et génère le bundle autonome `runtime/reminders.mjs` avec esbuild.
@@ -76,7 +78,9 @@ Les déclencheurs de menus Radix conservent leurs handlers souris/clavier, ARIA 
 
 Les données sont persistées sur le NAS. Les mutations sont ciblées par élément. Le client relit l'état toutes les **2,5 secondes** lorsque l'application est visible, après chaque mutation et au retour sur la fenêtre. Cette synchronisation se fait donc en quelques secondes. Une modification fondée sur une ancienne révision est rejetée avec HTTP 409.
 
-Le navigateur conserve des états propres à l'appareil, comme le foyer actif et les marqueurs des rappels locaux. Les préférences de tableau de bord restent en base, par utilisateur et par foyer. Il n'existe pas de file d'écritures hors ligne synchronisée au retour du réseau.
+Le navigateur conserve des états propres à l'appareil, comme le foyer actif et les marqueurs des rappels locaux. La visibilité des cartes électricité/poubelles utilise uniquement la clé `myhomeia-device-dashboard` du `localStorage`, avec les deux cartes visibles par défaut. Un store à snapshots immuables/cachés se synchronise entre onglets ; un stockage inaccessible laisse les choix utilisables en mémoire pour la session. Le rendu serveur ne lit pas ce stockage et les cartes attendent la lecture initiale côté client avant de devenir visibles. Une carte seule occupe la ligne ; aucune zone n'est rendue si les deux sont masquées. Ces réglages ne modifient ni les règles du foyer, ni les notifications, ni les préférences serveur.
+
+Les autres préférences de tableau de bord (listes, disposition, rotation, caméra, couleurs) restent en base, par utilisateur et par foyer. Il n'existe pas de file d'écritures hors ligne synchronisée au retour du réseau.
 
 ## Notifications avec l'application fermée
 
@@ -111,7 +115,7 @@ Références : [getUserMedia](https://developer.mozilla.org/en-US/docs/Web/API/M
 
 ## Vérifications et limites de livraison
 
-`npm test` couvre le domaine (dont la prochaine bascule électrique et les changements d'heure), les minuteurs de rotation avec horloge simulée, les gestes swipe/tap/scroll/annulation, les migrations, la réouverture de SQLite, les rollbacks, les références, les droits, l'authentification, les checklists, le regroupement des cochés et la validation des quantités/commentaires des articles. `npm run test:api` démarre une instance standalone avec une base temporaire, vérifie les comptes, les sessions, le partage et l'isolation des foyers, les rôles, les codes-barres, l'ordre et les libellés des checklists, l'édition des articles sans modification du catalogue ni propagation aux autres lignes, la purge atomique des terminés et la protection des listes réutilisables, les conflits de révision, les préférences et la persistance après un arrêt/redémarrage. Le HTML de démonstration est vérifié pour la position des commandes et les boutons d'actions.
+`npm test` couvre le domaine (dont la prochaine bascule électrique et les changements d'heure), les minuteurs de rotation avec horloge simulée, les gestes swipe/tap/scroll/annulation, les préférences locales (isolation des appareils, SSR, chargement, persistance, changements entre onglets et stockage bloqué), les migrations, la réouverture de SQLite, les rollbacks, les références, les droits, l'authentification, les checklists, le regroupement des cochés et la validation des quantités/commentaires des articles. `npm run test:api` démarre une instance standalone avec une base temporaire, vérifie les comptes, les sessions, le partage et l'isolation des foyers, les rôles, les codes-barres, l'ordre et les libellés des checklists, l'édition des articles sans modification du catalogue ni propagation aux autres lignes, la purge atomique des terminés et la protection des listes réutilisables, les conflits de révision, les préférences et la persistance après un arrêt/redémarrage. Le HTML de démonstration est vérifié pour la position des commandes, la quantité visible et les menus d'actions de chaque type de liste.
 
 La compilation Next.js en production et la validation de la configuration Docker Compose ont réussi sur le poste de préparation. Les résultats définitifs des suites de tests sont précisés à la livraison.
 

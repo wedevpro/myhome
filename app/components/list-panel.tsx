@@ -144,22 +144,21 @@ export default function ListPanel({ list, kind, snapshot, busy, showPicker, onSe
             return <div key={item.id} className={`item-row ${item.data.checked ? "completed" : ""}`}>
               <Checkbox checked={!!item.data.checked} disabled={busy} onCheckedChange={() => void onToggle(item).catch(() => {})} aria-label={(shopping ? "Acheter " : "Terminer ") + item.data.name}/>
               <div className="item-label"><span>{item.data.name}</span>{shopping && !item.data.checked && item.data.category && <small>{item.data.category}</small>}{shopping && item.data.comment && <p className="shopping-item-comment">{item.data.comment}</p>}</div>
-              {shopping ? <>
-                <button type="button" className="quantity quantity-button" disabled={busy} aria-label={`Modifier la quantité de ${item.data.name}`} title="Modifier la quantité et la note" onClick={() => onEditItem(item)}>{item.data.quantity ?? 1} {item.data.unit || ""}</button>
-                <button type="button" className="icon-button shopping-item-edit" disabled={busy} aria-label={`Modifier la quantité et la note de ${item.data.name}`} title="Modifier cet article" onClick={() => onEditItem(item)}><Pencil size={15}/></button>
-              </> : <DropdownMenu onOpenChange={open => { if (open) menuOpensDialog.current = false; }}>
-                <DropdownMenuTrigger asChild><button type="button" className="icon-button checklist-actions-trigger" disabled={busy} aria-label={`Actions pour ${item.data.name}, position ${index + 1}`} title="Actions de cet élément"><Ellipsis size={19}/></button></DropdownMenuTrigger>
-                <DropdownMenuContent className="checklist-actions-menu" align="end" onCloseAutoFocus={event => { if (menuOpensDialog.current) { event.preventDefault(); menuOpensDialog.current = false; } }}>
-                  <DropdownMenuItem onSelect={() => { menuOpensDialog.current = true; onEditItem(item); }}><Pencil size={15}/>Modifier le libellé</DropdownMenuItem>
+              {shopping && (item.data.quantity ?? 1) > 1 && <button type="button" className="quantity quantity-button" disabled={busy} aria-label={`Modifier la quantité de ${item.data.name}`} title="Modifier la quantité et la note" onClick={() => onEditItem(item)}>{item.data.quantity} {item.data.unit || ""}</button>}
+              <DropdownMenu onOpenChange={open => { if (open) menuOpensDialog.current = false; }}>
+                <DropdownMenuTrigger asChild><button type="button" className={`icon-button item-actions-trigger ${shopping ? "shopping-actions-trigger" : "checklist-actions-trigger"}`} disabled={busy} aria-label={shopping ? `Actions pour ${item.data.name}` : `Actions pour ${item.data.name}, position ${index + 1}`} title="Actions de cet élément"><Ellipsis size={19}/></button></DropdownMenuTrigger>
+                <DropdownMenuContent className={`item-actions-menu ${shopping ? "shopping-actions-menu" : "checklist-actions-menu"}`} align="end" onCloseAutoFocus={event => { if (menuOpensDialog.current) { event.preventDefault(); menuOpensDialog.current = false; } }}>
+                  <DropdownMenuItem onSelect={() => { menuOpensDialog.current = true; onEditItem(item); }}><Pencil size={15}/>{shopping ? "Modifier la quantité et la note" : "Modifier le libellé"}</DropdownMenuItem>
                   <DropdownMenuSeparator/>
-                  <DropdownMenuItem disabled={index === 0 || !!items[index - 1]?.data.checked !== !!item.data.checked} onSelect={() => void move(item, "up")}><ArrowUp size={15}/>Monter d’une position</DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => { menuOpensDialog.current = true; setMoveTarget({ id: item.id, position: String(index + 1) }); }}><ListChecks size={15}/>Choisir la position ({index + 1})</DropdownMenuItem>
-                  <DropdownMenuItem disabled={index === items.length - 1 || !!items[index + 1]?.data.checked !== !!item.data.checked} onSelect={() => void move(item, "down")}><ArrowDown size={15}/>Descendre d’une position</DropdownMenuItem>
-                  <DropdownMenuSeparator/>
-                  <DropdownMenuItem variant="destructive" onSelect={() => onDelete(item)}><Trash2 size={15}/>Supprimer cet élément</DropdownMenuItem>
+                  {!shopping && <>
+                    <DropdownMenuItem disabled={index === 0 || !!items[index - 1]?.data.checked !== !!item.data.checked} onSelect={() => void move(item, "up")}><ArrowUp size={15}/>Monter d’une position</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => { menuOpensDialog.current = true; setMoveTarget({ id: item.id, position: String(index + 1) }); }}><ListChecks size={15}/>Choisir la position ({index + 1})</DropdownMenuItem>
+                    <DropdownMenuItem disabled={index === items.length - 1 || !!items[index + 1]?.data.checked !== !!item.data.checked} onSelect={() => void move(item, "down")}><ArrowDown size={15}/>Descendre d’une position</DropdownMenuItem>
+                    <DropdownMenuSeparator/>
+                  </>}
+                  <DropdownMenuItem variant="destructive" onSelect={() => onDelete(item)}><Trash2 size={15}/>{shopping ? "Supprimer l’article" : "Supprimer cet élément"}</DropdownMenuItem>
                 </DropdownMenuContent>
-              </DropdownMenu>}
-              {shopping && <button type="button" className="icon-button item-delete" disabled={busy} aria-label={"Retirer " + item.data.name} onClick={() => onDelete(item)}><X size={13}/></button>}
+              </DropdownMenu>
             </div>;
           })}
           {items.length === 0 && <p className="helper py-7 text-center">{shopping ? "Votre liste est prête à accueillir les courses." : "Rien à faire pour le moment. Profitez-en."}</p>}
