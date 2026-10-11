@@ -1,6 +1,12 @@
 # État de livraison — MyHomeIA sur Synology
 
-10 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
+11 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
+
+## Libellés des éléments plus lisibles
+
+Les noms des articles de courses et des tâches de checklist utilisent une police de **16 px** en affichage classique, **22 px** en mode cuisine et **20 px** en mode cuisine sur les écrans jusqu'à 767 px. Ce réglage s'applique aux pages de listes et aux tableaux de bord. L'interligne est de 1,45 et les textes longs reviennent à la ligne.
+
+Validation : compilation Next.js de production et génération du worker de rappels réussies. Les règles de cascade et les différents affichages ont été revus dans le code ; aucun contrôle visuel sur appareil n'a été effectué.
 
 ## Cartes du tableau de bord et actions des courses
 

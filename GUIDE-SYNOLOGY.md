@@ -87,6 +87,8 @@ Les champs **Ajouter un produit…** et **Ajouter une tâche…** se trouvent ma
 
 Dans les courses et toutes les checklists, les éléments cochés passent en bas et les éléments à faire restent en haut. Une tâche éphémère cochée est désormais conservée jusqu'à sa suppression : vous pouvez la décocher si besoin.
 
+Les libellés des éléments sont affichés en **16 px** sur les pages de listes et le tableau de bord classique. En mode cuisine, ils passent à **22 px**, ou **20 px** sur les petits écrans, avec retour à la ligne des textes longs.
+
 Le bouton **Supprimer les éléments terminés** est disponible pour les listes de courses et les checklists **éphémères**, avec confirmation et indication du nombre d'éléments concernés. Il s'applique à toute la liste, même si un filtre est actif. Les éléments à faire et les fiches produits sont conservés. Une modification concurrente d'un élément visé bloque l'opération entière ; actualisez la liste et relancez-la. Les éléments cochés après l'ouverture de la confirmation restent dans la liste. Les checklists réutilisables conservent leurs éléments pour la prochaine utilisation.
 
 ## Modifier un article de la liste de courses

@@ -331,6 +331,14 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
   background: linear-gradient(90deg, var(--background), #b99bea, var(--background));
 }
 
+/* Larger item labels in shopping lists and checklists. */
+.item-label { font-size: 16px; line-height: 1.45; }
+.wall-mode .item-label { font-size: 22px; }
+
+@media(max-width:767px) {
+  .wall-mode .item-label { font-size: 20px; }
+}
+
 .checklist-controls {
   display: flex;
   flex-wrap: wrap;
