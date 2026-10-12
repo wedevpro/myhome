@@ -402,7 +402,6 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
 }
 
 .checklist-order-help { margin-top: 8px; font-size: 10px; }
-.add-linked-checklist-button { align-self: flex-start; min-height: 44px; white-space: normal; text-align: left; }
 .linked-checklist-link {
   display: flex;
   align-items: center;
@@ -426,7 +425,6 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
 .dark .linked-checklist-link { color: #c7b2ff; }
 .dark .linked-checklist-link:hover:not(:disabled) { color: #e2d5ff; }
 .dark .linked-checklist-link:disabled { color: var(--muted-foreground); }
-.wall-mode .add-linked-checklist-button { font-size: 15px; }
 .checklist-sort button:disabled { opacity: .4; cursor: default; }
 .checklist-no-results { display: grid; justify-items: center; gap: 12px; padding: 28px 0; }
 

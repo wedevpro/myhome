@@ -123,7 +123,7 @@ L'ordre est enregistré sur le NAS et partagé avec les membres du foyer. Le tri
 
 ## Lier un élément à une autre checklist
 
-Dans **Valise**, cliquez sur **Ajouter une checklist liée**, choisissez **Trousse de toilette**, puis confirmez le libellé à afficher dans Valise. Pour lier un élément déjà présent, utilisez **⋯ → Modifier l’élément → Checklist liée (facultatif)**. Le choix **Aucune** retire uniquement le lien.
+Dans **Valise**, ajoutez une tâche nommée **Trousse de toilette** avec le champ **Ajouter une tâche…**. Ouvrez ensuite **⋯ → Modifier l’élément → Checklist liée (facultatif)** et choisissez la checklist **Trousse de toilette**. Ce menu permet aussi de changer le lien ou le libellé d'un élément déjà présent. Le choix **Aucune** retire uniquement le lien.
 
 Le libellé lié, accompagné d'une icône de lien, ouvre le contenu de Trousse de toilette. Le bouton **Retour** retrouve la liste ou le tableau de bord d'origine. Les liens peuvent aussi être suivis depuis le mode cuisine, sans modifier les listes choisies dans vos paramètres. Les cases à cocher de Valise et de Trousse de toilette restent indépendantes ; aucun détail n'est recopié dans Valise.
 

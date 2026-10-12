@@ -2,6 +2,12 @@
 
 12 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
 
+## Ajout des tâches de checklist
+
+Le bouton **Ajouter une checklist liée** sous le champ d'ajout et sa fenêtre dédiée sont supprimés, avec leurs états, gestionnaire et styles. Une tâche s'ajoute via **Ajouter une tâche…** ; son menu **⋯ → Modifier l’élément** permet ensuite de lui associer une autre checklist. Ce changement s'applique également au tableau de bord et au mode cuisine. Les liens existants restent consultables et modifiables.
+
+Validation : lint ciblé et compilation de production avec TypeScript réussis. Le parcours navigateur existant, adapté à l'ajout normal puis à l'association via l'éditeur, passe à la souris et en émulation tactile, avec retrait de lien, liens imbriqués, mode cuisine et bouton Retour mobile. Essais avec un Edge isolé, sans test sur appareil physique ni sur le NAS.
+
 ## En-têtes des courses et checklists
 
 Les encarts affichent directement le **nom de la liste en cours**, aligné avec l'icône, sans descriptif statique ni sélecteur de liste. Les noms longs reviennent à la ligne et le compteur des articles à acheter reste visible dans l'en-tête. Le changement concerne les pages de listes, le tableau de bord et le mode cuisine, y compris la rotation. Les boutons avec icônes au-dessus des encarts restent le moyen de changer de liste sur leurs pages ; les listes du tableau de bord se choisissent dans les paramètres personnels.
@@ -18,7 +24,7 @@ Validation : **95 tests unitaires réussis**, TypeScript, lint ciblé et compila
 
 ## Éléments liés à d'autres checklists
 
-Un élément peut pointer vers une autre checklist du même foyer. **Ajouter une checklist liée** crée un élément au libellé prérempli et personnalisable ; **⋯ → Modifier l’élément** associe, change ou retire le lien d'un élément existant. Le libellé cliquable ouvre la cible, avec un bouton Retour et une navigation possible entre liens successifs. Le tableau de bord et le mode cuisine retrouvent leur contexte sans changer les préférences de listes. Les cases restent indépendantes et le contenu lié n'est jamais recopié dans la liste principale.
+Un élément peut pointer vers une autre checklist du même foyer. Ajoutez-le via **Ajouter une tâche…**, puis utilisez **⋯ → Modifier l’élément** pour associer, changer ou retirer le lien. Le libellé cliquable ouvre la cible, avec un bouton Retour et une navigation possible entre liens successifs. Le tableau de bord et le mode cuisine retrouvent leur contexte sans changer les préférences de listes. Les cases restent indépendantes et le contenu lié n'est jamais recopié dans la liste principale.
 
 Le lien `linkedChecklistId` est partagé et persistant, limité aux éléments de checklists et à une autre checklist du foyer. Un renommage conserve l'ID et le libellé personnalisé. La suppression de la cible retire les références entrantes en transaction avec audit/révision, en conservant les libellés et états des éléments parents ; supprimer une liste ne supprime pas ses cibles liées. Les écritures vérifient aussi l'existence de la cible au moment du SQL. Aucune migration de base n'est nécessaire. La démonstration contient une Trousse de toilette liée à la liste de vacances.
 

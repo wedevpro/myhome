@@ -234,11 +234,9 @@ async function run(mobileMode) {
   await press(element('.checklist-back-button'));
   await editItem("Chargeurs", "Trousse de toilette", "Ma petite trousse");
   assert.ok(await evaluate(`!!${row("Ma petite trousse")}.querySelector('.linked-checklist-link')`));
-  await press(named("Ajouter une checklist liée"));
-  await select("Checklist à ouvrir", "Trousse de toilette");
-  assert.equal(await evaluate(`${element('[role="dialog"] input[type="text"]')}.value`), "Trousse de toilette", "The linked checklist name prefills the parent item label");
-  await replaceInput(element('[role="dialog"] input[type="text"]'), "Trousse secondaire");
-  await press(named("Ajouter l’élément", '[role="dialog"] button'));
+  await replaceInput(element('input[aria-label="Ajouter une tâche"]'), "Trousse secondaire");
+  await press(element('button[aria-label="Ajouter la tâche"]'));
+  await editItem("Trousse secondaire", "Trousse de toilette");
   assert.equal(await evaluate(`${region("Prêts pour les vacances")}.querySelectorAll('.item-row').length`), 4, "Adding a reference creates one item, without copying contents");
   await editItem("Trousse secondaire", "Aucune");
   assert.equal(await evaluate(`!!${row("Trousse secondaire")}.querySelector('.linked-checklist-link')`), false, "Removing a link preserves the label as a normal item");

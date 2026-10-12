@@ -10,14 +10,13 @@ import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, 
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
-import { Choice } from "./entity-editor";
 
 type Props = {
   list?: Entity;
   kind: "shopping" | "checklist";
   snapshot: Snapshot;
   busy: boolean;
-  onAdd: (text: string, linkedChecklistId?: string) => Promise<void>;
+  onAdd: (text: string) => Promise<void>;
   onOpenChecklist: (id: string) => void;
   onToggle: (item: Entity) => Promise<void>;
   onDelete: (item: Entity) => void;
@@ -35,12 +34,9 @@ export default function ListPanel({ list, kind, snapshot, busy, onAdd, onOpenChe
   const [text, setText] = useState("");
   const [query, setQuery] = useState("");
   const [moveTarget, setMoveTarget] = useState<{ id: string; position: string } | null>(null);
-  const [linkedItem, setLinkedItem] = useState<{ parentId: string; checklistId: string; name: string; customName: boolean } | null>(null);
-  const [linkedItemError, setLinkedItemError] = useState("");
   const menuOpensDialog = useRef(false);
   const shopping = kind === "shopping";
   const linkedChecklists = snapshot.entities.filter(entity => entity.kind === "checklist" && entity.householdId === list?.householdId && entity.id !== list?.id);
-  const linkedTarget = linkedChecklists.find(entity => entity.id === linkedItem?.checklistId);
   const items = completedItemsLast(shopping
     ? snapshot.entities.filter(item => item.kind === "item" && item.householdId === list?.householdId && item.data.listId === list?.id)
     : getChecklistItems(snapshot.entities, list));
@@ -57,17 +53,6 @@ export default function ListPanel({ list, kind, snapshot, busy, onAdd, onOpenChe
     event.preventDefault();
     if (!text.trim()) return;
     try { await onAdd(text.trim()); setText(""); } catch {}
-  };
-  const addLinkedItem = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!linkedItem || !linkedTarget || linkedItem.parentId !== list?.id || !linkedItem.name.trim() || busy) return;
-    setLinkedItemError("");
-    try {
-      await onAdd(linkedItem.name.trim(), linkedTarget.id);
-      setLinkedItem(null);
-    } catch (error) {
-      setLinkedItemError(error instanceof Error ? error.message : "Impossible d’ajouter cet élément. Réessayez.");
-    }
   };
   const reorder = async (itemIds: string[], message: string) => {
     if (itemIds.every((id, index) => id === items[index]?.id) && itemIds.length === items.length) return;
@@ -125,7 +110,6 @@ export default function ListPanel({ list, kind, snapshot, busy, onAdd, onOpenChe
             <button type="submit" disabled={busy || !text.trim()} aria-label={shopping ? "Ajouter le produit" : "Ajouter la tâche"}><CornerDownLeft size={18}/></button>
           </form>
           {shopping && <button type="button" className="scan-button" disabled={busy} onClick={onScan}><ScanBarcode size={19}/>Scanner un code-barres</button>}
-          {!shopping && <button type="button" className="secondary-button add-linked-checklist-button" disabled={busy} onClick={() => { setLinkedItem({ parentId: list.id, checklistId: "", name: "", customName: false }); setLinkedItemError(""); }}><Link2 size={17}/>Ajouter une checklist liée</button>}
           {canClearCompleted && <button type="button" className="secondary-button clear-completed-button" disabled={busy || completed.length === 0} onClick={() => onClearCompleted(completed)}><Trash2 size={15}/>Supprimer les éléments terminés ({completed.length})</button>}
         </div>
         {!shopping && <>
@@ -190,24 +174,6 @@ export default function ListPanel({ list, kind, snapshot, busy, onAdd, onOpenChe
           {shopping ? <div className="avatar-stack">{snapshot.members.slice(0, 3).map(member => <span key={member.id}>{member.name.slice(0, 1).toUpperCase()}</span>)}</div> : <span>{pending} tâche{pending > 1 ? "s" : ""} à faire</span>}
         </footer>
       </> : <div className="empty-state"><House size={30}/><h3>Une place pour l’essentiel.</h3><p>{shopping ? "Créez votre première liste de courses." : "Créez une checklist pour votre quotidien."}</p><button className="primary-button" onClick={onNew}><Plus size={15}/>Créer une liste</button></div>}
-      <Dialog open={!!linkedItem} onOpenChange={open => { if (!open) { setLinkedItem(null); setLinkedItemError(""); } }}>
-        <DialogContent className="max-h-[90dvh] overflow-y-auto bg-background sm:max-w-[460px]">
-          <DialogTitle>Ajouter une checklist liée</DialogTitle>
-          <DialogDescription>Les détails restent dans la checklist liée. Cocher cet élément ne coche pas son contenu.</DialogDescription>
-          <form className="form-stack" onSubmit={addLinkedItem}>
-            <label className="field">Checklist à ouvrir<Choice label="Checklist à ouvrir" disabled={busy || linkedChecklists.length === 0} value={linkedItem?.checklistId ?? ""} options={[{ value: "", label: "Choisir une checklist" }, ...linkedChecklists.map(entity => ({ value: entity.id, label: entity.data.name || "Sans nom" }))]} onChange={id => {
-              const target = linkedChecklists.find(entity => entity.id === id);
-              setLinkedItem(item => item ? { ...item, checklistId: id, name: item.customName ? item.name : target?.data.name || "" } : null);
-              setLinkedItemError("");
-            }}/></label>
-            {linkedChecklists.length === 0 && <p className="helper">Créez une autre checklist dans ce foyer pour pouvoir l’associer à un élément.</p>}
-            {linkedItem?.checklistId && !linkedTarget && <p role="alert" className="error-text">Cette checklist n’est plus disponible. Choisissez-en une autre.</p>}
-            <label className="field">Libellé dans cette liste<input type="text" required disabled={busy} maxLength={150} value={linkedItem?.name ?? ""} placeholder="Ex. : Trousse de toilette" onChange={event => { setLinkedItem(item => item ? { ...item, name: event.target.value, customName: !!event.target.value.trim() } : null); setLinkedItemError(""); }}/></label>
-            {linkedItemError && <p role="alert" className="error-text">{linkedItemError}</p>}
-            <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setLinkedItem(null)}>Annuler</button><button type="submit" className="primary-button" disabled={busy || !linkedTarget || !linkedItem?.name.trim() || linkedItem.parentId !== list?.id}>{busy ? "Ajout…" : "Ajouter l’élément"}</button></div>
-          </form>
-        </DialogContent>
-      </Dialog>
       <Dialog open={!!moveTarget} onOpenChange={open => { if (!open) setMoveTarget(null); }}>
         <DialogContent className="bg-background sm:max-w-[420px]">
           <DialogTitle>Déplacer un élément</DialogTitle>
