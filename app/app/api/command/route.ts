@@ -6,6 +6,8 @@ import { requestOriginAllowed } from "@/lib/auth";
 import { findProductsByName,normalizeProductName } from "@/lib/product-matching";
 export const dynamic="force-dynamic";
 const commandBodyLimit=1_200_000;
+// Check both references inside the write: a target may disappear after validation.
+const checklistLinkExists="EXISTS(SELECT 1 FROM records parent JOIN records target ON target.household_id=parent.household_id WHERE parent.id=? AND parent.household_id=? AND parent.kind='checklist' AND target.id=? AND target.kind='checklist' AND target.id!=parent.id)";
 export async function POST(request:Request) {
  try {
   if(!requestOriginAllowed(request)) throw new ApiError(403,"Origine de la requête refusée.");
@@ -14,6 +16,14 @@ export async function POST(request:Request) {
   if(!parsed.success) throw new ApiError(400,parsed.error.issues[0].message);
   const c=parsed.data,user=await identity(),db=database(),now=new Date().toISOString();
   const fresh=(kind:Entity["kind"],data:Data,h:string):Entity=>({...audit(crypto.randomUUID(),kind,data,h),createdBy:user.id,updatedBy:user.id,createdAt:now,updatedAt:now});
+  const validateChecklistLink=async(list:Entity|null,id:string|undefined)=>{
+   if(!id) return;
+   if(list?.kind!=="checklist") throw new ApiError(400,"Seul un élément de checklist peut être lié à une autre checklist.");
+   const target=await findRecord(id,list.householdId);
+   if(target.kind!=="checklist") throw new ApiError(400,"La liste liée doit être une checklist.");
+   if(target.id===list.id) throw new ApiError(400,"Choisissez une autre checklist que celle de cet élément.");
+  };
+  const insertLinkedItem=(e:Entity)=>db.prepare(`INSERT INTO records(id,household_id,kind,data,revision,created_by,created_at,updated_by,updated_at) SELECT ?,?,?,?,?,?,?,?,? WHERE ${checklistLinkExists}`).bind(e.id,e.householdId,e.kind,JSON.stringify(e.data),e.revision,e.createdBy,e.createdAt,e.updatedBy,e.updatedAt,e.data.listId,e.householdId,e.data.linkedChecklistId);
   let h=c.householdId;
   if(c.action==="createHousehold") {
    if(!c.name) throw new ApiError(400,"Donnez un nom à votre foyer.");
@@ -38,7 +48,8 @@ export async function POST(request:Request) {
     const checked=dataSchemas[c.kind].safeParse(c.data);
     if(!checked.success) throw new ApiError(400,checked.error.issues[0].message);
     const data=checked.data as Data;
-    if(data.listId) { const list=await findRecord(data.listId,h);if(!["shopping","checklist"].includes(list.kind)) throw new ApiError(400,"Liste invalide."); }
+    const list=data.listId?await findRecord(data.listId,h):null;
+    if(list && !["shopping","checklist"].includes(list.kind)) throw new ApiError(400,"Liste invalide.");
     if(data.productId && (await findRecord(data.productId,h)).kind!=="product") throw new ApiError(400,"Produit invalide.");
     if(data.categoryId && (await findRecord(data.categoryId,h)).kind!=="category") throw new ApiError(400,"Catégorie invalide.");
     if(c.kind==="category" && data.parentId) {
@@ -49,6 +60,7 @@ export async function POST(request:Request) {
     const previous=c.id?await findRecord(c.id,h):null;
     if(previous && previous.kind!==c.kind) throw new ApiError(400,"Le type d’élément ne peut pas changer.");
     if(previous && (!c.expectedRevision||previous.revision!==c.expectedRevision)) throw new ApiError(409,"Cet élément a été modifié sur un autre appareil. Rouvrez-le pour récupérer la dernière version.");
+    await validateChecklistLink(list,data.linkedChecklistId);
     // Only reorderChecklist may change ordering; editors must preserve it.
     if(previous?.kind==="checklist" && Array.isArray(previous.data.itemOrder)) data.itemOrder=[...previous.data.itemOrder];
     const e=previous?{...previous,data,updatedBy:user.id,updatedAt:now,revision:crypto.randomUUID()}:fresh(c.kind,data,h);
@@ -63,9 +75,12 @@ export async function POST(request:Request) {
      const result=await db.batch(statements);
      if(previous && result[0].meta.changes!==1) throw new ApiError(409,"Modification simultanée : actualisez le produit.");
     } else if(previous) {
-     const result=await db.prepare("UPDATE records SET data=?,updated_by=?,updated_at=?,revision=? WHERE id=? AND household_id=? AND revision=?").bind(JSON.stringify(data),user.id,now,e.revision,e.id,h,c.expectedRevision).run();
+     const result=await db.prepare("UPDATE records SET data=?,updated_by=?,updated_at=?,revision=? WHERE id=? AND household_id=? AND revision=?"+(data.linkedChecklistId?` AND ${checklistLinkExists}`:"")).bind(JSON.stringify(data),user.id,now,e.revision,e.id,h,c.expectedRevision,...(data.linkedChecklistId?[data.listId,h,data.linkedChecklistId]:[])).run();
      if(result.meta.changes!==1) throw new ApiError(409,"Modification simultanée : rouvrez cet élément.");
-    } else await insertRecord(e).run();
+    } else {
+     const result=await (data.linkedChecklistId?insertLinkedItem(e):insertRecord(e)).run();
+     if(result.meta.changes!==1) throw new ApiError(409,"La checklist liée a changé. Actualisez les données.");
+    }
    } else if(c.action==="delete") {
     const e=await findRecord(c.id||"",h);
     if(["waste","electricity"].includes(e.kind)) await membership(h,user.id,true);
@@ -76,6 +91,7 @@ export async function POST(request:Request) {
     }
     if(e.kind==="product") {const linked=await db.prepare("SELECT id FROM records WHERE household_id=? AND json_extract(data,'$.productId')=? LIMIT 1").bind(h,e.id).first();if(linked) throw new ApiError(409,"Ce produit est utilisé dans une liste. Retirez les articles associés avant de le supprimer.");}
     const statements=[];
+    if(e.kind==="checklist") statements.push(db.prepare("UPDATE records SET data=json_remove(data,'$.linkedChecklistId'),updated_by=?,updated_at=?,revision=lower(hex(randomblob(16))) WHERE household_id=? AND kind='item' AND json_extract(data,'$.linkedChecklistId')=? AND EXISTS(SELECT 1 FROM records WHERE id=? AND household_id=? AND kind='checklist' AND revision=?) AND EXISTS(SELECT 1 FROM memberships WHERE household_id=? AND user_id=? AND status='active')").bind(user.id,now,h,e.id,e.id,h,c.expectedRevision,h,user.id));
     if(["shopping","checklist"].includes(e.kind)) statements.push(db.prepare("DELETE FROM records WHERE household_id=? AND json_extract(data,'$.listId')=? AND EXISTS(SELECT 1 FROM records WHERE id=? AND revision=?) AND EXISTS(SELECT 1 FROM memberships WHERE household_id=? AND user_id=? AND status='active')").bind(h,e.id,e.id,c.expectedRevision,h,user.id));
     statements.push(db.prepare("DELETE FROM records WHERE id=? AND household_id=? AND revision=? AND EXISTS(SELECT 1 FROM memberships WHERE household_id=? AND user_id=? AND status='active' AND (? NOT IN ('electricity','waste') OR role='admin'))").bind(e.id,h,c.expectedRevision,h,user.id,e.kind));
     const results=await db.batch(statements);if(results.at(-1)?.meta.changes!==1) throw new ApiError(409,"Cet élément a changé. Actualisez-le.");
@@ -149,6 +165,8 @@ export async function POST(request:Request) {
     await db.prepare("UPDATE records SET data=json_set(data,'$.checked',json('false')),updated_by=?,updated_at=?,revision=? WHERE household_id=? AND kind='item' AND json_extract(data,'$.listId')=?").bind(user.id,now,crypto.randomUUID(),h,list.id).run();
    } else if(c.action==="addItem") {
     const list=await findRecord(c.listId||"",h);if(!["shopping","checklist"].includes(list.kind)) throw new ApiError(400,"Liste invalide.");
+    await validateChecklistLink(list,c.linkedChecklistId);
+    if(c.linkedChecklistId && (c.productId||c.barcode||c.saveProduct)) throw new ApiError(400,"Un élément lié à une checklist ne peut pas être associé à un produit.");
     let product=c.productId?await findRecord(c.productId,h):null;
     if(product && product.kind!=="product") throw new ApiError(400,"Produit invalide.");
     if(c.barcode) {
@@ -177,8 +195,10 @@ export async function POST(request:Request) {
       if(!creatingProduct) statements.push(db.prepare("UPDATE records SET data=json_insert(data,'$.barcodes[#]',?),updated_by=?,updated_at=?,revision=? WHERE household_id=? AND id=?").bind(c.barcode,user.id,now,crypto.randomUUID(),h,product.id));
      }
     }
-    statements.push(insertRecord(fresh("item",{name:product?.data.name||c.name,listId:list.id,productId:product?.id,quantity:c.quantity||1,unit:c.unit||"",category:product?.data.category||"",checked:false},h)));
-    await db.batch(statements);
+    const item=fresh("item",{name:product?.data.name||c.name,listId:list.id,linkedChecklistId:c.linkedChecklistId,productId:product?.id,quantity:c.quantity||1,unit:c.unit||"",category:product?.data.category||"",checked:false},h);
+    statements.push(c.linkedChecklistId?insertLinkedItem(item):insertRecord(item));
+    const results=await db.batch(statements);
+    if(results.at(-1)?.meta.changes!==1) throw new ApiError(409,"La checklist liée a changé. Actualisez les données.");
    }
   }
   // Removing oneself may change the active household.

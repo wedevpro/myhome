@@ -390,6 +390,31 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
 }
 
 .checklist-order-help { margin-top: 8px; font-size: 10px; }
+.add-linked-checklist-button { align-self: flex-start; min-height: 44px; white-space: normal; text-align: left; }
+.linked-checklist-link {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  max-width: 100%;
+  min-height: 44px;
+  border-radius: 6px;
+  text-align: left;
+  font-size: inherit;
+  line-height: inherit;
+  color: #785cc1;
+}
+.linked-checklist-link span { min-width: 0; overflow-wrap: anywhere; }
+.linked-checklist-link svg { flex-shrink: 0; }
+.linked-checklist-link:hover:not(:disabled) { color: #6146a7; text-decoration: underline; }
+.linked-checklist-link:disabled { cursor: default; color: inherit; opacity: .7; }
+.linked-checklist-item-label small { color: var(--muted-foreground); }
+.tasks-panel .item-row.completed .linked-checklist-item-label { text-decoration: none; }
+.tasks-panel .item-row.completed .linked-checklist-link span { text-decoration: line-through; }
+.dark .linked-checklist-link { color: #c7b2ff; }
+.dark .linked-checklist-link:hover:not(:disabled) { color: #e2d5ff; }
+.dark .linked-checklist-link:disabled { color: var(--muted-foreground); }
+.wall-mode .add-linked-checklist-button { font-size: 15px; }
 .checklist-sort button:disabled { opacity: .4; cursor: default; }
 .checklist-no-results { display: grid; justify-items: center; gap: 12px; padding: 28px 0; }
 
@@ -510,6 +535,8 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
 .status-grid[data-device-pending=true] { visibility: hidden; }
 .device-card-option { display: flex; align-items: center; gap: 16px; }
 .device-card-option > label { flex: 1; display: flex; align-items: center; min-height: 44px; font-size: 13px; cursor: pointer; }
+
+.checklist-back-button { margin-bottom: 16px; min-height: 44px; max-width: 100%; white-space: normal; text-align: left; }
 
 /* Keep the menu button available while scrolling with the mobile sidebar. */
 @media(max-width:767px) {

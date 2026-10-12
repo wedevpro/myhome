@@ -179,6 +179,176 @@ async function checkBarcodeNameAssociation({ admin, member, adminId, memberId })
     ],
   };
 }
+async function checkLinkedChecklists({ admin, member, outsider, adminId, memberId }) {
+  const expectStatus = (response, status, label) => assert.equal(response.status, status, `${label}: ${JSON.stringify(response.json)}`);
+  let response = await admin("/api/command", { action: "createHousehold", name: "Linked checklist fixtures" });
+  expectStatus(response, 200, "Create isolated linked-checklist household");
+  const household = response.json.household;
+  let state = response.json;
+  const find = id => state.entities.find(entity => entity.id === id);
+  const items = listId => state.entities.filter(entity => entity.kind === "item" && entity.data.listId === listId);
+  const run = async (data, label, actor = admin) => {
+    const result = await actor("/api/command", { householdId: household.id, ...data });
+    expectStatus(result, 200, label); state = result.json; return state;
+  };
+  const create = async (kind, data, label, actor = admin) => {
+    const previousIds = new Set(state.entities.map(entity => entity.id));
+    await run({ action: "save", kind, data }, label, actor);
+    const added = state.entities.filter(entity => !previousIds.has(entity.id));
+    assert.equal(added.length, 1, label + " creates exactly one record"); return added[0];
+  };
+  const add = async (listId, data, label, actor = admin) => {
+    const previousIds = new Set(state.entities.map(entity => entity.id));
+    await run({ action: "addItem", listId, ...data }, label, actor);
+    const added = state.entities.filter(entity => entity.kind === "item" && !previousIds.has(entity.id));
+    assert.equal(added.length, 1, label + " creates exactly one item"); return added[0];
+  };
+  const edit = async (id, data, label, actor = admin) => {
+    const previous = find(id);
+    await run({ action: "save", kind: previous.kind, id, expectedRevision: previous.revision, data: { ...previous.data, ...data } }, label, actor);
+    return find(id);
+  };
+  const reject = async (data, status, label, actor = admin) => {
+    const before = state.entities;
+    const result = await actor("/api/command", { householdId: household.id, ...data });
+    expectStatus(result, status, label);
+    const inspected = await admin("/api/state?household=" + household.id);
+    expectStatus(inspected, 200, "Inspect records after rejected linked-checklist operation"); state = inspected.json;
+    assert.deepEqual(state.entities, before, label + " leaves every record, revision and audit intact");
+  };
+  const assertAudit = (current, previous, actorId, label) => {
+    assert.equal(current.id, previous.id); assert.equal(current.kind, previous.kind);
+    assert.equal(current.householdId, previous.householdId);
+    assert.equal(current.createdBy, previous.createdBy); assert.equal(current.createdAt, previous.createdAt);
+    assert.equal(current.updatedBy, actorId, label + " records the actor");
+    assert.notEqual(current.revision, previous.revision, label + " invalidates the previous revision");
+    assert.ok(Date.parse(current.updatedAt) >= Date.parse(previous.updatedAt), label + " records an update time");
+  };
+
+  response = await member("/api/command", { action: "joinHousehold", code: household.code });
+  expectStatus(response, 200, "Join linked-checklist fixtures as a simple member");
+  const shopping = state.entities.find(entity => entity.kind === "shopping");
+  const suitcase = await create("checklist", { name: "Valise", icon: "bag", reusable: true }, "Create parent checklist");
+  const toiletries = await create("checklist", { name: "Trousse de toilette", icon: "check", reusable: true }, "Create target checklist");
+  const chargers = await create("checklist", { name: "Chargeurs", icon: "check", reusable: true }, "Create another target checklist");
+  const weekend = await create("checklist", { name: "Week-end", icon: "plane", reusable: false }, "Create a second parent checklist");
+  const note = await create("note", { name: "Note sans liste", content: "Ne peut pas servir de checklist liée." }, "Create wrong-kind link target");
+  const toothbrush = await add(toiletries.id, { name: "Brosse à dents" }, "Add target checklist detail");
+  await add(toiletries.id, { name: "Dentifrice" }, "Add another target checklist detail");
+  await edit(toothbrush.id, { checked: true }, "Complete one detail in the target checklist");
+  const socks = await add(suitcase.id, { name: "Chaussettes" }, "Add a normal parent checklist item");
+  const linked = await add(suitcase.id, { name: "Ma trousse de toilette", linkedChecklistId: toiletries.id }, "Member adds a linked checklist item", member);
+  assert.equal(linked.data.linkedChecklistId, toiletries.id);
+  assert.equal(linked.data.name, "Ma trousse de toilette"); assert.equal(linked.data.listId, suitcase.id);
+  assert.equal(linked.data.checked, false); assert.equal(linked.createdBy, memberId); assert.equal(linked.updatedBy, memberId);
+  assert.equal(linked.createdAt, linked.updatedAt); assert.ok(Number.isFinite(Date.parse(linked.createdAt)));
+  assert.equal(items(suitcase.id).length, 2, "Linking a checklist does not copy its detail items into the parent");
+  assert.equal(items(toiletries.id).length, 2, "Linking leaves the target checklist's contents intact");
+
+  const targetContents = items(toiletries.id), targetBeforeCheck = find(toiletries.id);
+  await edit(linked.id, { checked: true }, "Complete the parent link independently of the target details", member);
+  assert.deepEqual(items(toiletries.id), targetContents, "Completing a link leaves every target item's completion and audit unchanged");
+  assert.deepEqual(find(toiletries.id), targetBeforeCheck);
+  await run({ action: "reset", listId: suitcase.id }, "Reset a reusable checklist containing a link", member);
+  assert.equal(find(linked.id).data.checked, false);
+  assert.equal(find(linked.id).data.linkedChecklistId, toiletries.id, "Reset preserves linked-checklist IDs");
+  assert.deepEqual(items(toiletries.id), targetContents, "Resetting the parent leaves linked checklist details unchanged");
+
+  const linkedBeforeRename = find(linked.id), targetBeforeRename = find(toiletries.id);
+  await edit(toiletries.id, { name: "Trousse de toilette familiale" }, "Rename the target checklist");
+  assert.deepEqual(find(linked.id), linkedBeforeRename, "A target rename preserves the explicit item label and the stable link ID");
+  assert.equal(find(toiletries.id).data.name, "Trousse de toilette familiale");
+  response = await member("/api/state?household=" + household.id);
+  expectStatus(response, 200, "Member sees linked checklist and renamed target");
+  assert.deepEqual(response.json.entities, state.entities);
+
+  const beforeLinkEdit = find(socks.id);
+  await edit(socks.id, { name: "Chargeurs à emporter", linkedChecklistId: chargers.id }, "Associate an existing item with another checklist", member);
+  assert.equal(find(socks.id).data.linkedChecklistId, chargers.id);
+  assert.equal(find(socks.id).data.name, "Chargeurs à emporter");
+  assertAudit(find(socks.id), beforeLinkEdit, memberId, "Link edit");
+  await edit(socks.id, { linkedChecklistId: toiletries.id }, "Change an existing item's linked checklist", member);
+  assert.equal(find(socks.id).data.linkedChecklistId, toiletries.id);
+  const beforeUnlink = find(socks.id), { linkedChecklistId: removedLink, ...unlinkedData } = beforeUnlink.data;
+  assert.equal(removedLink, toiletries.id);
+  await run({ action: "save", kind: "item", id: socks.id, expectedRevision: beforeUnlink.revision, data: unlinkedData }, "Omitting the link explicitly unlinks an existing item", member);
+  assert.equal(find(socks.id).data.linkedChecklistId, undefined);
+  assert.deepEqual(find(socks.id).data, unlinkedData, "Unlinking preserves all other item data");
+  assertAudit(find(socks.id), beforeUnlink, memberId, "Unlink edit");
+
+  const weekendLink = await create("item", { name: "La trousse du week-end", listId: weekend.id, linkedChecklistId: toiletries.id, checked: true, quantity: 2, comment: "À préparer vendredi.", unit: "trousses" }, "Create a linked checklist item through the generic save API");
+  assert.equal(weekendLink.data.linkedChecklistId, toiletries.id); assert.equal(weekendLink.createdBy, adminId);
+  const persistentLink = await add(suitcase.id, { name: "Vérifier les chargeurs", linkedChecklistId: chargers.id }, "Add a link that will survive the target deletion and restart", member);
+  const returnLink = await add(chargers.id, { name: "Revoir la valise", linkedChecklistId: suitcase.id }, "A reference back to another checklist is allowed without recursive expansion");
+  assert.equal(returnLink.data.linkedChecklistId, suitcase.id);
+  await edit(linked.id, { checked: true, comment: "À garder en bagage cabine." }, "Retain a checked parent link and its temporary note");
+  const parentOrder = [persistentLink.id, socks.id, linked.id];
+  const orderedItems = parentOrder.map(find);
+  await run({ action: "reorderChecklist", listId: suitcase.id, itemIds: parentOrder, expectedRevision: find(suitcase.id).revision }, "Reorder a checklist containing linked items", member);
+  assert.deepEqual(find(suitcase.id).data.itemOrder, parentOrder);
+  assert.deepEqual(parentOrder.map(find), orderedItems, "Reordering preserves every linked item's data, revision and audit");
+
+  response = await outsider("/api/command", { action: "createHousehold", name: "Foreign linked checklist fixture" });
+  expectStatus(response, 200, "Create a foreign household for linked-checklist isolation");
+  const foreignHousehold = response.json.household, foreignChecklist = response.json.entities.find(entity => entity.kind === "checklist");
+  response = await outsider("/api/command", { householdId: foreignHousehold.id, action: "addItem", listId: foreignChecklist.id, name: "Détail privé" });
+  expectStatus(response, 200, "Create a private foreign checklist detail");
+  const foreignRecords = response.json.entities;
+  const missingId = "00000000-0000-4000-8000-999999999999";
+  for (const [linkedChecklistId, status, label] of [
+    [suitcase.id, 400, "An item cannot link its own parent checklist"],
+    [shopping.id, 400, "A shopping list cannot be a linked checklist target"],
+    [note.id, 400, "A note cannot be a linked checklist target"],
+    [foreignChecklist.id, 404, "An item cannot reference another household's checklist"],
+    [missingId, 404, "A missing linked checklist is rejected"],
+  ]) {
+    await reject({ action: "addItem", listId: suitcase.id, name: "Lien refusé", linkedChecklistId }, status, label + " on add");
+    const previous = find(socks.id);
+    await reject({ action: "save", kind: "item", id: previous.id, expectedRevision: previous.revision, data: { ...previous.data, linkedChecklistId } }, status, label + " on edit");
+  }
+  await reject({ action: "addItem", listId: shopping.id, name: "Lien en courses", linkedChecklistId: toiletries.id }, 400, "A shopping item cannot be created with a checklist link");
+  await reject({ action: "save", kind: "item", data: { name: "Lien en courses", listId: shopping.id, linkedChecklistId: toiletries.id } }, 400, "Generic save cannot create a linked shopping item");
+  await reject({ action: "addItem", listId: suitcase.id, name: "Lien mélangé", linkedChecklistId: toiletries.id, saveProduct: true }, 400, "A checklist reference cannot also create a product");
+  const linkedBeforeMove = find(linked.id);
+  await reject({ action: "save", kind: "item", id: linked.id, expectedRevision: linkedBeforeMove.revision, data: { ...linkedBeforeMove.data, listId: shopping.id } }, 400, "Moving a linked item into a shopping list is rejected");
+  await reject({ action: "addItem", listId: suitcase.id, name: "Lien non autorisé", linkedChecklistId: chargers.id }, 403, "A non-member cannot add a linked household item", outsider);
+  await reject({ action: "save", kind: "item", id: socks.id, expectedRevision: beforeLinkEdit.revision, data: { ...beforeLinkEdit.data, linkedChecklistId: chargers.id } }, 409, "Stale item edits cannot restore an obsolete link");
+  await reject({ action: "delete", id: toiletries.id, expectedRevision: targetBeforeRename.revision }, 409, "A stale target deletion cannot remove any checklist or link");
+
+  const deletedTarget = find(toiletries.id), deletedChildIds = items(toiletries.id).map(entity => entity.id);
+  const referencedBeforeDelete = [find(linked.id), find(weekendLink.id)];
+  const parentBeforeDelete = find(suitcase.id), weekendBeforeDelete = find(weekend.id);
+  const unrelatedBeforeDelete = state.entities.filter(entity => entity.id !== toiletries.id && !deletedChildIds.includes(entity.id) && !referencedBeforeDelete.some(item => item.id === entity.id));
+  await run({ action: "delete", id: toiletries.id, expectedRevision: deletedTarget.revision }, "Member deletes a target checklist and clears its incoming links", member);
+  assert.equal(find(toiletries.id), undefined);
+  for (const id of deletedChildIds) assert.equal(find(id), undefined, "Deleting a target also removes its own detail item: " + id);
+  for (const before of referencedBeforeDelete) {
+    const current = find(before.id), { linkedChecklistId, ...expectedData } = before.data;
+    assert.equal(linkedChecklistId, toiletries.id);
+    assert.ok(current, "An incoming link remains a normal checklist item after its target is deleted");
+    assert.deepEqual(current.data, expectedData, "Target deletion preserves each referencing item's label, completion, quantity, note and other data");
+    assertAudit(current, before, memberId, "Target deletion cleanup");
+  }
+  assert.deepEqual(find(suitcase.id), parentBeforeDelete, "Removing incoming links leaves the parent list's order, revision and audit intact");
+  assert.deepEqual(find(weekend.id), weekendBeforeDelete, "Cleanup covers incoming links in every checklist without modifying their parent lists");
+  for (const previous of unrelatedBeforeDelete) assert.deepEqual(find(previous.id), previous, "Target deletion leaves every unrelated entity intact: " + previous.id);
+  assert.equal(find(persistentLink.id).data.linkedChecklistId, chargers.id, "A link to another target remains associated");
+  await reject({ action: "save", kind: "item", id: linked.id, expectedRevision: linkedBeforeMove.revision, data: linkedBeforeMove.data }, 409, "An old edit cannot restore a link cleaned up by target deletion");
+  await reject({ action: "addItem", listId: suitcase.id, name: "Lien supprimé", linkedChecklistId: toiletries.id }, 404, "A deleted target cannot receive a new link");
+  response = await member("/api/state?household=" + household.id);
+  expectStatus(response, 200, "Target deletion and cleaned-up links are shared with household members");
+  assert.deepEqual(response.json.entities, state.entities);
+  response = await outsider("/api/state?household=" + foreignHousehold.id);
+  expectStatus(response, 200, "Read the foreign household after local link operations");
+  assert.deepEqual(response.json.entities, foreignRecords, "Rejected cross-household associations and target deletion never alter foreign records");
+  const temporaryParent = await create("checklist", { name: "Valise temporaire", icon: "bag", reusable: false }, "Create a parent to verify deletion does not cascade through links");
+  await add(temporaryParent.id, { name: "Mes chargeurs", linkedChecklistId: chargers.id }, "Link to a surviving checklist from a temporary parent");
+  const survivingTarget = find(chargers.id), survivingContents = items(chargers.id);
+  await run({ action: "delete", id: temporaryParent.id, expectedRevision: temporaryParent.revision }, "Delete a parent checklist without deleting a referenced checklist");
+  assert.deepEqual(find(chargers.id), survivingTarget);
+  assert.deepEqual(items(chargers.id), survivingContents, "Deleting a parent never deletes the linked checklist's content");
+  return { householdId: household.id, records: state.entities, deletedIds: [toiletries.id, ...deletedChildIds], persistentLinkId: persistentLink.id, targetId: chargers.id, foreignHouseholdId: foreignHousehold.id, foreignRecords };
+}
 async function checkChecklistOrdering({ admin, member, outsider, command, household, shoppingList, adminId, memberId }) {
   const expectStatus = (response, status, label) => assert.equal(response.status, status, `${label}: ${JSON.stringify(response.json)}`);
   const findChecklist = state => state.entities.find(entity => entity.id === checklist.id);
@@ -593,6 +763,7 @@ try {
   r = await member("/api/command", { action: "member", householdId: household.id, userId: memberId, role: "admin" }); assert.equal(r.status, 403);
   r = await member("/api/command", { action: "save", householdId: household.id, kind: "electricity", data: { start: "22:00", end: "06:00", days: [1] } }); assert.equal(r.status, 403);
   const barcodeNameAssociation = await checkBarcodeNameAssociation({ admin, member, adminId, memberId });
+  const linkedChecklists = await checkLinkedChecklists({ admin, member, outsider, adminId, memberId });
   const orderedChecklist = await checkChecklistOrdering({ admin, member, outsider, command, household, shoppingList: list, adminId, memberId });
   const editedShoppingItem = await checkShoppingItemEdits({ admin, member, outsider, command, household, shoppingList: list, productId: product.id, memberId });
   const purgedItems = await checkCompletedPurge({ admin, member, outsider, household, productId: product.id, memberId });
@@ -605,6 +776,14 @@ try {
   const persistedAssociations = await admin("/api/state?household=" + barcodeNameAssociation.householdId);
   assert.equal(persistedAssociations.status, 200, "Read barcode-name fixture household after restart");
   assert.deepEqual(persistedAssociations.json.entities, barcodeNameAssociation.records, "Name-based associations, product codes, items and audits survive restart");
+  const persistedLinks = await admin("/api/state?household=" + linkedChecklists.householdId);
+  assert.equal(persistedLinks.status, 200, "Read linked checklists after restart");
+  assert.deepEqual(persistedLinks.json.entities, linkedChecklists.records, "Checklist links, cleaned references, order and audits survive restart");
+  assert.equal(persistedLinks.json.entities.find(entity => entity.id === linkedChecklists.persistentLinkId).data.linkedChecklistId, linkedChecklists.targetId);
+  for (const id of linkedChecklists.deletedIds) assert.equal(persistedLinks.json.entities.some(entity => entity.id === id), false, "Deleted target and its content stay deleted after restart");
+  const persistedForeignLinks = await outsider("/api/state?household=" + linkedChecklists.foreignHouseholdId);
+  assert.equal(persistedForeignLinks.status, 200);
+  assert.deepEqual(persistedForeignLinks.json.entities, linkedChecklists.foreignRecords, "Link operations never mutate another household, including after restart");
   let persistedBarcodeState = persistedAssociations.json;
   const persistedBarcodeCatalog = persistedBarcodeState.entities.filter(entity => entity.kind === "product");
   const persistedBarcodeList = persistedBarcodeState.entities.find(entity => entity.kind === "shopping");
@@ -643,7 +822,7 @@ try {
   r = await member("/api/state?household=" + household.id); assert.equal(r.status, 403);
   r = await member("/api/command", { action: "joinHousehold", code: household.code }); assert.equal(r.status, 403);
   r = await command({ action: "delete", id: list.id, expectedRevision: list.revision }); assert.equal(r.status, 200); assert.equal(r.json.entities.filter(e => e.kind === "item" && e.data.listId === list.id).length, 0); assert.equal(r.json.entities.filter(e => e.kind === "product").length, 1); assert.equal(r.json.entities.filter(e => e.kind === "item" && e.data.listId === orderedChecklist.id).length, orderedChecklist.itemIds.length);
-  console.log("NAS API/pages passed: authenticated dashboard after signup/login/restart, logout recovery page, secure sessions, household sharing/isolation, roles, barcodes/name matching/ambiguity/explicit selection, shopping item quantities/comments/validation/isolation, checklist ordering/sharing/audits/conflicts/reset/rename, completed-item purge/atomicity/isolation, task label edits, entry placement, preferences, CSRF and persistence.");
+  console.log("NAS API/pages passed: authenticated dashboard after signup/login/restart, logout recovery page, secure sessions, household sharing/isolation, roles, barcodes/name matching/ambiguity/explicit selection, shopping item quantities/comments/validation/isolation, checklist links/independent completion/audited cleanup/isolation, checklist ordering/sharing/audits/conflicts/reset/rename, completed-item purge/atomicity/isolation, task label edits, entry placement, preferences, CSRF and persistence.");
 } catch (error) { console.error(logs); throw error; }
 finally {
   await stop();

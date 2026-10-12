@@ -2,6 +2,14 @@
 
 12 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
 
+## Éléments liés à d'autres checklists
+
+Un élément peut pointer vers une autre checklist du même foyer. **Ajouter une checklist liée** crée un élément au libellé prérempli et personnalisable ; **⋯ → Modifier l’élément** associe, change ou retire le lien d'un élément existant. Le libellé cliquable ouvre la cible, avec un bouton Retour et une navigation possible entre liens successifs. Le tableau de bord et le mode cuisine retrouvent leur contexte sans changer les préférences de listes. Les cases restent indépendantes et le contenu lié n'est jamais recopié dans la liste principale.
+
+Le lien `linkedChecklistId` est partagé et persistant, limité aux éléments de checklists et à une autre checklist du foyer. Un renommage conserve l'ID et le libellé personnalisé. La suppression de la cible retire les références entrantes en transaction avec audit/révision, en conservant les libellés et états des éléments parents ; supprimer une liste ne supprime pas ses cibles liées. Les écritures vérifient aussi l'existence de la cible au moment du SQL. Aucune migration de base n'est nécessaire. La démonstration contient une Trousse de toilette liée à la liste de vacances.
+
+Validation : **78 tests unitaires réussis**, TypeScript, lint ciblé et compilation de production réussis. Le scénario API couvre partage, audits, références invalides/étrangères, conflits, cases indépendantes, tri/remise à zéro, retrait de lien, nettoyage à la suppression et persistance après redémarrage. Le parcours navigateur sur l'application de production en démonstration passe à la souris et en émulation tactile : ajout, édition, lien imbriqué avec retour, cases indépendantes, mode cuisine et suppression de cible. Le navigateur intégré reste indisponible ; ces essais ont utilisé un Edge isolé, sans test sur appareil physique ni sur le NAS. Le lint global conserve les quatre erreurs et deux avertissements préexistants de `home-app.tsx`, contrôlés avant/après modification.
+
 ## En-tête mobile accessible pendant le défilement
 
 Sous 768 px, au même seuil que le menu latéral rétractable, l'en-tête utilise `position: sticky` en haut de l'écran. Le bouton du menu reste accessible pendant le défilement de la page. L'en-tête conserve sa place dans le contenu et son fond opaque, avec les menus et fenêtres au-dessus.

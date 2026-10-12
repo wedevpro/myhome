@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
-import { ArrowDown, ArrowDownAZ, ArrowDownZA, ArrowUp, CircleCheck, CornerDownLeft, Ellipsis, House, ListChecks, Pencil, Plus, RotateCcw, ScanBarcode, Search, ShoppingBasket, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowDownAZ, ArrowDownZA, ArrowUp, CircleCheck, CornerDownLeft, Ellipsis, House, Link2, ListChecks, Pencil, Plus, RotateCcw, ScanBarcode, Search, ShoppingBasket, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Entity, Snapshot } from "@/lib/model";
 import { completedItemsLast, filterChecklistItems, getChecklistItems, moveChecklistItem, sortChecklistItems } from "@/lib/checklist";
@@ -19,7 +19,8 @@ type Props = {
   busy: boolean;
   showPicker: boolean;
   onSelect: (id: string) => void;
-  onAdd: (text: string) => Promise<void>;
+  onAdd: (text: string, linkedChecklistId?: string) => Promise<void>;
+  onOpenChecklist: (id: string) => void;
   onToggle: (item: Entity) => Promise<void>;
   onDelete: (item: Entity) => void;
   onEditItem: (item: Entity) => void;
@@ -32,12 +33,16 @@ type Props = {
   onReset: () => void;
 };
 
-export default function ListPanel({ list, kind, snapshot, busy, showPicker, onSelect, onAdd, onToggle, onDelete, onEditItem, onClearCompleted, onReorder, onScan, onNew, onEdit, onRemove, onReset }: Props) {
+export default function ListPanel({ list, kind, snapshot, busy, showPicker, onSelect, onAdd, onOpenChecklist, onToggle, onDelete, onEditItem, onClearCompleted, onReorder, onScan, onNew, onEdit, onRemove, onReset }: Props) {
   const [text, setText] = useState("");
   const [query, setQuery] = useState("");
   const [moveTarget, setMoveTarget] = useState<{ id: string; position: string } | null>(null);
+  const [linkedItem, setLinkedItem] = useState<{ parentId: string; checklistId: string; name: string; customName: boolean } | null>(null);
+  const [linkedItemError, setLinkedItemError] = useState("");
   const menuOpensDialog = useRef(false);
   const shopping = kind === "shopping";
+  const linkedChecklists = snapshot.entities.filter(entity => entity.kind === "checklist" && entity.householdId === list?.householdId && entity.id !== list?.id);
+  const linkedTarget = linkedChecklists.find(entity => entity.id === linkedItem?.checklistId);
   const items = completedItemsLast(shopping
     ? snapshot.entities.filter(item => item.kind === "item" && item.householdId === list?.householdId && item.data.listId === list?.id)
     : getChecklistItems(snapshot.entities, list));
@@ -54,6 +59,17 @@ export default function ListPanel({ list, kind, snapshot, busy, showPicker, onSe
     event.preventDefault();
     if (!text.trim()) return;
     try { await onAdd(text.trim()); setText(""); } catch {}
+  };
+  const addLinkedItem = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!linkedItem || !linkedTarget || linkedItem.parentId !== list?.id || !linkedItem.name.trim() || busy) return;
+    setLinkedItemError("");
+    try {
+      await onAdd(linkedItem.name.trim(), linkedTarget.id);
+      setLinkedItem(null);
+    } catch (error) {
+      setLinkedItemError(error instanceof Error ? error.message : "Impossible d’ajouter cet élément. Réessayez.");
+    }
   };
   const reorder = async (itemIds: string[], message: string) => {
     if (itemIds.every((id, index) => id === items[index]?.id) && itemIds.length === items.length) return;
@@ -116,6 +132,7 @@ export default function ListPanel({ list, kind, snapshot, busy, showPicker, onSe
             <button type="submit" disabled={busy || !text.trim()} aria-label={shopping ? "Ajouter le produit" : "Ajouter la tâche"}><CornerDownLeft size={18}/></button>
           </form>
           {shopping && <button type="button" className="scan-button" disabled={busy} onClick={onScan}><ScanBarcode size={19}/>Scanner un code-barres</button>}
+          {!shopping && <button type="button" className="secondary-button add-linked-checklist-button" disabled={busy} onClick={() => { setLinkedItem({ parentId: list.id, checklistId: "", name: "", customName: false }); setLinkedItemError(""); }}><Link2 size={17}/>Ajouter une checklist liée</button>}
           {canClearCompleted && <button type="button" className="secondary-button clear-completed-button" disabled={busy || completed.length === 0} onClick={() => onClearCompleted(completed)}><Trash2 size={15}/>Supprimer les éléments terminés ({completed.length})</button>}
         </div>
         {!shopping && <>
@@ -134,21 +151,31 @@ export default function ListPanel({ list, kind, snapshot, busy, showPicker, onSe
             <span>{visibleItems.length} / {items.length} élément{items.length > 1 ? "s" : ""}</span>
             {query.trim() && <span>Le tri et les positions concernent toute la liste.</span>}
           </div>
-          <p className="helper checklist-order-help">Le menu ⋯ de chaque élément permet de le renommer ou le déplacer. Les éléments cochés restent en bas.</p>
+          <p className="helper checklist-order-help">Le menu ⋯ de chaque élément permet de le modifier ou le déplacer. Les éléments cochés restent en bas.</p>
           <div className="progress-label"><span>{list.data.reusable ? "Prêts pour la prochaine fois" : "On avance à notre rythme"}</span><span>{items.length - pending} / {items.length}</span></div>
           <Progress value={items.length ? (items.length - pending) / items.length * 100 : 0} className="h-1 bg-[#f5f0ed] [&_[data-slot=progress-indicator]]:bg-[#e6bba3]"/>
         </>}
         <div className={shopping ? "shopping-items" : "task-items"} role="region" aria-label={`Éléments de ${list.data.name}`} tabIndex={0}>
           {visibleItems.map(item => {
             const index = itemPositions.get(item.id) ?? 0;
+            const linkedChecklistId = !shopping && typeof item.data.linkedChecklistId === "string" ? item.data.linkedChecklistId : undefined;
+            const linkedChecklist = linkedChecklistId ? linkedChecklists.find(entity => entity.id === linkedChecklistId) : undefined;
             return <div key={item.id} className={`item-row ${item.data.checked ? "completed" : ""}`}>
               <Checkbox checked={!!item.data.checked} disabled={busy} onCheckedChange={() => void onToggle(item).catch(() => {})} aria-label={(shopping ? "Acheter " : "Terminer ") + item.data.name}/>
-              <div className="item-label"><span>{item.data.name}</span>{shopping && !item.data.checked && item.data.category && <small>{item.data.category}</small>}{shopping && item.data.comment && <p className="shopping-item-comment">{item.data.comment}</p>}</div>
+              <div className={`item-label ${linkedChecklistId ? "linked-checklist-item-label" : ""}`}>
+                {linkedChecklistId ? <>
+                  <button type="button" className="linked-checklist-link" disabled={!linkedChecklist || busy} onClick={() => { if (linkedChecklist) onOpenChecklist(linkedChecklist.id); }} aria-label={linkedChecklist ? `Ouvrir la checklist ${linkedChecklist.data.name}` : `Checklist indisponible pour ${item.data.name}`}>
+                    <span>{item.data.name}</span><Link2 size={17} aria-hidden="true"/>
+                  </button>
+                  {!linkedChecklist ? <small className="linked-checklist-unavailable">Checklist indisponible</small> : item.data.name !== linkedChecklist.data.name && <small>Checklist : {linkedChecklist.data.name}</small>}
+                </> : <span>{item.data.name}</span>}
+                {shopping && !item.data.checked && item.data.category && <small>{item.data.category}</small>}{shopping && item.data.comment && <p className="shopping-item-comment">{item.data.comment}</p>}
+              </div>
               {shopping && (item.data.quantity ?? 1) > 1 && <button type="button" className="quantity quantity-button" disabled={busy} aria-label={`Modifier la quantité de ${item.data.name}`} title="Modifier la quantité et la note" onClick={() => onEditItem(item)}>{item.data.quantity} {item.data.unit || ""}</button>}
               <DropdownMenu onOpenChange={open => { if (open) menuOpensDialog.current = false; }}>
                 <DropdownMenuTrigger asChild><button type="button" className={`icon-button item-actions-trigger ${shopping ? "shopping-actions-trigger" : "checklist-actions-trigger"}`} disabled={busy} aria-label={shopping ? `Actions pour ${item.data.name}` : `Actions pour ${item.data.name}, position ${index + 1}`} title="Actions de cet élément"><Ellipsis size={19}/></button></DropdownMenuTrigger>
                 <DropdownMenuContent className={`item-actions-menu ${shopping ? "shopping-actions-menu" : "checklist-actions-menu"}`} align="end" onCloseAutoFocus={event => { if (menuOpensDialog.current) { event.preventDefault(); menuOpensDialog.current = false; } }}>
-                  <DropdownMenuItem onSelect={() => { menuOpensDialog.current = true; onEditItem(item); }}><Pencil size={15}/>{shopping ? "Modifier la quantité et la note" : "Modifier le libellé"}</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => { menuOpensDialog.current = true; onEditItem(item); }}><Pencil size={15}/>{shopping ? "Modifier la quantité et la note" : "Modifier l’élément"}</DropdownMenuItem>
                   <DropdownMenuSeparator/>
                   {!shopping && <>
                     <DropdownMenuItem disabled={index === 0 || !!items[index - 1]?.data.checked !== !!item.data.checked} onSelect={() => void move(item, "up")}><ArrowUp size={15}/>Monter d’une position</DropdownMenuItem>
@@ -170,6 +197,24 @@ export default function ListPanel({ list, kind, snapshot, busy, showPicker, onSe
           {shopping ? <div className="avatar-stack">{snapshot.members.slice(0, 3).map(member => <span key={member.id}>{member.name.slice(0, 1).toUpperCase()}</span>)}</div> : <span>{pending} tâche{pending > 1 ? "s" : ""} à faire</span>}
         </footer>
       </> : <div className="empty-state"><House size={30}/><h3>Une place pour l’essentiel.</h3><p>{shopping ? "Créez votre première liste de courses." : "Créez une checklist pour votre quotidien."}</p><button className="primary-button" onClick={onNew}><Plus size={15}/>Créer une liste</button></div>}
+      <Dialog open={!!linkedItem} onOpenChange={open => { if (!open) { setLinkedItem(null); setLinkedItemError(""); } }}>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto bg-background sm:max-w-[460px]">
+          <DialogTitle>Ajouter une checklist liée</DialogTitle>
+          <DialogDescription>Les détails restent dans la checklist liée. Cocher cet élément ne coche pas son contenu.</DialogDescription>
+          <form className="form-stack" onSubmit={addLinkedItem}>
+            <label className="field">Checklist à ouvrir<Choice label="Checklist à ouvrir" disabled={busy || linkedChecklists.length === 0} value={linkedItem?.checklistId ?? ""} options={[{ value: "", label: "Choisir une checklist" }, ...linkedChecklists.map(entity => ({ value: entity.id, label: entity.data.name || "Sans nom" }))]} onChange={id => {
+              const target = linkedChecklists.find(entity => entity.id === id);
+              setLinkedItem(item => item ? { ...item, checklistId: id, name: item.customName ? item.name : target?.data.name || "" } : null);
+              setLinkedItemError("");
+            }}/></label>
+            {linkedChecklists.length === 0 && <p className="helper">Créez une autre checklist dans ce foyer pour pouvoir l’associer à un élément.</p>}
+            {linkedItem?.checklistId && !linkedTarget && <p role="alert" className="error-text">Cette checklist n’est plus disponible. Choisissez-en une autre.</p>}
+            <label className="field">Libellé dans cette liste<input type="text" required disabled={busy} maxLength={150} value={linkedItem?.name ?? ""} placeholder="Ex. : Trousse de toilette" onChange={event => { setLinkedItem(item => item ? { ...item, name: event.target.value, customName: !!event.target.value.trim() } : null); setLinkedItemError(""); }}/></label>
+            {linkedItemError && <p role="alert" className="error-text">{linkedItemError}</p>}
+            <div className="modal-actions"><button type="button" className="secondary-button" onClick={() => setLinkedItem(null)}>Annuler</button><button type="submit" className="primary-button" disabled={busy || !linkedTarget || !linkedItem?.name.trim() || linkedItem.parentId !== list?.id}>{busy ? "Ajout…" : "Ajouter l’élément"}</button></div>
+          </form>
+        </DialogContent>
+      </Dialog>
       <Dialog open={!!moveTarget} onOpenChange={open => { if (!open) setMoveTarget(null); }}>
         <DialogContent className="bg-background sm:max-w-[420px]">
           <DialogTitle>Déplacer un élément</DialogTitle>

@@ -12,6 +12,7 @@
     "test": "node --test tests/domain.test.mjs tests/nas.test.mjs tests/auth.test.mjs tests/reminders.test.mjs tests/checklist.test.mjs tests/shopping-item.test.mjs tests/kitchen-rotation.test.mjs tests/menu-gesture.test.mjs tests/device-dashboard.test.mjs tests/product-matching.test.mjs",
     "test:api": "node tests/api-smoke.mjs",
     "test:browser": "node tests/product-association-browser.mjs",
+    "test:browser:checklists": "node tests/checklist-links-browser.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },
   "dependencies": {

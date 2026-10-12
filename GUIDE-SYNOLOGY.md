@@ -112,10 +112,18 @@ La note s'affiche sous le nom de l'article et est partagée avec les membres du 
 Ces commandes sont disponibles dans les checklists, sur le tableau de bord et en mode cuisine :
 
 - **A–Z** et **Z–A** trient toute la checklist par nom, avec un classement français tenant compte des nombres.
-- Le bouton **⋯** de chaque élément ouvre son menu : **Modifier le libellé**, **Monter d'une position**, **Choisir la position**, **Descendre d'une position** et **Supprimer cet élément**. Les déplacements se font parmi les éléments du même état (à faire ou terminés), pour garder les éléments cochés en bas.
+- Le bouton **⋯** de chaque élément ouvre son menu : **Modifier l’élément**, **Monter d'une position**, **Choisir la position**, **Descendre d'une position** et **Supprimer cet élément**. L'éditeur permet de modifier le libellé et de choisir une checklist liée facultative. Les déplacements se font parmi les éléments du même état (à faire ou terminés), pour garder les éléments cochés en bas.
 - **Filtrer les éléments…** recherche dans les noms sans tenir compte des majuscules ni des accents. Le compteur indique le nombre de résultats ; effacez le filtre pour revoir toute la checklist.
 
 L'ordre est enregistré sur le NAS et partagé avec les membres du foyer. Le tri s'applique séparément aux éléments à faire et terminés, même lorsqu'un filtre est actif. Les nouveaux éléments arrivent après les autres éléments à faire, avant les éléments terminés ; le filtre ne supprime ni ne modifie les tâches. Modifier un libellé ou renommer la liste conserve l'ordre enregistré. « Tout décocher » remet une checklist réutilisable à zéro. En mode cuisine avec rotation, un menu, une fenêtre ouverte ou un champ de saisie actif suspend le changement de liste.
+
+## Lier un élément à une autre checklist
+
+Dans **Valise**, cliquez sur **Ajouter une checklist liée**, choisissez **Trousse de toilette**, puis confirmez le libellé à afficher dans Valise. Pour lier un élément déjà présent, utilisez **⋯ → Modifier l’élément → Checklist liée (facultatif)**. Le choix **Aucune** retire uniquement le lien.
+
+Le libellé lié, accompagné d'une icône de lien, ouvre le contenu de Trousse de toilette. Le bouton **Retour** retrouve la liste ou le tableau de bord d'origine. Les liens peuvent aussi être suivis depuis le mode cuisine, sans modifier les listes choisies dans vos paramètres. Les cases à cocher de Valise et de Trousse de toilette restent indépendantes ; aucun détail n'est recopié dans Valise.
+
+La cible doit être une autre checklist du même foyer. Son renommage conserve le lien et votre libellé. Si elle est supprimée, les éléments qui la référencent restent dans leurs listes avec leur libellé et leur état coché ; seul leur lien est retiré. Supprimer Valise ne supprime pas une checklist vers laquelle elle pointe.
 
 ## Configurer le tableau de bord en mode cuisine
 
