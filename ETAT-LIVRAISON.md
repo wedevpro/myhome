@@ -2,6 +2,14 @@
 
 12 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
 
+## Relais du défilement des listes vers la page
+
+Les zones d'éléments des courses et checklists utilisent désormais `overscroll-behavior: auto` au lieu de `contain`. La page peut prendre le relais lorsque la liste est vide ou courte, ou lorsqu'elle atteint son début/sa fin. Le défilement interne des longues listes, leur hauteur maximale et la rotation cuisine sont conservés.
+
+Le navigateur et le système gèrent ce relais natif ; sa continuité pendant un seul geste dépend de l'appareil. Le [projet de spécification CSSWG](https://drafts.csswg.org/css-overscroll-1/#scroll-chaining) permet d'autoriser le chaînage sans imposer sa gestuelle.
+
+Validation : compilation Next.js de production et génération du worker réussies. Le CSS produit contient `overflow-y: auto`, `overscroll-behavior: auto` et la hauteur maximale de `56vh` pour les deux types de listes. Les gestionnaires de gestes ont été revus ; le comportement tactile n'a pas été vérifié sur appareil.
+
 ## Recherche de produit après un code-barres inconnu
 
 La fenêtre d'association propose **Rechercher un produit existant** : le nom filtre les produits du foyer sans tenir compte de la casse ni des accents. Un bouton efface la recherche et le nombre de résultats est indiqué, avec un message lorsqu'aucun produit ne correspond. Le choix **Créer un nouveau produit** reste disponible.

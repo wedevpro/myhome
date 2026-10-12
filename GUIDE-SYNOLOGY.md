@@ -85,6 +85,8 @@ La sauvegarde contient les comptes, les données des foyers et les clés Push. P
 
 Les champs **Ajouter un produit…** et **Ajouter une tâche…** se trouvent maintenant en haut de leur liste, avec **Scanner un code-barres** pour les courses. Les éléments des longues listes défilent dans leur propre zone ; les commandes d'ajout restent au-dessus.
 
+Les listes laissent le défilement passer à la page lorsqu'elles sont vides ou courtes, ou à leurs extrémités. Le navigateur gère ce relais ; selon l'appareil, un nouveau mouvement peut être nécessaire après avoir atteint le bord.
+
 Dans les courses et toutes les checklists, les éléments cochés passent en bas et les éléments à faire restent en haut. Une tâche éphémère cochée est désormais conservée jusqu'à sa suppression : vous pouvez la décocher si besoin.
 
 Les libellés des éléments sont affichés en **16 px** sur les pages de listes et le tableau de bord classique. En mode cuisine, ils passent à **22 px**, ou **20 px** sur les petits écrans, avec retour à la ligne des textes longs.
