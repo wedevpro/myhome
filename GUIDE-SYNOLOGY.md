@@ -95,9 +95,9 @@ Le bouton **Supprimer les éléments terminés** est disponible pour les listes 
 
 ## Associer un code-barres inconnu
 
-Après un scan caméra, une douchette ou la saisie manuelle d'un code inconnu, la fenêtre **Un nouveau code-barres** permet de **Rechercher un produit existant** par son nom. La recherche ignore les majuscules et les accents. Ouvrez ensuite **Associer à un produit existant**, choisissez le produit trouvé puis validez avec **Ajouter à la liste**.
+Après un scan caméra, une douchette ou la saisie manuelle d'un code inconnu, la fenêtre **Un nouveau code-barres** propose un seul champ **Nom du produit** avec auto-complétion. Saisissez le nom ou choisissez une suggestion, puis validez avec **Ajouter à la liste**.
 
-Vous pouvez effacer la recherche pour retrouver tout le catalogue. Le choix **Créer un nouveau produit** reste disponible même sans résultat. Changer le filtre conserve votre sélection et indique si elle ne correspond plus à la recherche ; si ce produit a été supprimé, choisissez-en un autre avant de valider.
+Si le nom complet correspond à un produit du foyer, sans tenir compte des majuscules, des accents ni des espaces aux extrémités, le code est ajouté à ce produit. Un nom inconnu crée un produit avec le nom saisi. Les suggestions permettent aussi de choisir directement un produit ; une correspondance partielle seule ne suffit pas à l'associer. Si plusieurs produits ont le même nom, choisissez une suggestion pour préciser lequel. Si un produit choisi a été supprimé, faites un nouveau choix avant de valider.
 
 ## Modifier un article de la liste de courses
 

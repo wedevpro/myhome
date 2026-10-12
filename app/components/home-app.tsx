@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { demoSnapshot } from "@/lib/demo";
 import { audit,getElectricity,upcomingWaste,Data,Entity,Kind,Preferences,Snapshot,User } from "@/lib/model";
+import { findProductsByName } from "@/lib/product-matching";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SidebarProvider,Sidebar,SidebarContent,SidebarHeader,SidebarFooter,SidebarMenu,SidebarMenuItem,SidebarMenuButton,SidebarTrigger } from "@/components/ui/sidebar";
 import { Dialog,DialogContent,DialogTitle,DialogDescription } from "@/components/ui/dialog";
@@ -105,6 +106,7 @@ export default function HomeApp({user}:{user:User|null}) {
     else if(c.action==="rotateCode"&&household)household={...household,code:crypto.randomUUID().replaceAll("-","").slice(0,20).toUpperCase()};
     else if(c.action==="addItem"){
      let product=entities.find(e=>e.id===c.productId&&e.kind==="product")||entities.find(e=>e.kind==="product"&&e.data.barcodes?.includes(String(c.barcode)));
+     if(!product&&c.barcode&&c.name){const matches=findProductsByName(entities,String(c.name));if(matches.length>1)throw new Error("Plusieurs produits portent ce nom. Choisissez le produit dans les suggestions.");product=matches[0];}
      if(!product&&(c.saveProduct||c.barcode)){product=audit(crypto.randomUUID(),"product",{name:String(c.name),category:"",barcodes:c.barcode?[String(c.barcode)]:[]});entities.push(product);}
      else if(product&&c.barcode&&!product.data.barcodes?.includes(String(c.barcode))){product={...product,data:{...product.data,barcodes:[...(product.data.barcodes||[]),String(c.barcode)]}};entities=entities.map(e=>e.id===product?.id?product:e);}
      entities.push(audit(crypto.randomUUID(),"item",{name:product?.data.name||String(c.name),listId:String(c.listId),productId:product?.id,quantity:Number(c.quantity)||1,unit:String(c.unit||""),category:product?.data.category||"",checked:false}));
@@ -172,7 +174,33 @@ function AddProduct({modal,snapshot,busy,error,onSave}:{modal:Extract<Modal,{typ
  const [name,setName]=useState(modal.text),[saveProduct,setSaveProduct]=useState(true),[quantity,setQuantity]=useState(1),[unit,setUnit]=useState(""),[existing,setExisting]=useState("");
  const products=snapshot.entities.filter(e=>e.kind==="product");
  const missingExisting=!!existing&&!products.some(product=>product.id===existing);
- return <><DialogTitle className="dialog-title">{modal.barcode?"Un nouveau code-barres":"Ajouter un produit"}</DialogTitle><DialogDescription>{modal.barcode?"Associez ce code à un produit pour le retrouver lors des prochains scans.":"Choisissez si ce produit doit rester dans votre catalogue."}</DialogDescription>{modal.barcode&&<span className="barcode-label">{modal.barcode}</span>}<form className="form-stack" onSubmit={async e=>{e.preventDefault();if(busy||missingExisting)return;try{await onSave({action:"addItem",listId:modal.listId,name:existing?undefined:name.trim(),productId:existing||undefined,saveProduct,barcode:modal.barcode,quantity,unit});}catch{}}}>{modal.barcode&&<ProductAssociationPicker products={products} value={existing} onChange={setExisting} disabled={busy}/>}{!existing&&<label className="field">Nom du produit<input autoFocus={!modal.barcode} required value={name} onChange={e=>setName(e.target.value)} maxLength={150}/></label>}<div className="form-row"><label className="field">Quantité<input required type="number" min="0.01" max="10000" step="0.01" value={quantity} onChange={e=>setQuantity(Number(e.target.value))}/></label><label className="field">Unité (facultatif)<input placeholder="pièces, packs, kg…" value={unit} onChange={e=>setUnit(e.target.value)} maxLength={50}/></label></div>{!modal.barcode&&<label className="check-field"><Checkbox checked={saveProduct} onCheckedChange={v=>setSaveProduct(!!v)}/>Enregistrer ce produit pour le réutiliser</label>}<p className="helper">{modal.barcode?"Le produit et ce code seront enregistrés dans le catalogue du foyer.":saveProduct?"Ce produit sera disponible pour les prochaines listes.":"Ce produit sera ajouté uniquement à cette liste."}</p>{error&&<p role="alert" className="error-text">{error}</p>}<button type="submit" disabled={busy||missingExisting} className="primary-button">{busy?"Ajout…":"Ajouter à la liste"}</button></form></>;
+ const ambiguousName=!!modal.barcode&&!existing&&findProductsByName(products,name).length>1;
+ const invalidBarcodeName=!!modal.barcode&&!name.trim();
+ return <>
+  <DialogTitle className="dialog-title">{modal.barcode?"Un nouveau code-barres":"Ajouter un produit"}</DialogTitle>
+  <DialogDescription>{modal.barcode?"Associez ce code à un produit existant ou saisissez le nom d’un nouveau produit.":"Choisissez si ce produit doit rester dans votre catalogue."}</DialogDescription>
+  {modal.barcode&&<span className="barcode-label">{modal.barcode}</span>}
+  <form className="form-stack" onSubmit={async e=>{
+   e.preventDefault();
+   if(busy||missingExisting||ambiguousName||invalidBarcodeName)return;
+   // Typed names are resolved against the current catalogue by the server;
+   // an explicit suggestion keeps its ID even if the product is renamed.
+   const productId=existing||undefined;
+   try{await onSave({action:"addItem",listId:modal.listId,name:productId?undefined:name.trim(),productId:productId||undefined,saveProduct,barcode:modal.barcode,quantity,unit});}catch{}
+  }}>
+   {modal.barcode
+    ? <ProductAssociationPicker products={products} name={name} onNameChange={setName} selectedId={existing} onSelect={setExisting} disabled={busy}/>
+    : <label className="field">Nom du produit<input autoFocus required disabled={busy} value={name} onChange={e=>setName(e.target.value)} maxLength={150}/></label>}
+   <div className="form-row">
+    <label className="field">Quantité<input required disabled={busy} type="number" min="0.01" max="10000" step="0.01" value={quantity} onChange={e=>setQuantity(Number(e.target.value))}/></label>
+    <label className="field">Unité (facultatif)<input disabled={busy} placeholder="pièces, packs, kg…" value={unit} onChange={e=>setUnit(e.target.value)} maxLength={50}/></label>
+   </div>
+   {!modal.barcode&&<label className="check-field"><Checkbox disabled={busy} checked={saveProduct} onCheckedChange={v=>setSaveProduct(!!v)}/>Enregistrer ce produit pour le réutiliser</label>}
+   <p className="helper">{modal.barcode?"Le produit et ce code seront enregistrés dans le catalogue du foyer.":saveProduct?"Ce produit sera disponible pour les prochaines listes.":"Ce produit sera ajouté uniquement à cette liste."}</p>
+   {error&&<p role="alert" className="error-text">{error}</p>}
+   <button type="submit" disabled={busy||missingExisting||ambiguousName||invalidBarcodeName} className="primary-button">{busy?"Ajout…":"Ajouter à la liste"}</button>
+  </form>
+ </>;
 }
 
 function HouseholdForm({user,busy,error,onSave}:{user:User|null;busy:boolean;error:string;onSave:(c:Command)=>Promise<void>}) {

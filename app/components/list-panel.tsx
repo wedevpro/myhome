@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
-import { ArrowDown, ArrowDownAZ, ArrowDownZA, ArrowUp, CircleCheck, Ellipsis, House, ListChecks, Pencil, Plus, RotateCcw, ScanBarcode, Search, ShoppingBasket, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowDownAZ, ArrowDownZA, ArrowUp, CircleCheck, CornerDownLeft, Ellipsis, House, ListChecks, Pencil, Plus, RotateCcw, ScanBarcode, Search, ShoppingBasket, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Entity, Snapshot } from "@/lib/model";
 import { completedItemsLast, filterChecklistItems, getChecklistItems, moveChecklistItem, sortChecklistItems } from "@/lib/checklist";
@@ -113,7 +113,7 @@ export default function ListPanel({ list, kind, snapshot, busy, showPicker, onSe
               <ComboboxInput disabled={busy} showTrigger={false} placeholder="Ajouter un produit…" aria-label="Ajouter un produit" className="flex-1 border-none bg-transparent shadow-none"/>
               <ComboboxContent><ComboboxEmpty>Saisissez un nouveau produit puis validez.</ComboboxEmpty><ComboboxList>{(item: string) => <ComboboxItem key={item} value={item}>{item}</ComboboxItem>}</ComboboxList></ComboboxContent>
             </Combobox> : <input placeholder="Ajouter une tâche…" aria-label="Ajouter une tâche" disabled={busy} value={text} onChange={event => setText(event.target.value)} maxLength={150}/>}
-            <button type="submit" disabled={busy || !text.trim()} aria-label={shopping ? "Ajouter le produit" : "Ajouter la tâche"}><Plus size={18}/></button>
+            <button type="submit" disabled={busy || !text.trim()} aria-label={shopping ? "Ajouter le produit" : "Ajouter la tâche"}><CornerDownLeft size={18}/></button>
           </form>
           {shopping && <button type="button" className="scan-button" disabled={busy} onClick={onScan}><ScanBarcode size={19}/>Scanner un code-barres</button>}
           {canClearCompleted && <button type="button" className="secondary-button clear-completed-button" disabled={busy || completed.length === 0} onClick={() => onClearCompleted(completed)}><Trash2 size={15}/>Supprimer les éléments terminés ({completed.length})</button>}

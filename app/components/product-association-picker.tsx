@@ -3,71 +3,84 @@
 import { useId, useRef, useState } from "react";
 import { X } from "lucide-react";
 import type { Entity } from "@/lib/model";
-import { Choice } from "./entity-editor";
+import { findProductByName, findProductsByName, normalizeProductName } from "@/lib/product-matching";
+import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from "@/components/ui/combobox";
 
 type ProductAssociationPickerProps = {
   products: Entity[];
-  value: string;
-  onChange: (value: string) => void;
+  name: string;
+  onNameChange: (name: string) => void;
+  selectedId: string;
+  onSelect: (id: string) => void;
   disabled?: boolean;
 };
 
-function searchableName(value: string): string {
-  return value.trim().normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("fr");
-}
+export default function ProductAssociationPicker({ products, name, onNameChange, selectedId, onSelect, disabled = false }: ProductAssociationPickerProps) {
+  const [open, setOpen] = useState(false);
+  const inputId = useId();
+  const statusId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const portalContainer = useRef<HTMLDivElement>(null);
+  const selected = products.find(product => product.id === selectedId) || null;
+  const exactMatches = findProductsByName(products, name);
+  const exactMatch = findProductByName(products, name);
+  const missingSelected = !!selectedId && !selected;
+  const ambiguousName = !selectedId && exactMatches.length > 1;
 
-export default function ProductAssociationPicker({ products, value, onChange, disabled = false }: ProductAssociationPickerProps) {
-  const [query, setQuery] = useState("");
-  const searchId = useId();
-  const resultId = useId();
-  const searchInput = useRef<HTMLInputElement>(null);
-  const search = searchableName(query);
-  const matches = products.filter(product => searchableName(product.data.name || "").includes(search));
-  const selected = products.find(product => product.id === value);
-  const selectedOutsideSearch = !!selected && !matches.some(product => product.id === value);
-  const selectedUnavailable = !!value && !selected;
-  // Retain the selected item in Select so filtering never clears its label or
-  // silently changes the association. The count still includes matches only.
-  const retainedSelection = value && !matches.some(product => product.id === value)
-    ? [{ value, label: selected ? `${selected.data.name} — sélectionné, hors recherche` : "Produit sélectionné indisponible" }]
-    : [];
-  const options = [
-    { value: "", label: "Créer un nouveau produit" },
-    ...retainedSelection,
-    ...matches.map(product => ({ value: product.id, label: product.data.name || "Sans nom" })),
-  ];
+  const editName = (value: string) => { onNameChange(value); onSelect(""); };
 
   return (
-    <div className="form-stack">
-      <div className="field">
-        <label htmlFor={searchId}>Rechercher un produit existant</label>
+    <div ref={portalContainer} className="flex flex-col gap-1.5">
+      <label className="field" htmlFor={inputId}>Nom du produit</label>
+      <Combobox<Entity>
+        items={products}
+        value={selected}
+        inputValue={name}
+        open={open}
+        onOpenChange={setOpen}
+        disabled={disabled}
+        itemToStringLabel={product => product.data.name || ""}
+        itemToStringValue={product => product.id}
+        isItemEqualToValue={(item, value) => item.id === value.id}
+        filter={(product, query) => normalizeProductName(product.data.name || "").includes(normalizeProductName(query))}
+        onInputValueChange={(value, details) => {
+          if (details.reason === "input-change" || details.reason === "clear-press") editName(value);
+          else if (details.reason === "item-press") onNameChange(value);
+          // Single Combobox also requests input-clear/none when closing its
+          // popup. Retain free text and an explicit ID on those updates.
+        }}
+        onValueChange={(product, details) => {
+          if (details.reason === "item-press" && product) {
+            onNameChange(product.data.name || "");
+            onSelect(product.id);
+          } else if (details.reason === "clear-press") editName("");
+        }}
+      >
         <div className="flex items-center gap-2">
-          <input
-            id={searchId}
-            ref={searchInput}
-            type="search"
+          <ComboboxInput
+            id={inputId}
+            ref={inputRef}
             autoFocus
-            className="min-w-0 flex-1"
-            placeholder="Nom du produit…"
-            value={query}
-            disabled={disabled}
+            required
             maxLength={150}
-            aria-describedby={resultId}
-            onChange={event => setQuery(event.target.value)}
-            onKeyDown={event => { if (event.key === "Enter") event.preventDefault(); }}
+            disabled={disabled}
+            showTrigger={false}
+            className="min-w-0 flex-1"
+            placeholder="Rechercher ou saisir un nouveau produit…"
+            aria-label="Nom du produit"
+            aria-describedby={statusId}
+            aria-invalid={missingSelected || ambiguousName || undefined}
           />
-          {query && <button type="button" className="icon-button" disabled={disabled} aria-label="Effacer la recherche de produit" onClick={() => { setQuery(""); searchInput.current?.focus(); }}><X size={16} aria-hidden="true"/></button>}
+          {name && <button type="button" className="icon-button" disabled={disabled} aria-label="Effacer le nom du produit" onClick={() => { editName(""); inputRef.current?.focus(); }}><X size={16} aria-hidden="true"/></button>}
         </div>
-      </div>
-      <p className="helper" id={resultId} role="status" aria-live="polite">
-        {matches.length ? `${matches.length} produit${matches.length > 1 ? "s" : ""} trouvé${matches.length > 1 ? "s" : ""}.` : search ? "Aucun produit ne correspond à votre recherche." : "Aucun produit existant dans le catalogue."}
+        <ComboboxContent portalContainer={portalContainer}>
+          <ComboboxEmpty>Saisissez un nouveau nom puis validez pour créer le produit.</ComboboxEmpty>
+          <ComboboxList>{(product: Entity) => <ComboboxItem key={product.id} value={product}><span className="flex min-w-0 flex-col"><span>{product.data.name}</span>{(product.data.category || product.data.barcodes?.[0]) && <small className="text-muted-foreground">{[product.data.category, product.data.barcodes?.[0]].filter(Boolean).join(" · ")}</small>}</span></ComboboxItem>}</ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+      <p id={statusId} role="status" className={missingSelected || ambiguousName ? "error-text" : "helper"}>
+        {missingSelected ? "Le produit sélectionné n’est plus dans le catalogue. Choisissez une autre suggestion ou modifiez le nom pour créer un produit." : ambiguousName ? "Plusieurs produits portent ce nom. Choisissez le produit à associer dans les suggestions." : selected ? `Ce code sera associé à « ${selected.data.name} ».` : exactMatch ? "Ce produit existe déjà dans le catalogue : son code-barres sera ajouté à sa fiche." : "Choisissez un produit proposé ou saisissez le nom d’un nouveau produit."}
       </p>
-      <div className="field">
-        <span>Associer à un produit existant</span>
-        <Choice label="Produit à associer" value={value} onChange={onChange} options={options} disabled={disabled}/>
-      </div>
-      {selectedOutsideSearch && <p className="helper">« {selected.data.name} » reste sélectionné et ne correspond pas à cette recherche.</p>}
-      {selectedUnavailable && <p className="error-text" role="status">Le produit sélectionné n’est plus dans le catalogue. Choisissez un autre produit ou créez-en un nouveau.</p>}
     </div>
   );
 }

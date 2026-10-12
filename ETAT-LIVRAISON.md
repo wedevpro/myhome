@@ -10,13 +10,13 @@ Le navigateur et le système gèrent ce relais natif ; sa continuité pendant un
 
 Validation : compilation Next.js de production et génération du worker réussies. Le CSS produit contient `overflow-y: auto`, `overscroll-behavior: auto` et la hauteur maximale de `56vh` pour les deux types de listes. Les gestionnaires de gestes ont été revus ; le comportement tactile n'a pas été vérifié sur appareil.
 
-## Recherche de produit après un code-barres inconnu
+## Association d'un code-barres par auto-complétion
 
-La fenêtre d'association propose **Rechercher un produit existant** : le nom filtre les produits du foyer sans tenir compte de la casse ni des accents. Un bouton efface la recherche et le nombre de résultats est indiqué, avec un message lorsqu'aucun produit ne correspond. Le choix **Créer un nouveau produit** reste disponible.
+La fenêtre d'association utilise un seul champ **Nom du produit** avec auto-complétion. Une suggestion choisie cible son produit par ID. Sans choix explicite, un nom complet connu, sans casse ni accents et après suppression des espaces aux extrémités, réutilise le produit existant. Un nom inconnu crée un produit avec son orthographe saisie. Les correspondances partielles restent des suggestions, sans association automatique.
 
-La sélection est explicite et reste conservée si la recherche change ; si le produit choisi sort du filtre, un message le précise. Un produit supprimé pendant l'édition doit être remplacé avant validation. Appuyer sur Entrée dans la recherche ne déclenche pas l'ajout à la liste. Le filtre est disponible après scan caméra, douchette ou saisie manuelle d'un code inconnu.
+Le même rapprochement exact est contrôlé côté serveur sur le catalogue actuel du foyer. Plusieurs produits portant le même nom exigent un choix explicite. Un produit choisi puis supprimé bloque l'ajout jusqu'à correction ; un code déjà associé entre-temps à une autre cible est refusé sans mutation. Les codes existants, l'audit et les quantités/unités sont conservés. L'association fonctionne après caméra, douchette ou saisie manuelle.
 
-Validation : TypeScript, lint ciblé du nouveau sélecteur et de `Choice`, compilation de production et scénario API existant réussis. Le payload d'association, les gardes de soumission et les états de sélection ont été revus. Le navigateur intégré reste indisponible : les interactions du nouveau sélecteur n'ont pas été vérifiées visuellement. Le lint de `home-app.tsx` conserve ses quatre erreurs préexistantes, sans nouveau diagnostic.
+Validation : **75 tests unitaires réussis**, dont quatre cas de comparaison des noms (accents Unicode, casse, noms complets, absence de mutation et ambiguïtés). TypeScript, lint ciblé du sélecteur/wrapper/helper/API, compilation de production et scénario API complet réussis. L'intégration vérifie l'association par nom, les codes multiples, le choix explicite parmi les doublons, les collisions sans mutation, l'isolation des foyers, l'audit et les rescans après redémarrage. Le portail et les événements clavier ont été revus dans les composants installés. Le navigateur intégré reste indisponible pour la vérification visuelle ; `home-app.tsx` conserve ses quatre erreurs de lint préexistantes.
 
 ## Libellés des éléments plus lisibles
 
@@ -122,7 +122,7 @@ La synchronisation reste une actualisation toutes les **2,5 secondes**, après m
 - Installation propre des dépendances depuis le lockfile : réussie, 552 packages.
 - Compilation Next.js de production et génération du worker de rappels : réussies.
 - Validation Docker Compose : réussie.
-- Tests de domaine, rotation/gestes, préférences de l'appareil, articles de courses, checklists, authentification, SQLite et rappels : **71 tests réussis** (22 domaine, 9 rotation/swipe, 8 menus tactiles, 8 préférences locales, 4 articles de courses, 7 checklists/ordre des cochés, 5 authentification, 7 stockage NAS, 1 rappels avec plusieurs scénarios).
+- Tests de domaine, rotation/gestes, préférences de l'appareil, association des produits, articles de courses, checklists, authentification, SQLite et rappels : **75 tests réussis** (22 domaine, 9 rotation/swipe, 8 menus tactiles, 8 préférences locales, 4 comparaisons de noms produits, 4 articles de courses, 7 checklists/ordre des cochés, 5 authentification, 7 stockage NAS, 1 rappels avec plusieurs scénarios).
 - Intégration sur serveur de production : affichage du tableau de bord authentifié après inscription, connexion et redémarrage ; accès à `/deconnexion` ; quantités et notes des articles, validations, partage/audit, conflits, isolation, catalogue inchangé et absence de recopie ; ordre et libellés des checklists, conservation après renommage/remise à zéro ; purge atomique des terminés, permissions, isolation, checklists réutilisables protégées, commandes en haut et persistance après redémarrage ; partage et isolation des foyers, rôles, codes-barres, préférences et contrôle d'origine : réussie.
 
 Le moteur Docker local n'est pas démarré : **la construction et l'exécution du conteneur Linux n'ont pas été testées**. Aucun accès direct à votre NAS n'a été utilisé. La vérification visuelle dans Browser était indisponible ; caméras, douchette et réception réelle des notifications restent à vérifier sur vos appareils. Les tests des rappels utilisent les vrais calculs et payloads chiffrés, avec des réponses réseau simulées.

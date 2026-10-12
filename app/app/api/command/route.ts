@@ -1,8 +1,9 @@
 import { commandSchema,dataSchemas,preferenceSchema } from "@/lib/validation";
-import { database,identity,membership,findRecord,insertRecord,snapshot,failure,ApiError } from "@/lib/server";
+import { database,identity,membership,findRecord,insertRecord,snapshot,failure,ApiError,mapRecord } from "@/lib/server";
 import { audit, Entity, Data } from "@/lib/model";
 import { readJson } from "@/lib/json-body";
 import { requestOriginAllowed } from "@/lib/auth";
+import { findProductsByName,normalizeProductName } from "@/lib/product-matching";
 export const dynamic="force-dynamic";
 const commandBodyLimit=1_200_000;
 export async function POST(request:Request) {
@@ -150,13 +151,27 @@ export async function POST(request:Request) {
     const list=await findRecord(c.listId||"",h);if(!["shopping","checklist"].includes(list.kind)) throw new ApiError(400,"Liste invalide.");
     let product=c.productId?await findRecord(c.productId,h):null;
     if(product && product.kind!=="product") throw new ApiError(400,"Produit invalide.");
-    if(c.barcode) {const linked=await db.prepare("SELECT product_id FROM barcodes WHERE household_id=? AND code=?").bind(h,c.barcode).first<{product_id:string}>();if(linked) product=await findRecord(linked.product_id,h);}
+    if(c.barcode) {
+     const linked=await db.prepare("SELECT product_id FROM barcodes WHERE household_id=? AND code=?").bind(h,c.barcode).first<{product_id:string}>();
+     if(linked) {
+      const owner=await findRecord(linked.product_id,h);
+      if((c.productId&&c.productId!==owner.id)||(!c.productId&&c.name&&normalizeProductName(c.name)!==normalizeProductName(owner.data.name||""))) throw new ApiError(409,"Ce code-barres est déjà associé à un autre produit. Actualisez les produits puis réessayez.");
+      product=owner;
+     }
+    }
+    if(c.barcode&&!product&&c.name&&list.kind==="shopping") {
+     const catalogue=await db.prepare("SELECT * FROM records WHERE household_id=? AND kind='product' ORDER BY created_at,id").bind(h).all<Record<string,string>>();
+     const matches=findProductsByName(catalogue.results.map(mapRecord),c.name);
+     if(matches.length>1) throw new ApiError(409,"Plusieurs produits portent ce nom. Choisissez le produit dans les suggestions.");
+     product=matches[0]||null;
+    }
     if(!product&&!c.name) throw new ApiError(400,"Choisissez un produit ou saisissez son nom.");
     const statements=[];
     const creatingProduct=!product&&(c.saveProduct||c.barcode);
     if(creatingProduct) {product=fresh("product",{name:c.name,category:"",barcodes:c.barcode?[c.barcode]:[]},h);statements.push(insertRecord(product));}
     if(c.barcode&&product) {
-     const exists=await db.prepare("SELECT product_id FROM barcodes WHERE household_id=? AND code=?").bind(h,c.barcode).first();
+     const exists=await db.prepare("SELECT product_id FROM barcodes WHERE household_id=? AND code=?").bind(h,c.barcode).first<{product_id:string}>();
+     if(exists&&exists.product_id!==product.id) throw new ApiError(409,"Ce code-barres est déjà associé à un autre produit. Actualisez les produits puis réessayez.");
      if(!exists) {
       statements.push(db.prepare("INSERT INTO barcodes(household_id,code,product_id,created_by,created_at,updated_by,updated_at) VALUES(?,?,?,?,?,?,?)").bind(h,c.barcode,product.id,user.id,now,user.id,now));
       if(!creatingProduct) statements.push(db.prepare("UPDATE records SET data=json_insert(data,'$.barcodes[#]',?),updated_by=?,updated_at=?,revision=? WHERE household_id=? AND id=?").bind(c.barcode,user.id,now,crypto.randomUUID(),h,product.id));

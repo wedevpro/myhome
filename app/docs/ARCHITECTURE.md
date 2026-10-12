@@ -10,7 +10,7 @@ Le déploiement, le proxy HTTPS et les sauvegardes sont décrits dans [GUIDE-SYN
 | --- | --- |
 | Courses | Plusieurs listes, nom et icône, ajout et scan en haut, zone d'éléments défilante. Quantités modifiables (décimales acceptées), quantité/unité affichée uniquement si la quantité est strictement supérieure à 1, commentaire propre à chaque article, cochés en bas et suppression collective des terminés avec confirmation. Le commentaire n'est pas enregistré au catalogue ni recopié sur d'autres articles. |
 | Produits | Catalogue du foyer, plusieurs codes-barres par produit, unicité d'un code dans le foyer. Un nouveau produit peut être conservé au catalogue ou ajouté uniquement à la liste. |
-| Scan | Caméra avant/arrière avec ZXing, douchette clavier USB/Bluetooth et saisie manuelle. Produit reconnu ajouté directement ; code inconnu associé à un produit existant ou nouveau. Recherche par nom sans casse/accents dans le catalogue du foyer, sélection explicite conservée sous filtre et création toujours accessible. |
+| Scan | Caméra avant/arrière avec ZXing, douchette clavier USB/Bluetooth et saisie manuelle. Produit reconnu ajouté directement ; code inconnu associé via un seul champ de nom avec auto-complétion. Suggestion choisie par ID ou nom complet reconnu sans casse/accents : réutilisation du produit. Nom inconnu : création. Plusieurs noms identiques : choix explicite exigé. |
 | Checklists | Ajout en haut, cochés en bas et libellés modifiables. Listes éphémères : tâches terminées conservées jusqu'à suppression individuelle ou collective. Listes réutilisables : remise à zéro, sans purge collective. Tri A–Z/Z–A, filtre ignorant casse et accents, menu par élément pour renommer, déplacer par flèches ou position et supprimer. Ordre partagé et persistant. |
 | Notes | Création, édition, suppression, recherche et trois couleurs. Texte simple ; dessin, pièces jointes et synchronisation Samsung Notes ne sont pas intégrés. |
 | Contacts | Nom, téléphone, email et adresse. Catégories imbriquées sans limite configurée de profondeur ; le filtre d'une catégorie inclut ses descendants. |
@@ -59,6 +59,10 @@ Le commentaire temporaire d'un article de courses est stocké dans le champ JSON
 Les lignes de courses affichent la quantité/unité uniquement lorsque la quantité est strictement supérieure à 1 ; la quantité affichée est éditable au clic. Les actions modification/suppression restent accessibles pour chaque article dans le menu ⋯, avec le même wrapper tactile et la même gestion du focus vers l'éditeur que les checklists. Les actions utilisent les commandes existantes ; aucune nouvelle écriture de catalogue n'est ajoutée.
 
 ## Build et supervision
+
+L'association d'un code inconnu partage la comparaison exacte des noms de `lib/product-matching.ts` entre l'interface et l'API : trim, décomposition Unicode, suppression des accents et casse française. Un choix dans les suggestions transmet l'ID ; un nom tapé transmet le texte pour une résolution sur le catalogue actuel du foyer côté serveur. Un nom ambigu exige un choix, et une collision avec un code déjà lié à une autre cible est refusée avant les écritures. La forme originale des noms et les codes précédents sont conservés ; aucune migration n'est nécessaire.
+
+Les suggestions Base UI sont placées à l'intérieur de la fenêtre Radix via un conteneur de portail dédié, pour rester dans son périmètre de focus et de défilement. Sans option active, Entrée valide le nom saisi ; avec une option active, elle sélectionne cette option sans soumettre en même temps le formulaire.
 
 `npm run build` compile Next.js avec `output: standalone`, copie les assets publics et génère le bundle autonome `runtime/reminders.mjs` avec esbuild.
 

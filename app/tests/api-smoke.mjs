@@ -42,6 +42,143 @@ function client() {
     return { status: response.status, json, text, response };
   };
 }
+async function checkBarcodeNameAssociation({ admin, member, adminId, memberId }) {
+  const expectStatus = (response, status, label) => assert.equal(response.status, status, `${label}: ${JSON.stringify(response.json)}`);
+  let response = await admin("/api/command", { action: "createHousehold", name: "Barcode name fixtures" });
+  expectStatus(response, 200, "Create isolated barcode-name household");
+  const household = response.json.household, list = response.json.entities.find(entity => entity.kind === "shopping");
+  let state = response.json;
+  const products = () => state.entities.filter(entity => entity.kind === "product");
+  const find = id => state.entities.find(entity => entity.id === id);
+  const run = async (data, label, actor = admin) => {
+    const result = await actor("/api/command", { householdId: household.id, ...data });
+    expectStatus(result, 200, label); state = result.json; return state;
+  };
+  const createProduct = async (data, label) => {
+    const previousIds = new Set(products().map(product => product.id));
+    await run({ action: "save", kind: "product", data }, label);
+    const added = products().filter(product => !previousIds.has(product.id));
+    assert.equal(added.length, 1, label + " creates exactly one product"); return added[0];
+  };
+  const add = async (data, label, actor = admin) => {
+    const previousIds = new Set(state.entities.map(entity => entity.id));
+    await run({ action: "addItem", listId: list.id, ...data }, label, actor);
+    const added = state.entities.filter(entity => entity.kind === "item" && !previousIds.has(entity.id));
+    assert.equal(added.length, 1, label + " adds exactly one item");
+    const item = added[0], actorId = actor === member ? memberId : adminId;
+    assert.equal(item.householdId, household.id); assert.equal(item.data.listId, list.id);
+    assert.equal(item.data.checked, false); assert.equal(item.createdBy, actorId); assert.equal(item.updatedBy, actorId);
+    assert.ok(Number.isFinite(Date.parse(item.createdAt))); assert.equal(item.updatedAt, item.createdAt);
+    return item;
+  };
+
+  // A matching name in another household must not fill this initially empty catalog.
+  response = await admin("/api/command", { action: "createHousehold", name: "Foreign barcode-name fixture" });
+  expectStatus(response, 200, "Create foreign product household");
+  const foreignHousehold = response.json.household;
+  response = await admin("/api/command", { householdId: foreignHousehold.id, action: "save", kind: "product", data: { name: "Thé vert", category: "Privé", barcodes: ["NAME-FOREIGN-OLD"] } });
+  expectStatus(response, 200, "Create identically named foreign product");
+  const foreignProduct = response.json.entities.find(entity => entity.kind === "product");
+  const emptyCatalogState = state.entities;
+  for (let read = 0; read < 2; read++) {
+    response = await admin("/api/state?household=" + household.id);
+    expectStatus(response, 200, "Read empty catalog without creating products"); state = response.json;
+    assert.equal(products().length, 0); assert.deepEqual(state.entities, emptyCatalogState);
+  }
+  const isolatedItem = await add({ barcode: "NAME-LOCAL-TEA", name: "  THÉ VERT  ", saveProduct: false, quantity: 0.5, unit: "kg" }, "Unknown name creates local product despite a foreign match");
+  assert.equal(products().length, 1);
+  const localTea = find(isolatedItem.data.productId);
+  assert.ok(localTea); assert.notEqual(localTea.id, foreignProduct.id);
+  assert.equal(localTea.householdId, household.id); assert.equal(localTea.data.name, "THÉ VERT");
+  assert.deepEqual(localTea.data.barcodes, ["NAME-LOCAL-TEA"]);
+  assert.equal(localTea.createdBy, adminId); assert.equal(localTea.updatedBy, adminId);
+  assert.equal(isolatedItem.data.name, "THÉ VERT"); assert.equal(isolatedItem.data.quantity, 0.5); assert.equal(isolatedItem.data.unit, "kg");
+  response = await member("/api/command", { action: "joinHousehold", code: household.code });
+  expectStatus(response, 200, "Join barcode-name fixtures as simple member");
+
+  const coffee = await createProduct({ name: "Café", category: "Épicerie", barcodes: ["NAME-CAFE-OLD"] }, "Create coffee fixture with an existing barcode");
+  const coffeeAudit = { createdBy: coffee.createdBy, createdAt: coffee.createdAt };
+  const coffeeCodes = ["NAME-CAFE-OLD"];
+  for (const [index, name] of ["Café", "cafe", "CAFÉ"].entries()) {
+    const previousProduct = find(coffee.id), count = products().length, barcode = "NAME-CAFE-" + index;
+    const actor = index === 2 ? member : admin;
+    const item = await add({ barcode, name, quantity: 2.5, unit: "paquets" }, "Reuse exact normalized name " + name, actor);
+    coffeeCodes.push(barcode);
+    assert.equal(products().length, count, "An exact name must not create another catalog product");
+    assert.equal(item.data.productId, coffee.id); assert.equal(item.data.name, "Café");
+    assert.equal(item.data.category, "Épicerie"); assert.equal(item.data.quantity, 2.5); assert.equal(item.data.unit, "paquets");
+    const currentProduct = find(coffee.id);
+    assert.equal(currentProduct.data.name, "Café"); assert.equal(currentProduct.data.category, "Épicerie");
+    assert.deepEqual(currentProduct.data.barcodes, coffeeCodes, "Associating a code preserves all previous codes");
+    assert.deepEqual({ createdBy: currentProduct.createdBy, createdAt: currentProduct.createdAt }, coffeeAudit);
+    assert.equal(currentProduct.updatedBy, actor === member ? memberId : adminId);
+    assert.notEqual(currentProduct.revision, previousProduct.revision);
+    assert.ok(Date.parse(currentProduct.updatedAt) >= Date.parse(currentProduct.createdAt));
+  }
+
+  const beforeNewProduct = new Set(products().map(product => product.id));
+  const freshItem = await add({ barcode: "NAME-NEW-CHOCOLATE", name: "  Chocolat noir 70 %  ", saveProduct: false }, "New barcode and name create a trimmed product");
+  const newProducts = products().filter(product => !beforeNewProduct.has(product.id));
+  assert.equal(newProducts.length, 1);
+  const chocolate = newProducts[0];
+  assert.equal(chocolate.data.name, "Chocolat noir 70 %"); assert.deepEqual(chocolate.data.barcodes, ["NAME-NEW-CHOCOLATE"]);
+  assert.equal(freshItem.data.productId, chocolate.id); assert.equal(freshItem.data.name, chocolate.data.name);
+  assert.equal(freshItem.data.quantity, 1); assert.equal(freshItem.data.unit, "");
+  assert.equal(chocolate.createdBy, adminId); assert.equal(chocolate.updatedBy, adminId);
+
+  for (const [index, name] of ["Caf", "Café moulu"].entries()) {
+    const previousIds = new Set(products().map(product => product.id));
+    const barcode = "NAME-APPROXIMATE-" + index;
+    const item = await add({ barcode, name }, "Approximate name remains a new product: " + name);
+    const created = products().filter(product => !previousIds.has(product.id));
+    assert.equal(created.length, 1); assert.equal(created[0].data.name, name);
+    assert.notEqual(created[0].id, coffee.id); assert.equal(item.data.productId, created[0].id);
+    assert.deepEqual(created[0].data.barcodes, [barcode]);
+  }
+
+  const duplicate = await createProduct({ name: "CAFÉ", category: "Autre café", barcodes: ["NAME-DUPLICATE-OLD"] }, "Create a second product with the same normalized name");
+  const beforeAmbiguous = state.entities;
+  response = await admin("/api/command", { householdId: household.id, action: "addItem", listId: list.id, barcode: "NAME-AMBIGUOUS", name: "cafe" });
+  expectStatus(response, 409, "Ambiguous exact name requires an explicit product choice");
+  response = await admin("/api/state?household=" + household.id);
+  expectStatus(response, 200, "Read records after ambiguous association"); state = response.json;
+  assert.deepEqual(state.entities, beforeAmbiguous, "Ambiguity must not create a product or item, associate a code, or alter audits");
+  const beforeExplicitCoffee = find(coffee.id), countBeforeChoice = products().length;
+  const explicitItem = await add({ barcode: "NAME-AMBIGUOUS", productId: duplicate.id, name: "cafe", quantity: 3, unit: "boîtes" }, "Explicit ID selects the intended normalized-name duplicate");
+  assert.equal(products().length, countBeforeChoice);
+  assert.equal(explicitItem.data.productId, duplicate.id); assert.equal(explicitItem.data.name, "CAFÉ");
+  assert.equal(explicitItem.data.quantity, 3); assert.equal(explicitItem.data.unit, "boîtes");
+  assert.deepEqual(find(duplicate.id).data.barcodes, ["NAME-DUPLICATE-OLD", "NAME-AMBIGUOUS"]);
+  assert.deepEqual(find(coffee.id), beforeExplicitCoffee, "Explicit selection must not update the other matching product");
+  const beforeCollision = state.entities;
+  for (const [data, label] of [
+    [{ productId: duplicate.id, name: "cafe" }, "Known barcode cannot be reassigned to another explicit product"],
+    [{ name: "Chocolat noir 70 %" }, "Known barcode cannot be associated using a conflicting product name"],
+  ]) {
+    response = await admin("/api/command", { householdId: household.id, action: "addItem", listId: list.id, barcode: "NAME-CAFE-OLD", ...data });
+    expectStatus(response, 409, label);
+    response = await admin("/api/state?household=" + household.id);
+    expectStatus(response, 200, "Read catalog and items after conflicting barcode association"); state = response.json;
+    assert.deepEqual(state.entities, beforeCollision, "A barcode collision leaves catalog, items, revisions and audits intact");
+  }
+  const beforeKnownScan = products();
+  const knownItem = await add({ barcode: "NAME-CAFE-OLD", name: "cafe" }, "Existing barcode association remains authoritative despite ambiguous names");
+  assert.equal(knownItem.data.productId, coffee.id); assert.deepEqual(products(), beforeKnownScan);
+  response = await member("/api/state?household=" + household.id);
+  expectStatus(response, 200, "Name-based associations are shared with household members");
+  assert.deepEqual(response.json.entities, state.entities);
+  response = await admin("/api/state?household=" + foreignHousehold.id);
+  expectStatus(response, 200, "Read foreign product after local associations");
+  assert.deepEqual(response.json.entities.find(entity => entity.id === foreignProduct.id), foreignProduct);
+  return {
+    householdId: household.id, records: state.entities, foreignHouseholdId: foreignHousehold.id, foreignProduct,
+    rescan: [
+      { barcode: "NAME-CAFE-2", productId: coffee.id },
+      { barcode: "NAME-NEW-CHOCOLATE", productId: chocolate.id },
+      { barcode: "NAME-AMBIGUOUS", productId: duplicate.id },
+    ],
+  };
+}
 async function checkChecklistOrdering({ admin, member, outsider, command, household, shoppingList, adminId, memberId }) {
   const expectStatus = (response, status, label) => assert.equal(response.status, status, `${label}: ${JSON.stringify(response.json)}`);
   const findChecklist = state => state.entities.find(entity => entity.id === checklist.id);
@@ -455,6 +592,7 @@ try {
   r = await member("/api/state?household=" + household.id); assert.equal(r.status, 200); assert.equal(r.json.entities.find(e => e.id === product.id).data.name, "Lait modifié"); assert.equal(r.json.preferences.rotation, undefined);
   r = await member("/api/command", { action: "member", householdId: household.id, userId: memberId, role: "admin" }); assert.equal(r.status, 403);
   r = await member("/api/command", { action: "save", householdId: household.id, kind: "electricity", data: { start: "22:00", end: "06:00", days: [1] } }); assert.equal(r.status, 403);
+  const barcodeNameAssociation = await checkBarcodeNameAssociation({ admin, member, adminId, memberId });
   const orderedChecklist = await checkChecklistOrdering({ admin, member, outsider, command, household, shoppingList: list, adminId, memberId });
   const editedShoppingItem = await checkShoppingItemEdits({ admin, member, outsider, command, household, shoppingList: list, productId: product.id, memberId });
   const purgedItems = await checkCompletedPurge({ admin, member, outsider, household, productId: product.id, memberId });
@@ -464,6 +602,24 @@ try {
   r = await admin("/api/push/run", {}); assert.equal(r.status, 403);
   await stop(); await start();
   r = await admin("/api/state?household=" + household.id); assert.equal(r.status, 200, "Session survives restart"); assert.equal(r.json.preferences.rotation, 10); assert.equal(r.json.entities.find(e => e.id === product.id).data.name, "Lait modifié");
+  const persistedAssociations = await admin("/api/state?household=" + barcodeNameAssociation.householdId);
+  assert.equal(persistedAssociations.status, 200, "Read barcode-name fixture household after restart");
+  assert.deepEqual(persistedAssociations.json.entities, barcodeNameAssociation.records, "Name-based associations, product codes, items and audits survive restart");
+  let persistedBarcodeState = persistedAssociations.json;
+  const persistedBarcodeCatalog = persistedBarcodeState.entities.filter(entity => entity.kind === "product");
+  const persistedBarcodeList = persistedBarcodeState.entities.find(entity => entity.kind === "shopping");
+  for (const association of barcodeNameAssociation.rescan) {
+    const previousIds = new Set(persistedBarcodeState.entities.map(entity => entity.id));
+    const rescanned = await admin("/api/command", { householdId: barcodeNameAssociation.householdId, action: "addItem", listId: persistedBarcodeList.id, barcode: association.barcode });
+    assert.equal(rescanned.status, 200, "Newly associated barcode is recognized after restart: " + association.barcode);
+    persistedBarcodeState = rescanned.json;
+    const addedItems = persistedBarcodeState.entities.filter(entity => entity.kind === "item" && !previousIds.has(entity.id));
+    assert.equal(addedItems.length, 1); assert.equal(addedItems[0].data.productId, association.productId);
+    assert.deepEqual(persistedBarcodeState.entities.filter(entity => entity.kind === "product"), persistedBarcodeCatalog, "Rescanning a persisted code does not alter or duplicate catalog products");
+  }
+  const persistedForeignProduct = await admin("/api/state?household=" + barcodeNameAssociation.foreignHouseholdId);
+  assert.equal(persistedForeignProduct.status, 200, "Read foreign barcode-name fixture after restart");
+  assert.deepEqual(persistedForeignProduct.json.entities.find(entity => entity.id === barcodeNameAssociation.foreignProduct.id), barcodeNameAssociation.foreignProduct, "Foreign product remains unchanged after restart");
   for (const id of purgedItems.deletedIds) assert.equal(r.json.entities.some(entity => entity.id === id), false, "Purged item remains deleted after restart: " + id);
   for (const survivor of purgedItems.survivors) assert.deepEqual(r.json.entities.find(entity => entity.id === survivor.id), survivor, "Purge survivor data and revision survive restart: " + survivor.id);
   const persistedChecklist = r.json.entities.find(e => e.id === orderedChecklist.id);
@@ -487,7 +643,7 @@ try {
   r = await member("/api/state?household=" + household.id); assert.equal(r.status, 403);
   r = await member("/api/command", { action: "joinHousehold", code: household.code }); assert.equal(r.status, 403);
   r = await command({ action: "delete", id: list.id, expectedRevision: list.revision }); assert.equal(r.status, 200); assert.equal(r.json.entities.filter(e => e.kind === "item" && e.data.listId === list.id).length, 0); assert.equal(r.json.entities.filter(e => e.kind === "product").length, 1); assert.equal(r.json.entities.filter(e => e.kind === "item" && e.data.listId === orderedChecklist.id).length, orderedChecklist.itemIds.length);
-  console.log("NAS API/pages passed: authenticated dashboard after signup/login/restart, logout recovery page, secure sessions, household sharing/isolation, roles, barcodes, shopping item quantities/comments/validation/isolation, checklist ordering/sharing/audits/conflicts/reset/rename, completed-item purge/atomicity/isolation, task label edits, entry placement, preferences, CSRF and persistence.");
+  console.log("NAS API/pages passed: authenticated dashboard after signup/login/restart, logout recovery page, secure sessions, household sharing/isolation, roles, barcodes/name matching/ambiguity/explicit selection, shopping item quantities/comments/validation/isolation, checklist ordering/sharing/audits/conflicts/reset/rename, completed-item purge/atomicity/isolation, task label edits, entry placement, preferences, CSRF and persistence.");
 } catch (error) { console.error(logs); throw error; }
 finally {
   await stop();
