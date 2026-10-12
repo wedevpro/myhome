@@ -2,6 +2,14 @@
 
 12 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
 
+## Bouton Retour sur mobile
+
+Le bouton Retour de l'appareil ou du navigateur retrouve l'écran précédent, avec la liste sélectionnée, les liens entre checklists et la position de défilement de la page. Un menu ou une fenêtre ouverte se ferme d'abord. Sans écran précédent, l'application reste sur l'écran actuel. Le bouton Retour des checklists liées utilise le même historique sur mobile. Les modifications effectuées dans les listes restent conservées.
+
+L'historique s'active sous 768 px ou avec un pointeur tactile, puis reste actif après redimensionnement. Il utilise des entrées à URL constante, sans recharger le document. Les états d'écran restent en mémoire ; un rechargement ou un changement de foyer ouvre un nouvel historique.
+
+Validation : **95 tests unitaires réussis**, TypeScript, lint ciblé et compilation de production réussis. Le parcours navigateur de production passe à la souris et en émulation tactile : Retour/Suivant, racine protégée, menus et fenêtres, checklists liées imbriquées, bouton Retour de l'interface, retours rapides, rechargement et redimensionnement. Les tests vérifient la conservation du document et des modifications. Essais avec un Edge isolé, sans test sur appareil physique ni sur le NAS. Le lint global conserve les quatre erreurs et deux avertissements préexistants de `home-app.tsx`, contrôlés avant/après modification.
+
 ## Éléments liés à d'autres checklists
 
 Un élément peut pointer vers une autre checklist du même foyer. **Ajouter une checklist liée** crée un élément au libellé prérempli et personnalisable ; **⋯ → Modifier l’élément** associe, change ou retire le lien d'un élément existant. Le libellé cliquable ouvre la cible, avec un bouton Retour et une navigation possible entre liens successifs. Le tableau de bord et le mode cuisine retrouvent leur contexte sans changer les préférences de listes. Les cases restent indépendantes et le contenu lié n'est jamais recopié dans la liste principale.

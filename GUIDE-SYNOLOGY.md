@@ -137,6 +137,8 @@ La carte électrique indique la **prochaine bascule vers les heures creuses ou p
 
 Sur mobile, choisir une page ferme automatiquement le menu latéral. Pour ouvrir un menu ⋯, touchez puis relâchez le bouton ; commencer un défilement sur ce bouton laisse défiler la liste sans ouvrir son menu.
 
+Le bouton **Retour de l'appareil** retrouve l'écran précédent, y compris la liste sélectionnée et les checklists liées. Si un menu ou une fenêtre est ouvert, Retour le ferme d'abord. Sans écran précédent, vous restez dans l'application. Recharger la page ou changer de foyer démarre un nouvel historique ; revenir en arrière conserve les modifications faites dans les listes.
+
 ## Afficher ou masquer les cartes du tableau de bord
 
 Dans **Paramètres → Tableau de bord sur cet appareil**, activez ou désactivez séparément **Afficher la carte électricité** et **Afficher la carte poubelles**. Les deux cartes sont visibles par défaut. Le changement est immédiat, sans bouton d'enregistrement, et concerne le tableau de bord classique comme le mode cuisine.

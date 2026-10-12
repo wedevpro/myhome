@@ -111,6 +111,95 @@ async function openToiletries() {
   await press(element('button[aria-label="Ouvrir la checklist Trousse de toilette"]'));
   await until(`!!(${region("Trousse de toilette")})`, "linked checklist content");
 }
+const pageTitle = text => text === "Tableau de bord"
+  ? "document.querySelector('h1')?.textContent.startsWith('Bonjour')"
+  : `document.querySelector('h1')?.textContent.trim()===${JSON.stringify(text + ".")}`;
+async function markDocument() {
+  const token = "mobile-back-" + Date.now();
+  await evaluate(`window.__mobileBackDocument=${JSON.stringify(token)};window.__mobileBackTraversals=0;window.addEventListener('popstate',()=>window.__mobileBackTraversals++)`);
+  return token;
+}
+async function assertSameDocument(token) {
+  assert.equal(await evaluate("window.__mobileBackDocument"), token, "Back must restore application state without reloading the document");
+  assert.equal(await evaluate("location.origin"), origin, "Back cannot leave the application at its first page");
+}
+// history.back() traverses the same history as the Android device Back button.
+// Controls still receive real coordinate-based touch events through CDP.
+async function traverse(direction, expression, label, token) {
+  const before = await evaluate("window.__mobileBackTraversals");
+  await evaluate(`history.${direction}()`);
+  await until(`window.__mobileBackTraversals>${before}`, label + " history event");
+  await until(expression, label);
+  await pause(150);
+  await assertSameDocument(token);
+}
+async function runMobileBack() {
+  let token = await markDocument();
+  await traverse("back", pageTitle("Tableau de bord"), "first-page back stays on dashboard", token);
+  await navigate("Notes");
+  await navigate("Checklists");
+  await navigate("Paramètres");
+  await traverse("back", pageTitle("Checklists"), "settings back to checklists", token);
+  await traverse("back", pageTitle("Notes"), "checklists back to notes", token);
+  await traverse("back", pageTitle("Tableau de bord"), "notes back to dashboard", token);
+  await traverse("forward", pageTitle("Notes"), "forward to notes", token);
+  await traverse("forward", pageTitle("Checklists"), "forward to checklists", token);
+  await traverse("forward", pageTitle("Paramètres"), "forward to settings", token);
+
+  await press(element('[data-slot="sidebar-trigger"]'));
+  await until("!!document.querySelector('[data-mobile=true][data-state=open]')", "mobile menu open");
+  await traverse("back", "!document.querySelector('[data-mobile=true][data-state=open]')", "back closes the mobile menu first", token);
+  assert.ok(await evaluate(pageTitle("Paramètres")), "Closing the menu cannot change the current page");
+  await press(element('button[aria-label="Notifications"]'));
+  await until("!!document.querySelector('[role=dialog][data-state=open]')", "notification dialog open");
+  await traverse("back", "!document.querySelector('[role=dialog][data-state=open]')", "back closes the dialog first", token);
+  assert.ok(await evaluate(pageTitle("Paramètres")), "Closing a dialog cannot change the current page");
+
+  await navigate("Checklists");
+  await select("Checklist affichée", "Prêts pour les vacances");
+  await press(checkbox("Chargeurs"));
+  await openToiletries();
+  await editItem("Dentifrice", "Prêts pour les vacances");
+  await press(element('button[aria-label="Ouvrir la checklist Prêts pour les vacances"]'));
+  await until(`!!${region("Prêts pour les vacances")}`, "second-level linked checklist");
+  await traverse("back", `!!${region("Trousse de toilette")}`, "back restores the first linked checklist", token);
+  await traverse("back", `!!${region("Prêts pour les vacances")}`, "back restores the originating checklist", token);
+  assert.equal(await evaluate(`${checkbox("Chargeurs")}.getAttribute('aria-checked')`), "true", "Demo changes must survive history traversal without a reload");
+  await traverse("forward", `!!${region("Trousse de toilette")}`, "forward restores the linked checklist", token);
+  await traverse("back", `!!${region("Prêts pour les vacances")}`, "return before testing the UI Back control", token);
+  await navigate("Notes");
+  await navigate("Checklists");
+  await openToiletries();
+  await press(element('.checklist-back-button'));
+  await until(`!!${region("Prêts pour les vacances")}`, "checklist UI Back restores its parent");
+  await traverse("back", pageTitle("Notes"), "native Back after UI Back has no duplicate parent entry", token);
+
+  await navigate("Contacts");
+  await navigate("Paramètres");
+  await evaluate("history.back();setTimeout(()=>history.back(),60)");
+  await until(pageTitle("Notes"), "two quick Back presses restore the second previous page");
+  await assertSameDocument(token);
+  await cdp.send("Emulation.setDeviceMetricsOverride", { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
+  await cdp.send("Emulation.setTouchEmulationEnabled", { enabled: false });
+  mobile = false;
+  await navigate("Contacts");
+  await traverse("back", pageTitle("Notes"), "history remains consistent after resizing", token);
+  await cdp.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: true });
+  await cdp.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 1 });
+  mobile = true;
+  await capture("mobile-native-back");
+  await cdp.send("Page.reload");
+  await until("document.querySelector('.status-grid')?.getAttribute('data-device-pending')==='false'", "dashboard hydrated after reload");
+  token = await markDocument();
+  await navigate("Notes");
+  await traverse("back", pageTitle("Tableau de bord"), "back after reload restores its new root", token);
+  await traverse("back", pageTitle("Tableau de bord"), "root guard remains active after reload", token);
+  outcomes.push({ scenario: "mobile-device-back", passed: true });
+  console.log("PASS mobile device Back: root, pages, forward, overlays, linked checklists, reload and resize");
+  // Start the existing checklist flow with pristine demo data after its mutations.
+  await cdp.send("Page.reload");
+  await until("document.querySelector('.status-grid')?.getAttribute('data-device-pending')==='false'", "pristine demo after Back regression");
+}
 async function run(mobileMode) {
   mobile = mobileMode;
   await cdp.send("Emulation.setDeviceMetricsOverride", { width: mobile ? 390 : 1280, height: mobile ? 844 : 900, deviceScaleFactor: 1, mobile });
@@ -118,6 +207,7 @@ async function run(mobileMode) {
   await cdp.send("Page.navigate", { url: origin });
   await until(`!!(${element('[data-slot="sidebar-trigger"]')})`, "hydrated demo");
   await until("document.querySelector('.status-grid')?.getAttribute('data-device-pending')==='false'", "hydrated dashboard");
+  if (mobile) await runMobileBack();
   await navigate("Checklists");
   await select("Checklist affichée", "Prêts pour les vacances");
   assert.equal(await evaluate(`${region("Prêts pour les vacances")}.querySelectorAll('.item-row').length`), 3);
@@ -194,6 +284,10 @@ try {
   assert.equal(errors.length, 0, "No client runtime exceptions");
 } catch (error) {
   await capture("failure").catch(() => {});
+  if (cdp) {
+    const state = await evaluate("({url:location.href,title:document.querySelector('h1')?.textContent,history:history.state,traversals:window.__mobileBackTraversals,documentToken:window.__mobileBackDocument,dialogs:[...document.querySelectorAll('[role=dialog]')].map(e=>e.textContent),body:document.body.innerText})").catch(() => null);
+    writeFileSync(join(artifacts, "failure-state.json"), JSON.stringify(state, null, 2));
+  }
   writeFileSync(join(artifacts, "failure.txt"), error.stack);
   throw error;
 } finally {

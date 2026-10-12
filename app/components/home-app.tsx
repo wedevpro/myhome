@@ -1,5 +1,5 @@
 "use client";
-import { useCallback,useEffect,useRef,useState } from "react";
+import { useCallback,useEffect,useMemo,useRef,useState } from "react";
 import { House,LayoutDashboard,ShoppingBasket,ListChecks,StickyNote,Users,Zap,Trash2,Settings,Plus,ArrowLeft,ArrowUpRight,ChevronDown,Bell,Maximize2,Minimize2,Ellipsis,Check,Pencil,Copy,RotateCcw,Phone,Mail,MapPin,Folder,Carrot,Plane,Heart,ShoppingBag,LogOut,WifiOff } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
@@ -25,12 +25,14 @@ import ListPanel from "./list-panel";
 import KitchenRotation from "./kitchen-rotation";
 import ElectricityTransition from "./electricity-transition";
 import { useKitchenRotation } from "@/hooks/use-kitchen-rotation";
+import { useAppNavigationHistory } from "@/hooks/use-app-navigation-history";
 const menus=[{id:"dashboard",name:"Tableau de bord",Icon:LayoutDashboard},{id:"shopping",name:"Listes de courses",Icon:ShoppingBasket},{id:"checklist",name:"Checklists",Icon:ListChecks},{id:"notes",name:"Notes",Icon:StickyNote},{id:"contacts",name:"Contacts",Icon:Users}];
 const houseMenus=[{id:"household",name:"Membres du foyer",Icon:Users},{id:"electricity",name:"Électricité",Icon:Zap},{id:"waste",name:"Sortie des poubelles",Icon:Trash2},{id:"settings",name:"Paramètres",Icon:Settings}];
 const icons={basket:ShoppingBasket,home:House,carrot:Carrot,plane:Plane,check:ListChecks,heart:Heart,bag:ShoppingBag};
 type Modal={type:"edit";kind:Kind;entity?:Entity}|{type:"scan";listId:string}|{type:"add";listId:string;text:string;barcode?:string}|{type:"household"}|{type:"notifications"};
 type Command={action:string;[key:string]:unknown};
 type ChecklistVisit={householdId:string;view:string;checklistId:string;scrollY:number};
+type NavigationScene={view:string;shoppingSelection:string;checkSelection:string;catalog:boolean;wall:boolean;checklistHistory:ChecklistVisit[];search:string;category:string;scrollY:number};
 const localSettingFallback=new Map<string,string>();
 function readLocalSetting(key:string):string|null {
  if(localSettingFallback.has(key))return localSettingFallback.get(key)??null;
@@ -49,6 +51,24 @@ export default function HomeApp({user}:{user:User|null}) {
  const [busy,setBusy]=useState(false),[loading,setLoading]=useState(!!user),[error,setError]=useState(""),[online,setOnline]=useState(true),[wall,setWall]=useState(false),[now,setNow]=useState(new Date()),[rotation,setRotation]=useState(0);
  const [search,setSearch]=useState(""),[category,setCategory]=useState(""),[catalog,setCatalog]=useState(false),[shoppingSelection,setShoppingSelection]=useState(""),[checkSelection,setCheckSelection]=useState("");
  const [checklistHistory,setChecklistHistory]=useState<ChecklistVisit[]>([]);
+ const navigationScene=useMemo<NavigationScene>(()=>({view,shoppingSelection,checkSelection,catalog,wall,checklistHistory,search,category,scrollY:0}),[view,shoppingSelection,checkSelection,catalog,wall,checklistHistory,search,category]);
+ const navigationKey=JSON.stringify({view,shoppingSelection:view==="shopping"?shoppingSelection:"",checkSelection:view==="checklist"?checkSelection:"",catalog:view==="shopping"&&catalog,wall,checklistHistory,category:view==="contacts"?category:""});
+ const captureNavigation=useCallback((scene:NavigationScene)=>({...scene,scrollY:window.scrollY}),[]);
+ const restoreNavigation=useCallback((scene:NavigationScene)=>{
+  setView(scene.view);setShoppingSelection(scene.shoppingSelection);setCheckSelection(scene.checkSelection);setCatalog(scene.catalog);setWall(scene.wall);setChecklistHistory(scene.checklistHistory);setSearch(scene.search);setCategory(scene.category);
+  setMobileMenuOpen(false);setModal(null);setConfirm(null);setError("");
+  if(!scene.wall&&document.fullscreenElement)void document.exitFullscreen().catch(()=>{});
+  requestAnimationFrame(()=>window.scrollTo({top:scene.scrollY,behavior:"instant"}));
+ },[]);
+ const closeNavigationLayer=useCallback(()=>{
+  const layer=document.querySelector('[role="dialog"][data-state="open"],[role="alertdialog"][data-state="open"],[role="menu"][data-state="open"],[data-slot="select-content"][data-state="open"],[data-slot="combobox-content"][data-open]');
+  if(!layer&&!modal&&!confirm&&!mobileMenuOpen)return false;
+  const escape=new KeyboardEvent("keydown",{key:"Escape",bubbles:true,cancelable:true});
+  document.dispatchEvent(escape);
+  if(!escape.defaultPrevented){setMobileMenuOpen(false);setModal(null);setConfirm(null);}
+  return true;
+ },[modal,confirm,mobileMenuOpen]);
+ const nativeBack=useAppNavigationHistory({scene:navigationScene,sceneKey:navigationKey,scope:snapshot.household?.id,ready:deviceDashboardHydrated,capture:captureNavigation,onRestore:restoreNavigation,onBeforeBack:closeNavigationLayer});
  const activeHouse=useRef<string|undefined>(undefined),generation=useRef(0),mutation=useRef(false),snapshotRef=useRef(snapshot);snapshotRef.current=snapshot;
  const refresh=useCallback(async(house?:string)=>{
   if(!user||demo||mutation.current)return;
@@ -154,6 +174,7 @@ export default function HomeApp({user}:{user:User|null}) {
   requestAnimationFrame(()=>window.scrollTo({top:0,behavior:"instant"}));
  };
  const returnFromChecklist=()=>{
+  if(nativeBack())return;
   const previous=checklistHistory[checklistHistory.length-1];
   if(!previous||previous.householdId!==snapshotRef.current.household?.id){setChecklistHistory([]);return;}
   setChecklistHistory(history=>history.slice(0,-1));setCheckSelection(previous.checklistId);setView(previous.view);setError("");resetRotation();

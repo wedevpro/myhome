@@ -21,6 +21,16 @@ Le déploiement, le proxy HTTPS et les sauvegardes sont décrits dans [GUIDE-SYN
 | Administration | Promotion, rétrogradation et retrait de membres. Protection atomique du dernier administrateur. Un membre retiré ne peut pas revenir avec le même code. |
 | Traçabilité | `created_by`, `created_at`, `updated_by`, `updated_at` fixés côté serveur. UUID de révision pour rejeter les écrasements concurrents. |
 
+## Navigation mobile
+
+`lib/app-navigation-history.ts` gère les entrées History API à URL constante. Son curseur `__myhomeia_navigation` est ajouté sans écraser les champs de Next.js. Les scènes restent dans une table en mémoire : page, listes sélectionnées, catalogue, mode cuisine, retour entre checklists liées, recherche, catégorie et défilement de la page. Un changement d'écran crée une entrée ; une saisie ou un défilement actualise la scène courante sans multiplier les étapes de retour.
+
+`hooks/use-app-navigation-history.ts` active le contrôleur après hydratation, sous 768 px ou avec un pointeur tactile. L'activation persiste pendant les redimensionnements. `popstate` restaure l'écran sans recharger le document ni annuler les mutations de données. Les menus et fenêtres consomment d'abord le retour via leur fermeture. Une entrée de garde avant la première scène renvoie vers celle-ci avec `history.go(1)` pour rester dans l'application tout en conservant la branche Suivant.
+
+Le foyer définit la portée de l'historique : changer de foyer ou recharger la page crée une nouvelle portée et ne restaure pas les anciennes scènes. Le nettoyage retire les écouteurs sans déclencher de navigation ; il tolère le remontage des effets en Strict Mode. Le bouton Retour des checklists liées appelle le même contrôleur lorsqu'il est actif, et conserve son comportement existant sur ordinateur.
+
+Les tests unitaires simulent les traversées asynchrones, les branches, les fenêtres, les retours rapides, les portées et les métadonnées Next.js. Le test navigateur de production vérifie aussi le document conservé, les liens imbriqués, le rechargement et l'activation persistante après redimensionnement.
+
 ## Comptes et isolation des foyers
 
 Chaque personne crée un compte MyHomeIA avec un nom, une adresse email et un mot de passe d'au moins **12 caractères**. L'adresse email est normalisée ; les mots de passe sont dérivés avec `scrypt` et un sel aléatoire. Aucun mot de passe en clair n'est stocké.
