@@ -2,6 +2,12 @@
 
 12 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
 
+## En-tête mobile accessible pendant le défilement
+
+Sous 768 px, au même seuil que le menu latéral rétractable, l'en-tête utilise `position: sticky` en haut de l'écran. Le bouton du menu reste accessible pendant le défilement de la page. L'en-tête conserve sa place dans le contenu et son fond opaque, avec les menus et fenêtres au-dessus.
+
+Validation : compilation de production et génération du worker réussies. Le CSS compilé contient la règle sticky uniquement dans le breakpoint mobile, avec `top: 0` et `z-index: 20`. La structure et les ancêtres ont été revus ; aucun contrôle visuel sur appareil mobile n'a été effectué pour cette modification.
+
 ## Sélection tactile des produits après défilement
 
 Le sélecteur d'association de code-barres désactive la mise en évidence automatique au survol et le choix au simple relâchement de souris. Les événements souris de compatibilité d'un geste tactile ne peuvent ainsi plus sélectionner une suggestion par ce chemin, ni provoquer son défilement automatique au survol. Le choix explicite au clic/tap et les flèches puis Entrée continuent à cibler l'ID de la ligne choisie. Le défilement natif reste disponible.

@@ -510,3 +510,12 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
 .status-grid[data-device-pending=true] { visibility: hidden; }
 .device-card-option { display: flex; align-items: center; gap: 16px; }
 .device-card-option > label { flex: 1; display: flex; align-items: center; min-height: 44px; font-size: 13px; cursor: pointer; }
+
+/* Keep the menu button available while scrolling with the mobile sidebar. */
+@media(max-width:767px) {
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+}
