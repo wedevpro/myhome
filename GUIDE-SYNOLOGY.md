@@ -91,6 +91,12 @@ Les libellés des éléments sont affichés en **16 px** sur les pages de listes
 
 Le bouton **Supprimer les éléments terminés** est disponible pour les listes de courses et les checklists **éphémères**, avec confirmation et indication du nombre d'éléments concernés. Il s'applique à toute la liste, même si un filtre est actif. Les éléments à faire et les fiches produits sont conservés. Une modification concurrente d'un élément visé bloque l'opération entière ; actualisez la liste et relancez-la. Les éléments cochés après l'ouverture de la confirmation restent dans la liste. Les checklists réutilisables conservent leurs éléments pour la prochaine utilisation.
 
+## Associer un code-barres inconnu
+
+Après un scan caméra, une douchette ou la saisie manuelle d'un code inconnu, la fenêtre **Un nouveau code-barres** permet de **Rechercher un produit existant** par son nom. La recherche ignore les majuscules et les accents. Ouvrez ensuite **Associer à un produit existant**, choisissez le produit trouvé puis validez avec **Ajouter à la liste**.
+
+Vous pouvez effacer la recherche pour retrouver tout le catalogue. Le choix **Créer un nouveau produit** reste disponible même sans résultat. Changer le filtre conserve votre sélection et indique si elle ne correspond plus à la recherche ; si ce produit a été supprimé, choisissez-en un autre avant de valider.
+
 ## Modifier un article de la liste de courses
 
 Le bouton **⋯** de chaque article ouvre les actions **Modifier la quantité et la note** et **Supprimer l’article**. La quantité et son unité s'affichent hors du menu uniquement lorsque la quantité est strictement supérieure à 1 ; cliquer sur la quantité affichée ouvre aussi l'édition. Le menu reste accessible quelle que soit la quantité. Les quantités décimales sont acceptées ; la valeur doit être supérieure à zéro, dans la limite de 10 000. Pour retirer une note, videz son champ puis enregistrez.

@@ -1,6 +1,14 @@
 # État de livraison — MyHomeIA sur Synology
 
-11 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
+12 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
+
+## Recherche de produit après un code-barres inconnu
+
+La fenêtre d'association propose **Rechercher un produit existant** : le nom filtre les produits du foyer sans tenir compte de la casse ni des accents. Un bouton efface la recherche et le nombre de résultats est indiqué, avec un message lorsqu'aucun produit ne correspond. Le choix **Créer un nouveau produit** reste disponible.
+
+La sélection est explicite et reste conservée si la recherche change ; si le produit choisi sort du filtre, un message le précise. Un produit supprimé pendant l'édition doit être remplacé avant validation. Appuyer sur Entrée dans la recherche ne déclenche pas l'ajout à la liste. Le filtre est disponible après scan caméra, douchette ou saisie manuelle d'un code inconnu.
+
+Validation : TypeScript, lint ciblé du nouveau sélecteur et de `Choice`, compilation de production et scénario API existant réussis. Le payload d'association, les gardes de soumission et les états de sélection ont été revus. Le navigateur intégré reste indisponible : les interactions du nouveau sélecteur n'ont pas été vérifiées visuellement. Le lint de `home-app.tsx` conserve ses quatre erreurs préexistantes, sans nouveau diagnostic.
 
 ## Libellés des éléments plus lisibles
 

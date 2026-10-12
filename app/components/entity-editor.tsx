@@ -6,7 +6,7 @@ import { Select,SelectContent,SelectItem,SelectTrigger,SelectValue } from "@/com
 import { DialogTitle,DialogDescription } from "@/components/ui/dialog";
 export const days=["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
 export const labels:Record<Kind,string>={shopping:"liste de courses",checklist:"checklist",item:"élément",product:"produit",note:"note",category:"catégorie",contact:"contact",electricity:"plage d’heures creuses",waste:"sortie de poubelles"};
-export function Choice({value,onChange,options,label}:{value:string;onChange:(v:string)=>void;options:{value:string;label:string}[];label:string}) { return <Select value={value||"none"} onValueChange={v=>onChange(v==="none"?"":v)}><SelectTrigger aria-label={label} className="w-full bg-white text-xs"><SelectValue placeholder={label}/></SelectTrigger><SelectContent>{options.map(o=><SelectItem key={o.value||"none"} value={o.value||"none"}>{o.label}</SelectItem>)}</SelectContent></Select>; }
+export function Choice({value,onChange,options,label,disabled=false}:{value:string;onChange:(v:string)=>void;options:{value:string;label:string}[];label:string;disabled?:boolean}) { return <Select value={value||"none"} disabled={disabled} onValueChange={v=>onChange(v==="none"?"":v)}><SelectTrigger aria-label={label} className="w-full bg-white text-xs"><SelectValue placeholder={label}/></SelectTrigger><SelectContent>{options.map(o=><SelectItem key={o.value||"none"} value={o.value||"none"}>{o.label}</SelectItem>)}</SelectContent></Select>; }
 export function categoryOptions(entities:Entity[],exclude?:string) {
  const categories=entities.filter(e=>e.kind==="category");
  const options:{value:string;label:string}[]=[];const seen=new Set<string>();
