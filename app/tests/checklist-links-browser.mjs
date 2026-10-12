@@ -85,6 +85,10 @@ async function select(label, text) {
   await press(element(`[role="combobox"][aria-label="${label}"]`));
   await press(named(text, '[role="option"]'));
 }
+async function chooseChecklist(name) {
+  await press(named(name, '.tabs-strip .tab-button'));
+  await until(`!!${region(name)}`, "checklist selected from its tab");
+}
 async function replaceInput(expression, text) {
   await press(expression);
   await cdp.send("Input.dispatchKeyEvent", { type: "keyDown", key: "a", code: "KeyA", windowsVirtualKeyCode: 65, modifiers: 2 });
@@ -156,7 +160,7 @@ async function runMobileBack() {
   assert.ok(await evaluate(pageTitle("Paramètres")), "Closing a dialog cannot change the current page");
 
   await navigate("Checklists");
-  await select("Checklist affichée", "Prêts pour les vacances");
+  await chooseChecklist("Prêts pour les vacances");
   await press(checkbox("Chargeurs"));
   await openToiletries();
   await editItem("Dentifrice", "Prêts pour les vacances");
@@ -209,7 +213,7 @@ async function run(mobileMode) {
   await until("document.querySelector('.status-grid')?.getAttribute('data-device-pending')==='false'", "hydrated dashboard");
   if (mobile) await runMobileBack();
   await navigate("Checklists");
-  await select("Checklist affichée", "Prêts pour les vacances");
+  await chooseChecklist("Prêts pour les vacances");
   assert.equal(await evaluate(`${region("Prêts pour les vacances")}.querySelectorAll('.item-row').length`), 3);
   await openToiletries();
   assert.equal(await evaluate(`${checkbox("Brosse à dents")}.getAttribute('aria-checked')`), "false");
@@ -238,9 +242,12 @@ async function run(mobileMode) {
   assert.equal(await evaluate(`${region("Prêts pour les vacances")}.querySelectorAll('.item-row').length`), 4, "Adding a reference creates one item, without copying contents");
   await editItem("Trousse secondaire", "Aucune");
   assert.equal(await evaluate(`!!${row("Trousse secondaire")}.querySelector('.linked-checklist-link')`), false, "Removing a link preserves the label as a normal item");
+  await navigate("Paramètres");
+  await select("Checklist du tableau de bord", "Prêts pour les vacances");
+  await press(named("Enregistrer mes préférences"));
   await navigate("Tableau de bord");
-  await select("Checklist affichée", "Prêts pour les vacances");
   await press(named("Mode cuisine"));
+  await capture(mobile ? "mobile-kitchen-lists" : "desktop-kitchen-lists");
   await openToiletries();
   assert.equal(await evaluate(`${element('.checklist-back-button')}.textContent.trim()`), "Retour au tableau de bord");
   await press(element('.checklist-back-button'));
@@ -248,11 +255,11 @@ async function run(mobileMode) {
   assert.ok(await evaluate(`!!${element('.wall-mode')}`), "Following a link preserves kitchen mode");
   await press(named("Quitter le mode cuisine"));
   await navigate("Checklists");
-  await select("Checklist affichée", "Trousse de toilette");
+  await chooseChecklist("Trousse de toilette");
   await press(element('button[aria-label="Options des tâches"]'));
   await press(named("Supprimer la liste", '[role="menuitem"]'));
   await press(named("Confirmer", '[role="alertdialog"] button'));
-  await select("Checklist affichée", "Prêts pour les vacances");
+  await chooseChecklist("Prêts pour les vacances");
   assert.equal(await evaluate(`${region("Prêts pour les vacances")}.querySelectorAll('.item-row').length`), 4);
   assert.equal(await evaluate(`!!${region("Prêts pour les vacances")}.querySelector('.linked-checklist-link')`), false, "Deleting a target leaves all parent labels and removes their links");
   await capture(mobile ? "mobile-cleaned-links" : "desktop-cleaned-links");

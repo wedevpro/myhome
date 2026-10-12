@@ -17,8 +17,6 @@ type Props = {
   kind: "shopping" | "checklist";
   snapshot: Snapshot;
   busy: boolean;
-  showPicker: boolean;
-  onSelect: (id: string) => void;
   onAdd: (text: string, linkedChecklistId?: string) => Promise<void>;
   onOpenChecklist: (id: string) => void;
   onToggle: (item: Entity) => Promise<void>;
@@ -33,7 +31,7 @@ type Props = {
   onReset: () => void;
 };
 
-export default function ListPanel({ list, kind, snapshot, busy, showPicker, onSelect, onAdd, onOpenChecklist, onToggle, onDelete, onEditItem, onClearCompleted, onReorder, onScan, onNew, onEdit, onRemove, onReset }: Props) {
+export default function ListPanel({ list, kind, snapshot, busy, onAdd, onOpenChecklist, onToggle, onDelete, onEditItem, onClearCompleted, onReorder, onScan, onNew, onEdit, onRemove, onReset }: Props) {
   const [text, setText] = useState("");
   const [query, setQuery] = useState("");
   const [moveTarget, setMoveTarget] = useState<{ id: string; position: string } | null>(null);
@@ -101,7 +99,8 @@ export default function ListPanel({ list, kind, snapshot, busy, showPicker, onSe
     <section className={`panel ${shopping ? "shopping-panel" : "tasks-panel"}`}>
       <div className="panel-heading">
         <span className={`panel-icon ${shopping ? "green" : "coral"}`}>{shopping ? <ShoppingBasket size={21}/> : <ListChecks size={21}/>}</span>
-        <div><h2>{shopping ? "Les courses" : "À faire"}</h2><p>{shopping ? "Tout ce qu’il nous faut." : "Une chose à la fois."}</p></div>
+        <h2 className="list-panel-title">{list?.data.name || (shopping ? "Liste de courses" : "Checklist")}</h2>
+        {list && shopping && <span className="counter">{pending} à acheter</span>}
         <DropdownMenu>
           <DropdownMenuTrigger asChild><button type="button" className="icon-button" disabled={busy} aria-label={shopping ? "Options des courses" : "Options des tâches"}><Ellipsis size={20}/></button></DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -116,12 +115,6 @@ export default function ListPanel({ list, kind, snapshot, busy, showPicker, onSe
         </DropdownMenu>
       </div>
       {list ? <>
-        <div className="list-toolbar">
-          {showPicker
-            ? <Choice label={shopping ? "Liste de courses affichée" : "Checklist affichée"} value={list.id} onChange={onSelect} options={snapshot.entities.filter(entity => entity.kind === kind).map(entity => ({ value: entity.id, label: String(entity.data.name) }))}/>
-            : <span className="list-selector">{list.data.name}</span>}
-          {shopping && <span className="counter">{pending} à acheter</span>}
-        </div>
         <div className="list-entry-controls">
           <form className={shopping ? "add-item" : "add-item add-task"} onSubmit={add}>
             <Plus size={18}/>

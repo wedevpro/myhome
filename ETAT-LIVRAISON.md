@@ -2,6 +2,12 @@
 
 12 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
 
+## En-têtes des courses et checklists
+
+Les encarts affichent directement le **nom de la liste en cours**, aligné avec l'icône, sans descriptif statique ni sélecteur de liste. Les noms longs reviennent à la ligne et le compteur des articles à acheter reste visible dans l'en-tête. Le changement concerne les pages de listes, le tableau de bord et le mode cuisine, y compris la rotation. Les boutons avec icônes au-dessus des encarts restent le moyen de changer de liste sur leurs pages ; les listes du tableau de bord se choisissent dans les paramètres personnels.
+
+Validation : lint ciblé et compilation de production avec TypeScript réussis. Les parcours navigateur existants ont été adaptés aux boutons de listes et aux paramètres du tableau de bord ; ils passent à la souris et en émulation tactile, avec les checklists liées, le mode cuisine et le bouton Retour mobile. Les captures des encarts de checklist et du mode cuisine ont été revues sur ordinateur et à 390 px. Essais avec un Edge isolé, sans test sur appareil physique ni sur le NAS.
+
 ## Bouton Retour sur mobile
 
 Le bouton Retour de l'appareil ou du navigateur retrouve l'écran précédent, avec la liste sélectionnée, les liens entre checklists et la position de défilement de la page. Un menu ou une fenêtre ouverte se ferme d'abord. Sans écran précédent, l'application reste sur l'écran actuel. Le bouton Retour des checklists liées utilise le même historique sur mobile. Les modifications effectuées dans les listes restent conservées.

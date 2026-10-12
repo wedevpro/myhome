@@ -5,6 +5,18 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
 @media(max-width:850px){.status-grid{grid-template-columns:1fr 1fr;gap:12px}.status-symbol{width:37px;height:40px}.status-card{padding:18px 12px;gap:9px}.status-text h2{font-size:15px}.status-text p{font-size:9px}.countdown{padding:0}.countdown strong{font-size:28px}.countdown span{font-size:7px}.panel{padding:18px 14px 0}.lists-grid{gap:15px}.notes-preview{gap:12px}.note-card{padding:15px}.settings-grid{grid-template-columns:1fr}}
 @media(max-width:767px){.workspace{width:100%}.mobile-trigger{display:block;color:#85719d}.topbar{padding:0 18px;height:62px}.breadcrumb{gap:9px;font-size:10px}.top-actions{gap:12px}.live-label{display:none}.page-content{padding:26px 18px 20px}.page-heading{align-items:center;margin-bottom:23px}.eyebrow{font-size:7px;letter-spacing:1px}h1{font-size:28px}.page-heading p{font-size:11px}.heading-right{gap:9px}.date{font-size:9px}.secondary-button{font-size:10px;padding:9px 10px}.status-grid{gap:11px}.status-card{flex-wrap:wrap;min-height:148px;padding:16px;align-content:flex-start}.status-symbol{width:33px;height:33px;order:0}.status-text{order:2;width:100%;margin-top:5px}.status-text>span{font-size:7px}.status-text h2{font-size:15px;margin-top:5px}.status-text p{font-size:9px}.countdown{margin-left:auto;order:1;flex-direction:row;gap:4px}.countdown strong{font-size:24px}.countdown span{font-size:7px;max-width:30px;white-space:normal}.lists-grid{grid-template-columns:1fr;gap:18px}.panel{padding:21px 20px 0}.item-row{min-height:54px}.item-label{font-size:13px}.item-label small{font-size:10px}.quantity{font-size:10px}.add-item input,.scan-button{font-size:12px}.scan-button{min-height:44px}.add-item{min-height:44px}.item-delete{opacity:1}.notes-preview{grid-template-columns:1fr}.note-card{min-height:150px}.note-card h3{font-size:14px}.note-card p{font-size:12px}.content-grid{grid-template-columns:1fr}.contacts-layout{grid-template-columns:1fr}.category-tree{max-width:none}.members-table td,.members-table th{padding:12px 6px;font-size:10px}.member-name small{max-width:150px;overflow-wrap:anywhere}.banner{font-size:10px;line-height:1.6;align-items:flex-start}.page-heading .title-actions{flex-direction:column}.wall-mode .page-content{padding:18px}.wall-mode .item-label{font-size:16px}.form-row{flex-wrap:wrap}.form-row>.field{min-width:120px}}
 
+.panel-heading .list-panel-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.panel-heading .counter {
+  flex-shrink: 0;
+}
+
 /* Theme changes are driven by the user's selection, never by a media query. */
 .dark body,
 .dark main.min-h-screen {

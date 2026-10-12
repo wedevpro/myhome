@@ -21,6 +21,8 @@ Le déploiement, le proxy HTTPS et les sauvegardes sont décrits dans [GUIDE-SYN
 | Administration | Promotion, rétrogradation et retrait de membres. Protection atomique du dernier administrateur. Un membre retiré ne peut pas revenir avec le même code. |
 | Traçabilité | `created_by`, `created_at`, `updated_by`, `updated_at` fixés côté serveur. UUID de révision pour rejeter les écrasements concurrents. |
 
+Les encarts de courses et checklists partagent `components/list-panel.tsx`. Leur titre affiche directement le nom de la liste, sans descriptif ni sélecteur, avec retour à la ligne des noms longs. Les pages de listes utilisent leurs onglets avec icônes pour la sélection ; les encarts du tableau de bord et du mode cuisine suivent les préférences personnelles. Le compteur des articles à acheter figure dans l'en-tête.
+
 ## Navigation mobile
 
 `lib/app-navigation-history.ts` gère les entrées History API à URL constante. Son curseur `__myhomeia_navigation` est ajouté sans écraser les champs de Next.js. Les scènes restent dans une table en mémoire : page, listes sélectionnées, catalogue, mode cuisine, retour entre checklists liées, recherche, catégorie et défilement de la page. Un changement d'écran crée une entrée ; une saisie ou un défilement actualise la scène courante sans multiplier les étapes de retour.
