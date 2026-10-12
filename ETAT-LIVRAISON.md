@@ -2,6 +2,12 @@
 
 12 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
 
+## Boutons des listes de courses
+
+Le scan apparaît à droite du champ **Ajouter un produit…**, sous la forme d'un bouton à icône seule, avec libellé accessible et infobulle. Sa cible mesure 44 × 44 px, ou 49 × 49 px en mode cuisine. Le bouton **Supprimer les éléments terminés** se trouve sous la zone des articles. Ces dispositions s'appliquent aux pages de courses, au tableau de bord et au mode cuisine ; la disposition des checklists est conservée.
+
+Validation : lint ciblé et compilation de production avec TypeScript réussis. Les parcours navigateur existants passent à la souris et en émulation tactile ; les captures du mode cuisine confirment le scanner à droite du champ d'ajout sur ordinateur et à 390 px. Essais avec un Edge isolé, sans test sur appareil physique ni sur le NAS.
+
 ## Ajout des tâches de checklist
 
 Le bouton **Ajouter une checklist liée** sous le champ d'ajout et sa fenêtre dédiée sont supprimés, avec leurs états, gestionnaire et styles. Une tâche s'ajoute via **Ajouter une tâche…** ; son menu **⋯ → Modifier l’élément** permet ensuite de lui associer une autre checklist. Ce changement s'applique également au tableau de bord et au mode cuisine. Les liens existants restent consultables et modifiables.

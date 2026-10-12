@@ -44,6 +44,7 @@ export default function ListPanel({ list, kind, snapshot, busy, onAdd, onOpenChe
   const pending = items.filter(item => !item.data.checked).length;
   const completed = items.filter(item => item.data.checked);
   const canClearCompleted = shopping || !list?.data.reusable;
+  const clearCompletedButton = canClearCompleted && <button type="button" className="secondary-button clear-completed-button" disabled={busy || completed.length === 0} onClick={() => onClearCompleted(completed)}><Trash2 size={15}/>Supprimer les éléments terminés ({completed.length})</button>;
   const itemPositions = new Map(items.map((item, index) => [item.id, index]));
   const movingItem = items.find(item => item.id === moveTarget?.id);
   const firstPosition = movingItem?.data.checked ? pending + 1 : 1;
@@ -109,8 +110,8 @@ export default function ListPanel({ list, kind, snapshot, busy, onAdd, onOpenChe
             </Combobox> : <input placeholder="Ajouter une tâche…" aria-label="Ajouter une tâche" disabled={busy} value={text} onChange={event => setText(event.target.value)} maxLength={150}/>}
             <button type="submit" disabled={busy || !text.trim()} aria-label={shopping ? "Ajouter le produit" : "Ajouter la tâche"}><CornerDownLeft size={18}/></button>
           </form>
-          {shopping && <button type="button" className="scan-button" disabled={busy} onClick={onScan}><ScanBarcode size={19}/>Scanner un code-barres</button>}
-          {canClearCompleted && <button type="button" className="secondary-button clear-completed-button" disabled={busy || completed.length === 0} onClick={() => onClearCompleted(completed)}><Trash2 size={15}/>Supprimer les éléments terminés ({completed.length})</button>}
+          {shopping && <button type="button" className="scan-button" disabled={busy} onClick={onScan} aria-label="Scanner un code-barres" title="Scanner un code-barres"><ScanBarcode size={21} aria-hidden="true"/></button>}
+          {!shopping && clearCompletedButton}
         </div>
         {!shopping && <>
           <div className="checklist-controls">
@@ -168,6 +169,7 @@ export default function ListPanel({ list, kind, snapshot, busy, onAdd, onOpenChe
           {items.length === 0 && <p className="helper py-7 text-center">{shopping ? "Votre liste est prête à accueillir les courses." : "Rien à faire pour le moment. Profitez-en."}</p>}
           {!shopping && items.length > 0 && visibleItems.length === 0 && <div className="checklist-no-results"><p className="helper">Aucun élément ne correspond au filtre.</p><button type="button" className="secondary-button" onClick={() => setQuery("")}>Afficher tous les éléments</button></div>}
         </div>
+        {shopping && clearCompletedButton}
         {!shopping && <div className="task-tip"><CircleCheck size={19}/><span>{list.data.reusable ? "Votre liste reste là pour une prochaine fois." : "Supprimez les éléments terminés quand vous le souhaitez."}</span></div>}
         <footer className="panel-footer">
           <span>{shopping ? "Partagée avec le foyer" : list.data.reusable ? "Liste réutilisable" : "Liste éphémère"}</span>

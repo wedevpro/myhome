@@ -447,7 +447,12 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
 }
 
 .list-entry-controls .add-item, .list-entry-controls .scan-button { margin-top: 0; }
+.shopping-panel .list-entry-controls { flex-direction: row; align-items: center; }
+.shopping-panel .list-entry-controls .add-item { flex: 1; min-width: 0; }
+.shopping-panel .scan-button { flex: 0 0 44px; width: 44px; height: 44px; min-height: 44px; padding: 0; }
+.wall-mode .shopping-panel .scan-button { flex-basis: 49px; width: 49px; height: 49px; min-height: 49px; }
 .clear-completed-button { align-self: flex-start; min-height: 36px; white-space: normal; text-align: left; }
+.shopping-panel > .clear-completed-button { margin-top: 14px; }
 .clear-completed-button:disabled { opacity: .4; cursor: default; }
 /* Let the page take over when a list is short or reaches its scroll boundaries. */
 .shopping-items, .task-items { max-height: 56vh; min-height: 0; overflow-y: auto; overscroll-behavior: auto; scrollbar-gutter: stable; }

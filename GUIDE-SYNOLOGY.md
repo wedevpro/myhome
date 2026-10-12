@@ -83,7 +83,7 @@ La sauvegarde contient les comptes, les données des foyers et les clés Push. P
 
 ## Ajouter et nettoyer les listes
 
-Les champs **Ajouter un produit…** et **Ajouter une tâche…** se trouvent maintenant en haut de leur liste, avec **Scanner un code-barres** pour les courses. Les éléments des longues listes défilent dans leur propre zone ; les commandes d'ajout restent au-dessus.
+Les champs **Ajouter un produit…** et **Ajouter une tâche…** se trouvent en haut de leur liste. Pour les courses, le bouton de scan est placé **à droite du champ d'ajout**, avec uniquement une icône de code-barres. Les éléments des longues listes défilent dans leur propre zone ; les commandes d'ajout restent au-dessus.
 
 Les listes laissent le défilement passer à la page lorsqu'elles sont vides ou courtes, ou à leurs extrémités. Le navigateur gère ce relais ; selon l'appareil, un nouveau mouvement peut être nécessaire après avoir atteint le bord.
 
@@ -91,7 +91,7 @@ Dans les courses et toutes les checklists, les éléments cochés passent en bas
 
 Les libellés des éléments sont affichés en **16 px** sur les pages de listes et le tableau de bord classique. En mode cuisine, ils passent à **22 px**, ou **20 px** sur les petits écrans, avec retour à la ligne des textes longs.
 
-Le bouton **Supprimer les éléments terminés** est disponible pour les listes de courses et les checklists **éphémères**, avec confirmation et indication du nombre d'éléments concernés. Il s'applique à toute la liste, même si un filtre est actif. Les éléments à faire et les fiches produits sont conservés. Une modification concurrente d'un élément visé bloque l'opération entière ; actualisez la liste et relancez-la. Les éléments cochés après l'ouverture de la confirmation restent dans la liste. Les checklists réutilisables conservent leurs éléments pour la prochaine utilisation.
+Le bouton **Supprimer les éléments terminés** se trouve **sous les articles** dans les listes de courses et reste en haut des checklists **éphémères**, avec confirmation et indication du nombre d'éléments concernés. Il s'applique à toute la liste, même si un filtre est actif. Les éléments à faire et les fiches produits sont conservés. Une modification concurrente d'un élément visé bloque l'opération entière ; actualisez la liste et relancez-la. Les éléments cochés après l'ouverture de la confirmation restent dans la liste. Les checklists réutilisables conservent leurs éléments pour la prochaine utilisation.
 
 ## Associer un code-barres inconnu
 
