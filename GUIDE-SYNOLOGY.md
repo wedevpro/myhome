@@ -97,6 +97,8 @@ Le bouton **Supprimer les éléments terminés** est disponible pour les listes 
 
 Après un scan caméra, une douchette ou la saisie manuelle d'un code inconnu, la fenêtre **Un nouveau code-barres** propose un seul champ **Nom du produit** avec auto-complétion. Saisissez le nom ou choisissez une suggestion, puis validez avec **Ajouter à la liste**.
 
+Sur mobile, faites défiler les suggestions puis touchez le produit souhaité. Le défilement seul ne sélectionne pas de produit. Au clavier, les flèches et Entrée permettent de choisir une suggestion.
+
 Si le nom complet correspond à un produit du foyer, sans tenir compte des majuscules, des accents ni des espaces aux extrémités, le code est ajouté à ce produit. Un nom inconnu crée un produit avec le nom saisi. Les suggestions permettent aussi de choisir directement un produit ; une correspondance partielle seule ne suffit pas à l'associer. Si plusieurs produits ont le même nom, choisissez une suggestion pour préciser lequel. Si un produit choisi a été supprimé, faites un nouveau choix avant de valider.
 
 ## Modifier un article de la liste de courses

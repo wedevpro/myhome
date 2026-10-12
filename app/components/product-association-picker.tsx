@@ -39,6 +39,9 @@ export default function ProductAssociationPicker({ products, name, onNameChange,
         open={open}
         onOpenChange={setOpen}
         disabled={disabled}
+        // Touch browsers can emit mouse hover events before the final click.
+        // Keep them from moving the suggestions under the user's finger.
+        highlightItemOnHover={false}
         itemToStringLabel={product => product.data.name || ""}
         itemToStringValue={product => product.id}
         isItemEqualToValue={(item, value) => item.id === value.id}
@@ -75,7 +78,19 @@ export default function ProductAssociationPicker({ products, name, onNameChange,
         </div>
         <ComboboxContent portalContainer={portalContainer}>
           <ComboboxEmpty>Saisissez un nouveau nom puis validez pour créer le produit.</ComboboxEmpty>
-          <ComboboxList>{(product: Entity) => <ComboboxItem key={product.id} value={product}><span className="flex min-w-0 flex-col"><span>{product.data.name}</span>{(product.data.category || product.data.barcodes?.[0]) && <small className="text-muted-foreground">{[product.data.category, product.data.barcodes?.[0]].filter(Boolean).join(" · ")}</small>}</span></ComboboxItem>}</ComboboxList>
+          <ComboboxList>{(product: Entity) => (
+            <ComboboxItem
+              key={product.id}
+              value={product}
+              // Select on click/Enter, never on a drag release after scrolling.
+              onMouseUp={event => event.preventBaseUIHandler()}
+            >
+              <span className="flex min-w-0 flex-col">
+                <span>{product.data.name}</span>
+                {(product.data.category || product.data.barcodes?.[0]) && <small className="text-muted-foreground">{[product.data.category, product.data.barcodes?.[0]].filter(Boolean).join(" · ")}</small>}
+              </span>
+            </ComboboxItem>
+          )}</ComboboxList>
         </ComboboxContent>
       </Combobox>
       <p id={statusId} role="status" className={missingSelected || ambiguousName ? "error-text" : "helper"}>

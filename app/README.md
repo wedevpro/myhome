@@ -50,6 +50,7 @@ Le réglage HTTP ci-dessus concerne uniquement le développement local. La produ
 | `npm start` | Démarre le serveur standalone et le processus supervisé de rappels. Configurer au préalable l'environnement de production, notamment `SITE_ORIGIN`. |
 | `npm test` | Vérifie les calculs électriques, la rotation et les gestes tactiles, les préférences propres à l'appareil, les listes, l'authentification et le stockage SQLite sur des bases de test isolées. |
 | `npm run test:api` | Démarre une instance standalone isolée, teste les API et vérifie la persistance après redémarrage. Nécessite un build préalable. |
+| `npm run test:browser` | Vérifie l'auto-complétion dans un navigateur isolé, avec clics, défilement tactile et clavier. Nécessite le CSS du build et un navigateur Chromium installé. |
 
 Ordre de vérification :
 
@@ -60,6 +61,8 @@ npm run test:api
 ```
 
 Le test API choisit un port disponible et utilise une base temporaire ; il ne modifie pas les données du foyer. Le contrôle de santé est `GET /api/health`.
+
+Le test navigateur utilise par défaut Edge installé sous Windows ; `EDGE_PATH` permet de préciser le chemin d'un autre exécutable Chromium installé. Il sert une fixture sur `127.0.0.1` avec 100 produits fictifs et un profil temporaire. Les traces et captures restent dans `.sites-runtime/product-association-browser/`, ignoré par Git et exclu du package NAS. L'émulation tactile ne remplace pas un essai sur téléphone physique.
 
 La compilation Next.js de production et la validation du fichier Compose ont réussi sur le poste de préparation. Les résultats détaillés des suites de tests sont indiqués à la livraison. Le moteur Docker local étant arrêté, la construction et l'exécution de l'image Docker n'ont pas été testées ; aucun essai direct sur le NAS ni QA dans le navigateur intégré n'a été effectué. Caméras, douchette et réception Push restent à vérifier sur les appareils réels.
 

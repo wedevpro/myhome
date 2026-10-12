@@ -2,6 +2,12 @@
 
 12 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
 
+## Sélection tactile des produits après défilement
+
+Le sélecteur d'association de code-barres désactive la mise en évidence automatique au survol et le choix au simple relâchement de souris. Les événements souris de compatibilité d'un geste tactile ne peuvent ainsi plus sélectionner une suggestion par ce chemin, ni provoquer son défilement automatique au survol. Le choix explicite au clic/tap et les flèches puis Entrée continuent à cibler l'ID de la ligne choisie. Le défilement natif reste disponible.
+
+Validation : **10 scénarios navigateur réussis**, avec le composant réel dans sa fenêtre Radix, le CSS de production et 100 produits fictifs. Ils vérifient les ID/noms après molette ou défilement tactile, sans filtre/avec filtre, avec une fenêtre elle-même défilante, l'absence de choix pendant le scroll et la sélection clavier sans soumission du formulaire. Le test des événements souris de compatibilité échoue sur l'ancien composant : un `mouseup` sans nouveau clic sélectionne un produit ; il passe avec le correctif. TypeScript, lint ciblé et compilation de production réussis. Le navigateur intégré reste indisponible ; ces essais ont utilisé un Edge isolé avec émulation tactile, sans essai sur un téléphone physique ni sur le NAS.
+
 ## Relais du défilement des listes vers la page
 
 Les zones d'éléments des courses et checklists utilisent désormais `overscroll-behavior: auto` au lieu de `contain`. La page peut prendre le relais lorsque la liste est vide ou courte, ou lorsqu'elle atteint son début/sa fin. Le défilement interne des longues listes, leur hauteur maximale et la rotation cuisine sont conservés.
