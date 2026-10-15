@@ -4,8 +4,11 @@ import android.app.Activity;
 import android.appwidget.AppWidgetManager;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Typeface;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -34,7 +37,7 @@ public class WidgetConfigureActivity extends Activity {
     private Spinner lists;
     private Button save;
     private final List<JSONObject> householdOptions = new ArrayList<>();
-    private final List<JSONObject> listOptions = new ArrayList<>();
+    private final List<ListOption> listOptions = new ArrayList<>();
     private JSONObject snapshot;
     private String loadedOrigin = "", loadedCookie = "", selectedHousehold = "";
     private boolean openedLogin;
@@ -107,6 +110,12 @@ public class WidgetConfigureActivity extends Activity {
             }
             @Override public void onNothingSelected(AdapterView<?> parent) { save.setEnabled(false); }
         });
+        lists.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                save.setEnabled(snapshot != null && lists.isEnabled() && listAt(position) != null);
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) { save.setEnabled(false); }
+        });
         MainActivity.applyInsets(scroll);
         setContentView(scroll);
     }
@@ -160,6 +169,58 @@ public class WidgetConfigureActivity extends Activity {
         return adapter;
     }
 
+    /** A null list marks a section heading, never a selectable destination. */
+    private static final class ListOption {
+        final String label;
+        final JSONObject list;
+
+        ListOption(String label, JSONObject list) { this.label = label; this.list = list; }
+        @Override public String toString() { return label; }
+    }
+
+    private final class GroupedListAdapter extends ArrayAdapter<ListOption> {
+        GroupedListAdapter() {
+            super(WidgetConfigureActivity.this, android.R.layout.simple_spinner_item, listOptions);
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        }
+
+        @Override public boolean areAllItemsEnabled() { return false; }
+        @Override public boolean isEnabled(int position) { return listAt(position) != null; }
+
+        @Override public View getDropDownView(int position, View convertView, ViewGroup parent) {
+            TextView row = (TextView) super.getDropDownView(position, convertView, parent);
+            boolean heading = !isEnabled(position);
+            row.setEnabled(!heading);
+            row.setTypeface(null, heading ? Typeface.BOLD : Typeface.NORMAL);
+            row.setTextSize(heading ? 14 : 16);
+            row.setTextColor(heading ? Color.rgb(83, 100, 76) : Color.rgb(37, 52, 42));
+            row.setBackgroundColor(heading ? Color.rgb(231, 236, 223) : Color.TRANSPARENT);
+            row.setPadding(dp(heading ? 16 : 32), dp(12), dp(16), dp(12));
+            row.setMinimumHeight(dp(48));
+            if (Build.VERSION.SDK_INT >= 28) row.setAccessibilityHeading(heading);
+            return row;
+        }
+    }
+
+    private JSONObject listAt(int position) {
+        return position >= 0 && position < listOptions.size() ? listOptions.get(position).list : null;
+    }
+
+    private void addListGroup(JSONArray entities, String householdId, String kind, String heading) {
+        if (entities == null) return;
+        boolean addedHeading = false;
+        for (int i = 0; i < entities.length(); i++) {
+            JSONObject list = entities.optJSONObject(i);
+            if (list == null || !householdId.equals(list.optString("householdId")) ||
+                    !MyHomeWidgetProvider.validId(list.optString("id")) || !kind.equals(list.optString("kind"))) continue;
+            if (!addedHeading) {
+                listOptions.add(new ListOption(heading, null));
+                addedHeading = true;
+            }
+            listOptions.add(new ListOption(MyHomeWidgetProvider.data(list).optString("name", "Ma liste"), list));
+        }
+    }
+
     private void loadLists(String householdId) {
         final int request = ++generation;
         final String origin = store.getOrigin(), cookie = ServerClient.sessionCookie(origin);
@@ -175,23 +236,22 @@ public class WidgetConfigureActivity extends Activity {
                         message.setText("Ce foyer n’est plus accessible. Actualisez les foyers."); return;
                     }
                     JSONArray entities = result.optJSONArray("entities");
-                    List<String> names = new ArrayList<>();
-                    if (entities != null) for (int i = 0; i < entities.length(); i++) {
-                        JSONObject list = entities.optJSONObject(i);
-                        if (list == null || !householdId.equals(list.optString("householdId")) ||
-                                !MyHomeWidgetProvider.validId(list.optString("id")) ||
-                                !("shopping".equals(list.optString("kind")) || "checklist".equals(list.optString("kind")))) continue;
-                        listOptions.add(list);
-                        names.add(MyHomeWidgetProvider.data(list).optString("name", "Ma liste") +
-                                ("shopping".equals(list.optString("kind")) ? " · Courses" : " · Checklist"));
-                    }
+                    addListGroup(entities, householdId, "shopping", "Courses");
+                    addListGroup(entities, householdId, "checklist", "Checklists");
                     snapshot = result; loadedOrigin = origin; loadedCookie = cookie;
-                    lists.setAdapter(adapter(names));
-                    int selected = 0;
-                    for (int i = 0; i < listOptions.size(); i++)
-                        if (store.getListId(widgetId).equals(listOptions.get(i).optString("id"))) selected = i;
-                    lists.setSelection(selected); lists.setEnabled(!names.isEmpty()); save.setEnabled(!names.isEmpty());
-                    message.setText(names.isEmpty() ? "Créez une liste dans ce foyer, puis actualisez." :
+                    lists.setAdapter(new GroupedListAdapter());
+                    int selected = AdapterView.INVALID_POSITION;
+                    String savedListId = store.getListId(widgetId);
+                    for (int i = 0; i < listOptions.size(); i++) {
+                        JSONObject list = listAt(i);
+                        if (list == null) continue;
+                        if (selected == AdapterView.INVALID_POSITION) selected = i;
+                        if (savedListId.equals(list.optString("id"))) { selected = i; break; }
+                    }
+                    lists.setSelection(selected);
+                    lists.setEnabled(selected != AdapterView.INVALID_POSITION);
+                    save.setEnabled(listAt(selected) != null);
+                    message.setText(selected == AdapterView.INVALID_POSITION ? "Créez une liste dans ce foyer, puis actualisez." :
                             "Le widget sera actualisé après vos actions et environ toutes les 30 minutes selon Android. Le bouton ↻ permet de l’actualiser à tout moment.");
                 });
             } catch (IOException error) { showError(request, error); }
@@ -215,12 +275,12 @@ public class WidgetConfigureActivity extends Activity {
     }
 
     private void finishConfiguration() {
-        int position = lists.getSelectedItemPosition();
-        if (position < 0 || position >= listOptions.size() || snapshot == null ||
+        JSONObject list = listAt(lists.getSelectedItemPosition());
+        if (list == null) { save.setEnabled(false); return; }
+        if (snapshot == null ||
                 !loadedOrigin.equals(store.getOrigin()) || !loadedCookie.equals(ServerClient.sessionCookie(loadedOrigin))) {
             loadHouseholds(); return;
         }
-        JSONObject list = listOptions.get(position);
         if (MyHomeWidgetProvider.findList(snapshot, selectedHousehold, list.optString("id")) == null) return;
         store.saveWidget(widgetId, selectedHousehold, list.optString("id"));
         store.saveSnapshot(widgetId, snapshot, loadedOrigin, loadedCookie);
