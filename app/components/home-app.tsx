@@ -1,6 +1,6 @@
 "use client";
 import { useCallback,useEffect,useMemo,useRef,useState } from "react";
-import { House,LayoutDashboard,ShoppingBasket,ListChecks,StickyNote,Users,Zap,Trash2,Settings,Plus,ArrowLeft,ArrowUpRight,ChevronDown,Bell,Maximize2,Minimize2,Ellipsis,Check,Pencil,Copy,RotateCcw,Phone,Mail,MapPin,Folder,Carrot,Plane,Heart,ShoppingBag,LogOut,WifiOff } from "lucide-react";
+import { House,LayoutDashboard,ShoppingBasket,ListChecks,StickyNote,Users,Zap,Trash2,Settings,Plus,ArrowLeft,ArrowUpRight,ChevronDown,Bell,Maximize2,Minimize2,Ellipsis,Check,Pencil,Copy,RotateCcw,Phone,Mail,MapPin,Folder,LogOut,WifiOff } from "lucide-react";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { demoSnapshot } from "@/lib/demo";
@@ -22,13 +22,13 @@ import AppearanceSettings from "./appearance-settings";
 import DeviceDashboardSettings from "./device-dashboard-settings";
 import { useDeviceDashboard } from "@/hooks/use-device-dashboard";
 import ListPanel from "./list-panel";
+import ListIcon from "./list-icon";
 import KitchenRotation from "./kitchen-rotation";
 import ElectricityTransition from "./electricity-transition";
 import { useKitchenRotation } from "@/hooks/use-kitchen-rotation";
 import { useAppNavigationHistory } from "@/hooks/use-app-navigation-history";
 const menus=[{id:"dashboard",name:"Tableau de bord",Icon:LayoutDashboard},{id:"shopping",name:"Listes de courses",Icon:ShoppingBasket},{id:"checklist",name:"Checklists",Icon:ListChecks},{id:"notes",name:"Notes",Icon:StickyNote},{id:"contacts",name:"Contacts",Icon:Users}];
 const houseMenus=[{id:"household",name:"Membres du foyer",Icon:Users},{id:"electricity",name:"Électricité",Icon:Zap},{id:"waste",name:"Sortie des poubelles",Icon:Trash2},{id:"settings",name:"Paramètres",Icon:Settings}];
-const icons={basket:ShoppingBasket,home:House,carrot:Carrot,plane:Plane,check:ListChecks,heart:Heart,bag:ShoppingBag};
 type Modal={type:"edit";kind:Kind;entity?:Entity}|{type:"scan";listId:string}|{type:"add";listId:string;text:string;barcode?:string}|{type:"household"}|{type:"notifications"};
 type Command={action:string;[key:string]:unknown};
 type ChecklistVisit={householdId:string;view:string;checklistId:string;scrollY:number};
@@ -42,7 +42,6 @@ function writeLocalSetting(key:string,value:string):void {
  try{localStorage.setItem(key,value);localSettingFallback.delete(key);}catch{localSettingFallback.set(key,value);}
 }
 function emptySnapshot(user:User|null):Snapshot{return {user,households:[],household:null,entities:[],members:[],preferences:{}};}
-function ListIcon({entity,size=22}:{entity:Entity;size?:number}){const Icon=icons[(entity.data.icon||"basket") as keyof typeof icons]||ShoppingBasket;return <Icon size={size}/>;}
 
 export default function HomeApp({user}:{user:User|null}) {
  const {settings:deviceDashboard,hydrated:deviceDashboardHydrated}=useDeviceDashboard();

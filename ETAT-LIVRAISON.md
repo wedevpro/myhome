@@ -1,6 +1,12 @@
 # État de livraison — MyHomeIA sur Synology
 
-12 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
+15 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
+
+## Icône personnalisée dans les titres de listes
+
+Les en-têtes des listes de courses et checklists affichent désormais l'icône enregistrée sur la liste, comme leurs boutons de sélection. Le composant partagé `components/list-icon.tsx` couvre les sept icônes disponibles et s'applique aux pages de listes, au tableau de bord, au mode cuisine et aux checklists liées. Si l'icône manque ou est inconnue, un panier est utilisé pour les courses et des cases pour les checklists.
+
+Validation : compilation de production avec TypeScript et lint ciblé du composant d'icône et des encarts réussis. Le mapping et les valeurs de l'éditeur ont été revus ; aucun essai sur appareil ni sur le NAS pour cette modification.
 
 ## Boutons des listes de courses
 

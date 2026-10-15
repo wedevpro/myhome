@@ -10,6 +10,7 @@ import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, 
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
+import ListIcon from "./list-icon";
 
 type Props = {
   list?: Entity;
@@ -84,7 +85,7 @@ export default function ListPanel({ list, kind, snapshot, busy, onAdd, onOpenChe
   return (
     <section className={`panel ${shopping ? "shopping-panel" : "tasks-panel"}`}>
       <div className="panel-heading">
-        <span className={`panel-icon ${shopping ? "green" : "coral"}`}>{shopping ? <ShoppingBasket size={21}/> : <ListChecks size={21}/>}</span>
+        <span className={`panel-icon ${shopping ? "green" : "coral"}`}>{list ? <ListIcon entity={list} size={21}/> : shopping ? <ShoppingBasket size={21}/> : <ListChecks size={21}/>}</span>
         <h2 className="list-panel-title">{list?.data.name || (shopping ? "Liste de courses" : "Checklist")}</h2>
         {list && shopping && <span className="counter">{pending} à acheter</span>}
         <DropdownMenu>

@@ -109,7 +109,7 @@ La note s'affiche sous le nom de l'article et est partagée avec les membres du 
 
 ## Afficher une liste de courses ou une checklist
 
-L'en-tête de chaque encart affiche le **nom de la liste en cours**, aligné avec son icône, sans descriptif ni liste déroulante. Sur les pages Courses et Checklists, les boutons avec icônes au-dessus de l'encart permettent de changer de liste. Sur le tableau de bord et en mode cuisine, les listes affichées se choisissent dans **Paramètres → Mon tableau de bord**. Le compteur des articles à acheter reste visible dans l'en-tête des courses.
+L'en-tête de chaque encart affiche le **nom de la liste en cours**, aligné avec son **icône personnalisée**, sans descriptif ni liste déroulante. Modifiez cette icône via **⋯ → Nom et icône**. Sur les pages Courses et Checklists, les boutons avec icônes au-dessus de l'encart permettent de changer de liste. Sur le tableau de bord et en mode cuisine, les listes affichées se choisissent dans **Paramètres → Mon tableau de bord**. Le compteur des articles à acheter reste visible dans l'en-tête des courses.
 
 ## Trier, déplacer et filtrer une checklist
 
