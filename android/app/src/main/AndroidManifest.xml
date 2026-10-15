@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
-    <application android:label="MyHomeIA" android:icon="@drawable/app_icon"
+    <application android:name=".MyHomeApplication" android:label="MyHomeIA" android:icon="@drawable/app_icon"
         android:theme="@style/AppTheme" android:allowBackup="false" android:fullBackupContent="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:usesCleartextTraffic="false" android:supportsRtl="true">

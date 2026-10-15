@@ -2,6 +2,7 @@ package fr.myhomeia.android;
 
 import android.app.Activity;
 import android.appwidget.AppWidgetManager;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Build;
@@ -45,8 +46,15 @@ public class WidgetConfigureActivity extends Activity {
     private JSONObject snapshot;
     private String loadedOrigin = "", loadedCookie = "", selectedHousehold = "";
     private boolean openedLogin;
+    private boolean appliedDark;
+
+    @Override protected void attachBaseContext(Context base) {
+        super.attachBaseContext(AppAppearance.themedContext(base));
+    }
 
     @Override public void onCreate(Bundle state) {
+        appliedDark = AppAppearance.isDark(this);
+        setTheme(appliedDark ? R.style.WidgetSetupThemeDark : R.style.WidgetSetupTheme);
         super.onCreate(state);
         setResult(RESULT_CANCELED);
         widgetId = getIntent().getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
@@ -60,6 +68,7 @@ public class WidgetConfigureActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         if (store == null) return;
+        if (appliedDark != AppAppearance.isDark(this)) { recreate(); return; }
         loadHouseholds();
         if (store.getOrigin().isEmpty() && !openedLogin) { openedLogin = true; openApplication(); }
     }
@@ -124,7 +133,7 @@ public class WidgetConfigureActivity extends Activity {
         status.setBackgroundResource(error ? R.drawable.setup_error_background : R.drawable.setup_status_background);
         progress.setVisibility(loading ? View.VISIBLE : View.GONE);
         statusIcon.setVisibility(loading ? View.GONE : View.VISIBLE);
-        statusIcon.setColorFilter(getColor(error ? R.color.setup_error : R.color.setup_accent));
+        statusIcon.setColorFilter(getColor(error ? R.color.setup_error : R.color.setup_accent_dark));
         refresh.setEnabled(!loading);
     }
 
@@ -201,7 +210,7 @@ public class WidgetConfigureActivity extends Activity {
             row.setEnabled(!heading);
             row.setTypeface(null, heading ? Typeface.BOLD : Typeface.NORMAL);
             row.setTextSize(heading ? 14 : 16);
-            row.setTextColor(getColor(heading ? R.color.setup_accent : R.color.setup_text));
+            row.setTextColor(getColor(heading ? R.color.setup_accent_dark : R.color.setup_text));
             row.setBackgroundResource(heading ? R.drawable.setup_status_background : 0);
             row.setPadding(dp(heading ? 16 : 32), dp(12), dp(16), dp(12));
             row.setMinimumHeight(dp(48));

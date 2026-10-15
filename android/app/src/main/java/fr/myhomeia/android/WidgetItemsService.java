@@ -3,7 +3,10 @@ package fr.myhomeia.android;
 import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.widget.RemoteViews;
 import android.widget.RemoteViewsService;
@@ -14,16 +17,29 @@ import java.util.List;
 
 public class WidgetItemsService extends RemoteViewsService {
     @Override public RemoteViewsFactory onGetViewFactory(Intent intent) {
-        return new Factory(getApplicationContext(), intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1));
+        return new Factory(getApplicationContext(), intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1),
+                intent.getBooleanExtra("widgetThemeForced", false), intent.getBooleanExtra("widgetThemeDark", false));
     }
 
     private static class Factory implements RemoteViewsFactory {
         private final Context context;
         private final int widgetId;
+        private final boolean forced;
+        private final Context themed;
+        private final int touchBackground;
+        private final Bitmap checkedIcon, uncheckedIcon;
         private List<JSONObject> items = new ArrayList<>();
         private boolean busy;
 
-        Factory(Context context, int id) { this.context = context; widgetId = id; }
+        Factory(Context context, int id, boolean forced, boolean dark) {
+            this.context = context;
+            widgetId = id;
+            this.forced = forced;
+            themed = forced ? MyHomeWidgetProvider.widgetThemeContext(context, dark) : null;
+            touchBackground = dark ? R.drawable.widget_touch_dark : R.drawable.widget_touch_light;
+            checkedIcon = forced ? rasterize(themed, R.drawable.widget_checked) : null;
+            uncheckedIcon = forced ? rasterize(themed, R.drawable.widget_unchecked) : null;
+        }
         @Override public void onCreate() { onDataSetChanged(); }
         @Override public void onDataSetChanged() {
             WidgetStore store = new WidgetStore(context);
@@ -50,10 +66,24 @@ public class WidgetItemsService extends RemoteViewsService {
                 name += " × " + value + (data.optString("unit").isEmpty() ? "" : " " + data.optString("unit"));
             }
             if (!data.optString("linkedChecklistId").isEmpty()) name += " ↗";
-            RemoteViews row = new RemoteViews(context.getPackageName(), R.layout.widget_item);
+            RemoteViews row = new RemoteViews(context.getPackageName(),
+                    forced ? R.layout.widget_item_forced : R.layout.widget_item);
             row.setTextViewText(R.id.widget_item_name, name);
             row.setInt(R.id.widget_item_name, "setPaintFlags", Paint.ANTI_ALIAS_FLAG | (checked ? Paint.STRIKE_THRU_TEXT_FLAG : 0));
-            row.setImageViewResource(R.id.widget_item_check, checked ? R.drawable.widget_checked : R.drawable.widget_unchecked);
+            if (forced) {
+                row.setTextColor(R.id.widget_item_name, themed.getColor(checked ? R.color.widget_completed : R.color.widget_text));
+                row.setTextColor(R.id.widget_item_note, themed.getColor(R.color.widget_muted));
+                row.setInt(R.id.widget_item_divider, "setBackgroundColor", themed.getColor(R.color.widget_divider));
+                for (int id : new int[]{R.id.widget_item_check, R.id.widget_item_text, R.id.widget_item_edit, R.id.widget_item_delete})
+                    row.setInt(id, "setBackgroundResource", touchBackground);
+                row.setInt(R.id.widget_item_edit, "setColorFilter", themed.getColor(R.color.widget_muted));
+                row.setInt(R.id.widget_item_delete, "setColorFilter", themed.getColor(R.color.widget_danger));
+                // Preserve the two colors of checked boxes without host-side resource resolution.
+                row.setImageViewBitmap(R.id.widget_item_check, checked ? checkedIcon : uncheckedIcon);
+            } else {
+                // Keep resource references so a launcher can re-inflate for system night changes.
+                row.setImageViewResource(R.id.widget_item_check, checked ? R.drawable.widget_checked : R.drawable.widget_unchecked);
+            }
             row.setContentDescription(R.id.widget_item_check, (checked ? "Décocher " : "Cocher ") + data.optString("name"));
             row.setContentDescription(R.id.widget_item_edit, "Modifier " + data.optString("name"));
             row.setContentDescription(R.id.widget_item_delete, "Supprimer " + data.optString("name"));
@@ -61,12 +91,21 @@ public class WidgetItemsService extends RemoteViewsService {
             row.setTextViewText(R.id.widget_item_note, note);
             row.setViewVisibility(R.id.widget_item_note, note.isEmpty() ? View.GONE : View.VISIBLE);
             row.setBoolean(R.id.widget_item_check, "setEnabled", !busy);
-            row.setFloat(R.id.widget_item_check, "setAlpha", busy ? 0.4f : 1f);
+            row.setInt(R.id.widget_item_check, "setImageAlpha", busy ? 102 : 255);
             row.setOnClickFillInIntent(R.id.widget_item_check, click(item, "toggle"));
             row.setOnClickFillInIntent(R.id.widget_item_text, click(item, "open"));
             row.setOnClickFillInIntent(R.id.widget_item_edit, click(item, "edit"));
             row.setOnClickFillInIntent(R.id.widget_item_delete, click(item, "delete"));
             return row;
+        }
+
+        private static Bitmap rasterize(Context themed, int resource) {
+            Drawable drawable = themed.getDrawable(resource).mutate();
+            int size = Math.max(1, Math.round(24 * themed.getResources().getDisplayMetrics().density));
+            Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+            drawable.setBounds(0, 0, size, size);
+            drawable.draw(new Canvas(bitmap));
+            return bitmap;
         }
 
         private Intent click(JSONObject item, String action) {

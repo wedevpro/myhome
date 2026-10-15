@@ -10,7 +10,7 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.PersistableBundle;
 import android.view.View;
@@ -99,6 +99,23 @@ public class MyHomeWidgetProvider extends AppWidgetProvider {
         int[] ids = AppWidgetManager.getInstance(context).getAppWidgetIds(
                 new ComponentName(context, MyHomeWidgetProvider.class));
         for (int id : ids) { render(context, id); schedule(context, id, null); }
+    }
+
+    /** Repaint cached content immediately after an appearance change, without a network job. */
+    public static void renderAll(Context context) {
+        for (int id : AppWidgetManager.getInstance(context).getAppWidgetIds(
+                new ComponentName(context, MyHomeWidgetProvider.class))) render(context, id);
+    }
+
+    /** Keep a collection factory on its captured palette while a new theme is being bound. */
+    static Context widgetThemeContext(Context context, boolean dark) {
+        Context themed = AppAppearance.themedContext(context);
+        int night = dark ? Configuration.UI_MODE_NIGHT_YES : Configuration.UI_MODE_NIGHT_NO;
+        if ((themed.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == night)
+            return themed;
+        Configuration config = new Configuration(themed.getResources().getConfiguration());
+        config.uiMode = (config.uiMode & ~Configuration.UI_MODE_NIGHT_MASK) | night;
+        return context.createConfigurationContext(config);
     }
 
     static boolean isBusy(int id) { return BUSY.containsKey(id); }
@@ -220,7 +237,11 @@ public class MyHomeWidgetProvider extends AppWidgetProvider {
         JSONObject list = findList(snapshot, householdId, listId);
         boolean available = list != null, busy = isBusy(id);
         boolean shopping = available && "shopping".equals(list.optString("kind"));
-        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_list);
+        String mode = AppAppearance.getMode(context);
+        boolean forced = !"system".equals(mode), dark = AppAppearance.isDark(context);
+        RemoteViews views = new RemoteViews(context.getPackageName(),
+                forced ? R.layout.widget_list_forced : R.layout.widget_list);
+        if (forced) applyForcedAppearance(views, widgetThemeContext(context, dark), dark);
         views.setTextViewText(R.id.widget_title, available ? data(list).optString("name", "Ma liste") : "MyHomeIA");
         views.setImageViewResource(R.id.widget_icon, icon(list));
         views.setOnClickPendingIntent(R.id.widget_header, web(context, id, householdId, listId, "open"));
@@ -237,7 +258,9 @@ public class MyHomeWidgetProvider extends AppWidgetProvider {
         views.setOnClickPendingIntent(R.id.widget_clear, web(context, id, householdId, listId, "clearCompleted"));
         views.setViewVisibility(R.id.widget_actions, available ? View.VISIBLE : View.GONE);
         views.setViewVisibility(R.id.widget_scan, shopping ? View.VISIBLE : View.GONE);
-        views.setViewVisibility(R.id.widget_progress, busy ? View.VISIBLE : View.GONE);
+        views.setViewVisibility(R.id.widget_progress, busy && !forced ? View.VISIBLE : View.GONE);
+        views.setViewVisibility(R.id.widget_progress_light, busy && forced && !dark ? View.VISIBLE : View.GONE);
+        views.setViewVisibility(R.id.widget_progress_dark, busy && forced && dark ? View.VISIBLE : View.GONE);
         List<JSONObject> items = orderedItems(snapshot, list);
         int pending = 0;
         for (JSONObject item : items) if (!data(item).optBoolean("checked")) pending++;
@@ -261,19 +284,43 @@ public class MyHomeWidgetProvider extends AppWidgetProvider {
             status = fetchedAt > 0 ? "Mis à jour à " + DateFormat.getTimeInstance(DateFormat.SHORT).format(new Date(fetchedAt)) : "";
         }
         views.setTextViewText(R.id.widget_status, status);
-        views.setTextColor(R.id.widget_status, error != null && !error.isEmpty() ? Color.rgb(151, 72, 44) : Color.rgb(101, 110, 101));
+        views.setTextViewText(R.id.widget_status_error, status);
+        boolean showError = !busy && error != null && !error.isEmpty();
+        views.setViewVisibility(R.id.widget_status, showError ? View.GONE : View.VISIBLE);
+        views.setViewVisibility(R.id.widget_status_error, showError ? View.VISIBLE : View.GONE);
         views.setTextViewText(R.id.widget_empty, available ? "Aucun élément dans cette liste." : "Connectez-vous puis choisissez votre liste.");
         views.setOnClickPendingIntent(R.id.widget_empty, available
                 ? web(context, id, householdId, listId, "add") : configureIntent);
         Intent service = new Intent(context, WidgetItemsService.class)
                 .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
-                .setData(Uri.parse("myhomeia-widget://" + id + "/items"));
+                .putExtra("widgetThemeForced", forced).putExtra("widgetThemeDark", dark)
+                .setData(Uri.parse("myhomeia-widget://" + id + "/items/" + mode + (dark ? "/dark" : "/light")));
         views.setRemoteAdapter(R.id.widget_items, service);
         views.setEmptyView(R.id.widget_items, R.id.widget_empty);
         views.setPendingIntentTemplate(R.id.widget_items, itemActions(context, id));
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
         manager.updateAppWidget(id, views);
         manager.notifyAppWidgetViewDataChanged(id, R.id.widget_items);
+    }
+
+    private static void applyForcedAppearance(RemoteViews views, Context themed, boolean dark) {
+        int touch = dark ? R.drawable.widget_touch_dark : R.drawable.widget_touch_light;
+        int add = dark ? R.drawable.widget_add_background_dark : R.drawable.widget_add_background_light;
+        views.setInt(R.id.widget_root, "setBackgroundResource",
+                dark ? R.drawable.widget_background_dark : R.drawable.widget_background_light);
+        for (int id : new int[]{R.id.widget_header, R.id.widget_refresh, R.id.widget_configure, R.id.widget_clear})
+            views.setInt(id, "setBackgroundResource", touch);
+        views.setInt(R.id.widget_add, "setBackgroundResource", add);
+        views.setInt(R.id.widget_scan, "setBackgroundResource", add);
+        views.setTextColor(R.id.widget_title, themed.getColor(R.color.widget_text));
+        for (int id : new int[]{R.id.widget_count, R.id.widget_empty, R.id.widget_status})
+            views.setTextColor(id, themed.getColor(R.color.widget_muted));
+        views.setTextColor(R.id.widget_add, themed.getColor(R.color.widget_accent));
+        views.setTextColor(R.id.widget_clear, themed.getColor(R.color.widget_danger));
+        views.setTextColor(R.id.widget_status_error, themed.getColor(R.color.widget_danger));
+        // ImageView.setColorFilter(int) is explicitly annotated @RemotableViewMethod in Android.
+        for (int id : new int[]{R.id.widget_icon, R.id.widget_refresh, R.id.widget_configure, R.id.widget_scan})
+            views.setInt(id, "setColorFilter", themed.getColor(R.color.widget_accent));
     }
 
     private static void schedule(Context context, int id, JSONObject toggleItem) {

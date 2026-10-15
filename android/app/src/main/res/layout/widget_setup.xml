@@ -58,7 +58,7 @@
                 android:orientation="horizontal" android:gravity="top" android:padding="16dp" android:layout_marginTop="20dp"
                 android:background="@drawable/setup_status_background">
                 <ProgressBar android:id="@+id/setup_progress" style="?android:attr/progressBarStyleSmall"
-                    android:layout_width="24dp" android:layout_height="24dp" android:indeterminateTint="@color/setup_accent" android:importantForAccessibility="no" />
+                    android:layout_width="24dp" android:layout_height="24dp" android:indeterminateTint="@color/setup_accent_dark" android:importantForAccessibility="no" />
                 <ImageView android:id="@+id/setup_status_icon" android:layout_width="24dp" android:layout_height="24dp"
                     android:src="@drawable/setup_info" android:visibility="gone" android:importantForAccessibility="no" />
                 <TextView android:id="@+id/setup_message" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"

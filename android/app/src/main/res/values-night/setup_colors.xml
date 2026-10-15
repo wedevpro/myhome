@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="setup_background">#17151D</color>
+    <color name="setup_surface">#221F2A</color>
+    <color name="setup_text">#ECE9F3</color>
+    <color name="setup_muted">#BBB4C7</color>
+    <color name="setup_accent">#8064CE</color>
+    <color name="setup_accent_dark">#C7B2FF</color>
+    <color name="setup_accent_pressed">#7055B9</color>
+    <color name="setup_lilac">#30283F</color>
+    <color name="setup_border">#423A50</color>
+    <color name="setup_ripple">#40BFA7FF</color>
+    <color name="setup_disabled_background">#383140</color>
+    <color name="setup_disabled_text">#AAA1B9</color>
+    <color name="setup_error">#FF969B</color>
+    <color name="setup_error_surface">#3A242E</color>
+    <color name="setup_error_border">#6D3C4D</color>
+    <color name="setup_legacy_navigation">#17151D</color>
+</resources>

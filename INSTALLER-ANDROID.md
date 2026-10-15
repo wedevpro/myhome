@@ -12,6 +12,12 @@ L'application **MyHomeIA Android** utilise le même serveur, les mêmes comptes 
 
 Chaque widget conserve son propre choix de foyer et de liste. Vous pouvez en ajouter plusieurs et les redimensionner. Le bouton de réglages du widget permet de modifier ce choix.
 
+## Apparence du widget
+
+Dans **MyHomeIA Android → Paramètres → Apparence**, choisissez **Mode Clair**, **Mode Sombre** ou **Appliquer le mode de l’appareil**. Tous les widgets et leur écran de configuration reprennent ce choix. Le mode clair s'applique par défaut ; le mode de l'appareil suit le thème Android.
+
+Le choix est repris automatiquement pendant que l'application Android est ouverte, puis conservé pour les widgets, y compris hors connexion. Après installation de la mise à jour, ouvrez une fois MyHomeIA pour reprendre le réglage déjà enregistré. Ce réglage est propre à cet appareil et à l'adresse du NAS : un choix fait dans Chrome ou sur un autre appareil n'est pas partagé avec l'application Android.
+
 ## Utilisation
 
 - La liste défile verticalement. Le titre et l'icône correspondent à la liste choisie ; les quantités supérieures à 1 et les notes des courses sont affichées. L'ordre des checklists est conservé et les éléments cochés sont regroupés en bas.
@@ -36,6 +42,8 @@ Installez les prochaines versions de `myhomeia-android.apk` **par-dessus la vers
 
 La version **1.0.2** reprend le thème violet de MyHomeIA dans la configuration du widget : carte de sélection, champs arrondis, bouton principal et états de chargement ou d'erreur. Les listes restent regroupées sous **Courses** et **Checklists**, avec des en-têtes non sélectionnables. Ces évolutions concernent uniquement Android : aucune mise à jour du NAS n'est nécessaire si vous utilisez déjà les widgets de la version 1.0.0.
 
+La version **1.0.3** applique aussi le choix d'apparence de l'application aux widgets, à leurs lignes et à leur configuration. Aucune mise à jour du NAS n'est nécessaire pour cette version.
+
 La somme de contrôle de l'APK est fournie dans `myhomeia-android.apk.sha256`.
 
 ## Recompiler depuis le projet
@@ -52,7 +60,7 @@ Les outils et caches sont installés dans `.runtime/`, en dehors de Git. La comp
 Pour une version suivante, augmentez le numéro de version Android :
 
 ```powershell
-.\android\scripts\Build-Apk.ps1 -VersionCode 4 -VersionName 1.0.3
+.\android\scripts\Build-Apk.ps1 -VersionCode 5 -VersionName 1.0.4
 ```
 
 **Sauvegardez de manière privée tout le dossier `.runtime/android-signing/`.** Il contient la clé de signature et sa configuration. Cette même clé est indispensable pour installer de futures mises à jour par-dessus cette version. Elle n'est incluse ni dans Git, ni dans le package Synology, ni dans l'APK.

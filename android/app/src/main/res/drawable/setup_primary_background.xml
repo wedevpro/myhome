@@ -3,7 +3,7 @@
     <item>
         <selector>
             <item android:state_enabled="false"><shape><solid android:color="@color/setup_disabled_background" /><corners android:radius="14dp" /></shape></item>
-            <item android:state_focused="true"><shape><solid android:color="@color/setup_accent_dark" /><corners android:radius="14dp" /><stroke android:width="3dp" android:color="@color/setup_text" /></shape></item>
+            <item android:state_focused="true"><shape><solid android:color="@color/setup_accent_pressed" /><corners android:radius="14dp" /><stroke android:width="3dp" android:color="@color/setup_text" /></shape></item>
             <item><shape><solid android:color="@color/setup_accent" /><corners android:radius="14dp" /></shape></item>
         </selector>
     </item>

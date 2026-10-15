@@ -16,8 +16,8 @@ android {
         applicationId 'fr.myhomeia.android'
         minSdk 26
         targetSdk 35
-        versionCode = (project.findProperty('myhomeiaVersionCode') ?: '3').toString().toInteger()
-        versionName = (project.findProperty('myhomeiaVersionName') ?: '1.0.2').toString()
+        versionCode = (project.findProperty('myhomeiaVersionCode') ?: '4').toString().toInteger()
+        versionName = (project.findProperty('myhomeiaVersionName') ?: '1.0.3').toString()
     }
 
     signingConfigs {
@@ -50,6 +50,25 @@ android {
         abortOnError true
         checkReleaseBuilds true
     }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+            all {
+                systemProperty 'robolectric.dependency.repo.url', 'https://repo.maven.apache.org/maven2'
+                systemProperty 'maven.repo.local', rootProject.file('../.runtime/robolectric-maven').absolutePath
+                systemProperty 'user.home', rootProject.file('../.runtime').absolutePath
+                systemProperty 'sun.net.client.defaultConnectTimeout', '15000'
+                systemProperty 'sun.net.client.defaultReadTimeout', '60000'
+                systemProperty 'robolectric.enabledSdks', project.findProperty('myhomeiaTestSdks') ?: '28,35'
+            }
+        }
+    }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.17'
 }
 
 gradle.taskGraph.whenReady { graph ->

@@ -8,6 +8,14 @@
         <item name="android:textColorPrimary">@color/setup_text</item>
         <item name="android:textColorSecondary">@color/setup_muted</item>
     </style>
+    <style name="WidgetSetupThemeDark" parent="AppThemeDark">
+        <item name="android:windowBackground">@color/setup_background</item>
+        <item name="android:statusBarColor">@color/setup_background</item>
+        <item name="android:colorAccent">@color/setup_accent_dark</item>
+        <item name="android:colorControlHighlight">@color/setup_ripple</item>
+        <item name="android:textColorPrimary">@color/setup_text</item>
+        <item name="android:textColorSecondary">@color/setup_muted</item>
+    </style>
     <style name="WidgetSetupButton" parent="android:style/Widget.Material.Button">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>

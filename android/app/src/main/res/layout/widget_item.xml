@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+<LinearLayout
     android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="54dp"
     android:orientation="horizontal" android:gravity="center_vertical">
     <ImageButton android:id="@+id/widget_item_check" android:layout_width="44dp" android:layout_height="48dp"
@@ -9,9 +11,9 @@
         android:minHeight="48dp" android:layout_weight="1" android:orientation="vertical" android:gravity="center_vertical"
         android:paddingTop="7dp" android:paddingBottom="7dp" android:background="@drawable/widget_touch">
         <TextView android:id="@+id/widget_item_name" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:textSize="17sp" android:textColor="#25342A" android:maxLines="3" android:ellipsize="end"/>
+            android:textSize="17sp" android:textColor="@color/widget_text" android:maxLines="3" android:ellipsize="end"/>
         <TextView android:id="@+id/widget_item_note" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="3dp" android:textSize="12sp" android:textColor="#657365" android:maxLines="2" android:ellipsize="end"/>
+            android:layout_marginTop="3dp" android:textSize="12sp" android:textColor="@color/widget_muted" android:maxLines="2" android:ellipsize="end"/>
     </LinearLayout>
     <ImageButton android:id="@+id/widget_item_edit" android:layout_width="40dp" android:layout_height="48dp"
         android:background="@drawable/widget_touch" android:src="@drawable/widget_more" android:padding="10dp"
@@ -19,4 +21,7 @@
     <ImageButton android:id="@+id/widget_item_delete" android:layout_width="40dp" android:layout_height="48dp"
         android:background="@drawable/widget_touch" android:src="@drawable/widget_delete" android:padding="11dp"
         android:contentDescription="Supprimer cet élément"/>
+</LinearLayout>
+    <ImageView android:id="@+id/widget_item_divider" android:layout_width="match_parent" android:layout_height="1dp"
+        android:background="@color/widget_divider" android:contentDescription="@null" android:importantForAccessibility="no"/>
 </LinearLayout>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Distinct layout IDs prevent launchers from retaining forced colors in system mode. -->
+    <item type="layout" name="widget_list_forced">@layout/widget_list</item>
+    <item type="layout" name="widget_item_forced">@layout/widget_item</item>
+</resources>

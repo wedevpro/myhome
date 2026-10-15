@@ -6,6 +6,8 @@
     <color name="setup_muted">#6D6679</color>
     <color name="setup_accent">#7B64D2</color>
     <color name="setup_accent_dark">#634AB9</color>
+    <color name="setup_accent_pressed">#634AB9</color>
+    <color name="setup_on_accent">#FFFFFF</color>
     <color name="setup_lilac">#F0ECFA</color>
     <color name="setup_border">#E5E1EE</color>
     <color name="setup_ripple">#287B64D2</color>
@@ -14,4 +16,5 @@
     <color name="setup_error">#AC3443</color>
     <color name="setup_error_surface">#FFF1F2</color>
     <color name="setup_error_border">#F3D4D8</color>
+    <color name="setup_legacy_navigation">#302C3C</color>
 </resources>

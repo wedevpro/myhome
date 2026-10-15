@@ -9,13 +9,15 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ContextThemeWrapper;
 import android.webkit.CookieManager;
 import android.webkit.PermissionRequest;
 import android.webkit.SslErrorHandler;
@@ -33,6 +35,8 @@ import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+import org.json.JSONException;
+import org.json.JSONTokener;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -51,6 +55,16 @@ public final class MainActivity extends Activity {
     private View fullscreen;
     private WebChromeClient.CustomViewCallback fullscreenCallback;
     private String lastSession = "";
+    private boolean appearanceActive;
+    private boolean appearanceReading;
+    private long appearanceReadId;
+    private final Handler appearanceHandler = new Handler(Looper.getMainLooper());
+    private final Runnable appearancePoll = new Runnable() {
+        @Override public void run() {
+            syncAppearance();
+            if (appearanceActive) appearanceHandler.postDelayed(this, 1000);
+        }
+    };
 
     public static Intent intent(Context context, String householdId, String listId, String itemId, String action) {
         return new Intent(context, MainActivity.class).setAction("fr.myhomeia.android.OPEN_LIST")
@@ -63,6 +77,7 @@ public final class MainActivity extends Activity {
     }
 
     @Override public void onCreate(Bundle state) {
+        setTheme(AppAppearance.isDeviceDark(this) ? R.style.AppThemeDark : R.style.AppTheme);
         super.onCreate(state);
         store = new WidgetStore(this);
         CookieManager.getInstance().setAcceptCookie(true);
@@ -104,15 +119,16 @@ public final class MainActivity extends Activity {
     private void showSetup() {
         hideFullscreen();
         cancelCameraRequest();
+        appearanceReadId++; appearanceReading = false;
         if (web != null) { web.destroy(); web = null; }
         ScrollView scroll = new ScrollView(this);
         LinearLayout body = new LinearLayout(this); body.setOrientation(LinearLayout.VERTICAL); body.setPadding(dp(24), dp(28), dp(24), dp(24));
-        TextView title = new TextView(this); title.setText("Bienvenue dans MyHomeIA"); title.setTextSize(24); title.setTextColor(Color.rgb(48,48,62)); body.addView(title);
+        TextView title = new TextView(this); title.setText("Bienvenue dans MyHomeIA"); title.setTextSize(24); title.setTextColor(getColor(R.color.setup_text)); body.addView(title);
         TextView description = new TextView(this); description.setText("Indiquez l’adresse HTTPS de votre application sur le NAS, puis connectez-vous avec votre compte MyHomeIA. Les widgets partageront cette connexion.");
         description.setTextSize(16); description.setPadding(0, dp(18), 0, dp(18)); body.addView(description);
         EditText origin = new EditText(this); origin.setSingleLine(true); origin.setHint("https://maison.exemple.fr"); origin.setText(store.getOrigin());
         origin.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_URI); origin.setContentDescription("Adresse HTTPS du NAS"); body.addView(origin);
-        TextView error = new TextView(this); error.setTextColor(Color.rgb(175,50,50)); body.addView(error);
+        TextView error = new TextView(this); error.setTextColor(getColor(R.color.setup_error)); body.addView(error);
         body.addView(button("Ouvrir MyHomeIA", view -> {
             final String normalized;
             try { normalized = ServerClient.normalizeOrigin(origin.getText().toString()); }
@@ -145,12 +161,13 @@ public final class MainActivity extends Activity {
     private void showBrowser() {
         hideFullscreen();
         cancelCameraRequest();
+        appearanceReadId++; appearanceReading = false;
         if (web != null) { web.destroy(); web = null; }
-        frame = new LinearLayout(this); frame.setOrientation(LinearLayout.VERTICAL); frame.setBackgroundColor(Color.WHITE);
+        frame = new LinearLayout(this); frame.setOrientation(LinearLayout.VERTICAL); frame.setBackgroundColor(getColor(R.color.setup_background));
         LinearLayout toolbar = new LinearLayout(this); toolbar.setGravity(android.view.Gravity.CENTER_VERTICAL);
         Button back = button("‹", view -> goBack()); back.setContentDescription("Retour");
         toolbar.addView(back, new LinearLayout.LayoutParams(dp(48), dp(48)));
-        TextView name = new TextView(this); name.setText("MyHomeIA"); name.setTextSize(17); name.setTextColor(Color.rgb(85,63,154));
+        TextView name = new TextView(this); name.setText("MyHomeIA"); name.setTextSize(17); name.setTextColor(getColor(R.color.setup_accent_dark));
         toolbar.addView(name, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         if (getIntent().getBooleanExtra("widgetConfiguration", false)) toolbar.addView(button("Continuer", view -> finish()));
         else {
@@ -167,13 +184,18 @@ public final class MainActivity extends Activity {
         frame.addView(toolbar);
         progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal); progress.setMax(100); frame.addView(progress, new LinearLayout.LayoutParams(-1, dp(3)));
         content = new FrameLayout(this); frame.addView(content, new LinearLayout.LayoutParams(-1, 0, 1));
-        web = new WebView(this);
+        // CSS 'prefers-color-scheme' represents the device, while next-themes applies
+        // explicit light/dark choices in the page. Do not derive this context from that choice.
+        web = new WebView(new ContextThemeWrapper(this,
+                AppAppearance.isDeviceDark(this) ? R.style.AppThemeDark : R.style.AppTheme));
         WebSettings settingsWeb = web.getSettings();
         settingsWeb.setJavaScriptEnabled(true); settingsWeb.setDomStorageEnabled(true);
         settingsWeb.setAllowFileAccess(false); settingsWeb.setAllowContentAccess(false);
         settingsWeb.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settingsWeb.setSafeBrowsingEnabled(true); settingsWeb.setMediaPlaybackRequiresUserGesture(true);
         settingsWeb.setUserAgentString(settingsWeb.getUserAgentString() + " MyHomeIAAndroid/1.0");
+        if (Build.VERSION.SDK_INT >= 29) web.setForceDarkAllowed(false);
+        if (Build.VERSION.SDK_INT >= 33) settingsWeb.setAlgorithmicDarkeningAllowed(false);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, false);
         web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -190,6 +212,7 @@ public final class MainActivity extends Activity {
                 progress.setVisibility(View.GONE); CookieManager.getInstance().flush();
                 String session = ServerClient.sessionCookie(store.getOrigin());
                 if (!session.equals(lastSession)) { lastSession = session; store.clearCaches(); MyHomeWidgetProvider.refreshAll(MainActivity.this); }
+                syncAppearance();
             }
             @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 if (request.isForMainFrame()) showNetworkError("Le NAS n’est pas joignable. Vérifiez le réseau, le VPN éventuel et l’adresse configurée.");
@@ -220,6 +243,29 @@ public final class MainActivity extends Activity {
     private boolean isTrusted(Uri uri) {
         try { return store.getOrigin().equals(ServerClient.normalizeOrigin(new Uri.Builder().scheme(uri.getScheme()).encodedAuthority(uri.getEncodedAuthority()).build().toString())); }
         catch (IOException error) { return false; }
+    }
+
+    /** Read one existing setting from our HTTPS origin; expose no native JS interface. */
+    private void syncAppearance() {
+        final WebView source = web;
+        if (source == null || appearanceReading || isDestroyed()) return;
+        String url = source.getUrl();
+        if (url == null || !isTrusted(Uri.parse(url))) return;
+        final String origin = store.getOrigin();
+        final long request = ++appearanceReadId;
+        appearanceReading = true;
+        source.evaluateJavascript("(function(){try{return localStorage.getItem('myhomeia-theme')||'light';}catch(e){return null;}})()", value -> {
+            if (request != appearanceReadId) return;
+            appearanceReading = false;
+            if (isDestroyed() || source != web || !origin.equals(store.getOrigin())) return;
+            String currentUrl = source.getUrl();
+            if (currentUrl == null || !isTrusted(Uri.parse(currentUrl)) || value == null || value.length() > 32) return;
+            try {
+                Object mode = new JSONTokener(value).nextValue();
+                if (mode instanceof String && AppAppearance.saveMode(this, origin, (String) mode))
+                    MyHomeWidgetProvider.renderAll(this);
+            } catch (JSONException ignored) { /* A failed read must not change the saved preference. */ }
+        });
     }
 
     private void requestCamera(PermissionRequest request) {
@@ -267,7 +313,7 @@ public final class MainActivity extends Activity {
         if (isFinishing() || content == null) return;
         runOnUiThread(() -> {
             if (content == null || content.getChildCount() > 1) return;
-            LinearLayout error = new LinearLayout(this); error.setOrientation(LinearLayout.VERTICAL); error.setPadding(dp(24),dp(24),dp(24),dp(24)); error.setBackgroundColor(Color.WHITE);
+            LinearLayout error = new LinearLayout(this); error.setOrientation(LinearLayout.VERTICAL); error.setPadding(dp(24),dp(24),dp(24),dp(24)); error.setBackgroundColor(getColor(R.color.setup_surface));
             TextView text = new TextView(this); text.setText(message); text.setTextSize(16); error.addView(text);
             error.addView(button("Réessayer", view -> { content.removeView(error); web.reload(); }));
             error.addView(button("Adresse du NAS", view -> showSetup()));
@@ -304,8 +350,18 @@ public final class MainActivity extends Activity {
     }
     @Override public void onBackPressed() { goBack(); }
     private void toast(String message) { Toast.makeText(this, message, Toast.LENGTH_LONG).show(); }
-    @Override protected void onResume() { super.onResume(); if (web != null) web.onResume(); if (store != null && !store.getOrigin().isEmpty()) MyHomeWidgetProvider.refreshAll(this); }
+    @Override protected void onResume() {
+        super.onResume();
+        if (web != null) web.onResume();
+        appearanceActive = true;
+        appearanceHandler.removeCallbacks(appearancePoll);
+        appearanceHandler.post(appearancePoll);
+        if (store != null && !store.getOrigin().isEmpty()) MyHomeWidgetProvider.refreshAll(this);
+    }
     @Override protected void onPause() {
+        appearanceActive = false;
+        appearanceHandler.removeCallbacks(appearancePoll);
+        syncAppearance();
         if (web != null) web.onPause();
         CookieManager.getInstance().flush();
         if (store != null && !store.getOrigin().isEmpty()) MyHomeWidgetProvider.refreshAll(this);
@@ -315,6 +371,9 @@ public final class MainActivity extends Activity {
         super.onSaveInstanceState(state); if (web != null) { state.putString("origin", store.getOrigin()); web.saveState(state); }
     }
     @Override protected void onDestroy() {
+        appearanceActive = false;
+        appearanceHandler.removeCallbacks(appearancePoll);
+        appearanceReadId++;
         cancelCameraRequest();
         hideFullscreen(); if (web != null) { web.destroy(); web = null; }
         super.onDestroy();
