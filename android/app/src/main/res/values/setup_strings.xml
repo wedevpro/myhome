@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="setup_brand">myhome.</string>
+    <string name="setup_eyebrow">VOTRE WIDGET</string>
+    <string name="setup_title">Votre quotidien, à portée de main</string>
+    <string name="setup_description">Vos courses et vos checklists, directement sur votre écran d’accueil.</string>
+    <string name="setup_household_label">Foyer</string>
+    <string name="setup_household_hint">Votre espace partagé</string>
+    <string name="setup_household_description">Foyer du widget</string>
+    <string name="setup_list_label">Liste</string>
+    <string name="setup_list_hint">Une liste pour ce widget</string>
+    <string name="setup_list_description">Liste du widget</string>
+    <string name="setup_refresh">Actualiser les listes</string>
+    <string name="setup_save">Afficher cette liste</string>
+    <string name="setup_cancel">Annuler</string>
+    <string name="setup_account_hint">Un autre compte ou un autre NAS ?</string>
+    <string name="setup_account">Connexion / serveur</string>
+    <string name="setup_loading_households">Chargement de vos foyers…</string>
+    <string name="setup_loading_lists">Chargement de vos listes…</string>
+    <string name="setup_sign_in_needed">Connectez-vous à votre NAS dans MyHomeIA, puis revenez ici pour choisir votre liste.</string>
+    <string name="setup_no_households">Créez ou rejoignez un foyer dans MyHomeIA, puis actualisez les listes.</string>
+    <string name="setup_household_unavailable">Ce foyer n’est plus accessible. Actualisez les listes pour choisir un autre foyer.</string>
+    <string name="setup_no_lists">Créez une liste dans ce foyer, puis actualisez les listes.</string>
+    <string name="setup_ready">Actualisation après vos actions et environ toutes les 30 minutes. Le bouton ↻ du widget permet de l’actualiser à tout moment.</string>
+    <string name="setup_session_expired">Reconnectez-vous dans MyHomeIA, puis revenez ici et actualisez les listes.</string>
+    <string name="setup_connection_error">Impossible de joindre le NAS. Vérifiez la connexion, l’adresse et le certificat HTTPS, puis réessayez.</string>
+    <string name="setup_step_one">1</string>
+    <string name="setup_step_two">2</string>
+</resources>

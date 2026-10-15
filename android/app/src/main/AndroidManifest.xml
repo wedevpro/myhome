@@ -17,6 +17,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".WidgetConfigureActivity" android:exported="true"
+            android:theme="@style/WidgetSetupTheme"
             android:label="Choisir une liste MyHomeIA">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />

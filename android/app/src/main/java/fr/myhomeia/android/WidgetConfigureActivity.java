@@ -3,7 +3,6 @@ package fr.myhomeia.android;
 import android.app.Activity;
 import android.appwidget.AppWidgetManager;
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
@@ -12,7 +11,8 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.LinearLayout;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -33,9 +33,13 @@ public class WidgetConfigureActivity extends Activity {
     private int generation;
     private WidgetStore store;
     private TextView message;
+    private View status;
+    private ProgressBar progress;
+    private ImageView statusIcon;
     private Spinner households;
     private Spinner lists;
     private Button save;
+    private Button refresh;
     private final List<JSONObject> householdOptions = new ArrayList<>();
     private final List<ListOption> listOptions = new ArrayList<>();
     private JSONObject snapshot;
@@ -69,38 +73,33 @@ public class WidgetConfigureActivity extends Activity {
 
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
 
-    private TextView text(String value, int size) {
-        TextView result = new TextView(this);
-        result.setText(value); result.setTextSize(size); result.setTextColor(Color.rgb(37, 52, 42));
-        result.setPadding(0, dp(12), 0, dp(6));
-        return result;
-    }
-
     private void buildScreen() {
-        getWindow().setStatusBarColor(Color.rgb(246, 248, 241));
-        ScrollView scroll = new ScrollView(this);
-        scroll.setBackgroundColor(Color.rgb(246, 248, 241));
-        LinearLayout body = new LinearLayout(this);
-        body.setOrientation(LinearLayout.VERTICAL); body.setPadding(dp(24), dp(30), dp(24), dp(30));
-        scroll.addView(body);
-        body.addView(text("Votre liste sur l’écran d’accueil", 25));
-        body.addView(text("Choisissez le foyer et la liste pour ce widget. Vous pourrez en ajouter plusieurs.", 16));
-        message = text("Connexion au NAS…", 15); message.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
-        body.addView(message);
-        Button account = new Button(this); account.setText("Se connecter / changer de serveur");
-        account.setOnClickListener(view -> openApplication()); body.addView(account);
-        body.addView(text("Foyer", 16));
-        households = new Spinner(this); households.setContentDescription("Foyer du widget"); body.addView(households);
-        body.addView(text("Liste de courses ou checklist", 16));
-        lists = new Spinner(this); lists.setContentDescription("Liste du widget"); body.addView(lists);
-        Button refresh = new Button(this); refresh.setText("Actualiser les listes");
-        refresh.setOnClickListener(view -> loadHouseholds()); body.addView(refresh);
-        save = new Button(this); save.setText("Afficher cette liste"); save.setEnabled(false);
-        save.setOnClickListener(view -> finishConfiguration()); body.addView(save);
-        Button cancel = new Button(this); cancel.setText("Annuler"); cancel.setOnClickListener(view -> finish()); body.addView(cancel);
+        setContentView(R.layout.widget_setup);
+        ScrollView scroll = findViewById(R.id.setup_scroll);
+        View content = findViewById(R.id.setup_content);
+        ViewGroup contentParent = (ViewGroup) content.getParent();
+        // Keep the form comfortable on tablets and adapt to split-screen/insets.
+        contentParent.addOnLayoutChangeListener((view, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+            int width = Math.min(dp(560), right - left - view.getPaddingLeft() - view.getPaddingRight());
+            ViewGroup.LayoutParams params = content.getLayoutParams();
+            if (width > 0 && params.width != width) { params.width = width; content.setLayoutParams(params); }
+        });
+        message = findViewById(R.id.setup_message);
+        status = findViewById(R.id.setup_status);
+        progress = findViewById(R.id.setup_progress);
+        statusIcon = findViewById(R.id.setup_status_icon);
+        households = findViewById(R.id.setup_households);
+        lists = findViewById(R.id.setup_lists);
+        findViewById(R.id.setup_account).setOnClickListener(view -> openApplication());
+        refresh = findViewById(R.id.setup_refresh);
+        refresh.setOnClickListener(view -> loadHouseholds());
+        save = findViewById(R.id.setup_save);
+        save.setEnabled(false);
+        save.setOnClickListener(view -> finishConfiguration());
+        findViewById(R.id.setup_cancel).setOnClickListener(view -> finish());
         households.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (position < householdOptions.size()) {
+                if (position >= 0 && position < householdOptions.size()) {
                     String next = householdOptions.get(position).optString("id");
                     if (!next.equals(selectedHousehold) || snapshot == null ||
                             !next.equals(snapshot.optJSONObject("household") == null ? "" : snapshot.optJSONObject("household").optString("id"))) {
@@ -117,7 +116,16 @@ public class WidgetConfigureActivity extends Activity {
             @Override public void onNothingSelected(AdapterView<?> parent) { save.setEnabled(false); }
         });
         MainActivity.applyInsets(scroll);
-        setContentView(scroll);
+    }
+
+    private void setStatus(int text, boolean loading, boolean error) {
+        message.setText(text);
+        message.setTextColor(getColor(error ? R.color.setup_error : R.color.setup_muted));
+        status.setBackgroundResource(error ? R.drawable.setup_error_background : R.drawable.setup_status_background);
+        progress.setVisibility(loading ? View.VISIBLE : View.GONE);
+        statusIcon.setVisibility(loading ? View.GONE : View.VISIBLE);
+        statusIcon.setColorFilter(getColor(error ? R.color.setup_error : R.color.setup_accent));
+        refresh.setEnabled(!loading);
     }
 
     private void openApplication() {
@@ -131,10 +139,10 @@ public class WidgetConfigureActivity extends Activity {
         final String origin = store.getOrigin(), cookie = ServerClient.sessionCookie(origin);
         snapshot = null; save.setEnabled(false); households.setEnabled(false); lists.setEnabled(false);
         if (origin.isEmpty() || cookie.isEmpty()) {
-            message.setText("Ouvrez MyHomeIA pour renseigner l’adresse HTTPS du NAS et vous connecter, puis revenez ici.");
+            setStatus(R.string.setup_sign_in_needed, false, false);
             return;
         }
-        message.setText("Chargement des foyers…");
+        setStatus(R.string.setup_loading_households, true, false);
         WORKER.execute(() -> {
             try {
                 JSONObject result = new ServerClient(this, origin).snapshot("");
@@ -151,7 +159,7 @@ public class WidgetConfigureActivity extends Activity {
                     }
                     households.setAdapter(adapter(names));
                     households.setEnabled(!names.isEmpty());
-                    if (names.isEmpty()) { message.setText("Créez ou rejoignez un foyer dans MyHomeIA, puis actualisez."); return; }
+                    if (names.isEmpty()) { setStatus(R.string.setup_no_households, false, false); return; }
                     int selected = 0;
                     for (int i = 0; i < householdOptions.size(); i++)
                         if (selectedHousehold.equals(householdOptions.get(i).optString("id"))) selected = i;
@@ -164,8 +172,8 @@ public class WidgetConfigureActivity extends Activity {
     }
 
     private ArrayAdapter<String> adapter(List<String> values) {
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, values);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.setup_spinner_value, values);
+        adapter.setDropDownViewResource(R.layout.setup_spinner_option);
         return adapter;
     }
 
@@ -180,8 +188,8 @@ public class WidgetConfigureActivity extends Activity {
 
     private final class GroupedListAdapter extends ArrayAdapter<ListOption> {
         GroupedListAdapter() {
-            super(WidgetConfigureActivity.this, android.R.layout.simple_spinner_item, listOptions);
-            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            super(WidgetConfigureActivity.this, R.layout.setup_spinner_value, listOptions);
+            setDropDownViewResource(R.layout.setup_spinner_option);
         }
 
         @Override public boolean areAllItemsEnabled() { return false; }
@@ -193,8 +201,8 @@ public class WidgetConfigureActivity extends Activity {
             row.setEnabled(!heading);
             row.setTypeface(null, heading ? Typeface.BOLD : Typeface.NORMAL);
             row.setTextSize(heading ? 14 : 16);
-            row.setTextColor(heading ? Color.rgb(83, 100, 76) : Color.rgb(37, 52, 42));
-            row.setBackgroundColor(heading ? Color.rgb(231, 236, 223) : Color.TRANSPARENT);
+            row.setTextColor(getColor(heading ? R.color.setup_accent : R.color.setup_text));
+            row.setBackgroundResource(heading ? R.drawable.setup_status_background : 0);
             row.setPadding(dp(heading ? 16 : 32), dp(12), dp(16), dp(12));
             row.setMinimumHeight(dp(48));
             if (Build.VERSION.SDK_INT >= 28) row.setAccessibilityHeading(heading);
@@ -225,7 +233,7 @@ public class WidgetConfigureActivity extends Activity {
         final int request = ++generation;
         final String origin = store.getOrigin(), cookie = ServerClient.sessionCookie(origin);
         snapshot = null; listOptions.clear(); lists.setAdapter(adapter(new ArrayList<>()));
-        save.setEnabled(false); lists.setEnabled(false); message.setText("Chargement des listes…");
+        save.setEnabled(false); lists.setEnabled(false); setStatus(R.string.setup_loading_lists, true, false);
         WORKER.execute(() -> {
             try {
                 JSONObject result = new ServerClient(this, origin).snapshot(householdId);
@@ -233,7 +241,7 @@ public class WidgetConfigureActivity extends Activity {
                     if (!accept(request, origin, cookie)) return;
                     JSONObject user = result.optJSONObject("user"), house = result.optJSONObject("household");
                     if (user == null || house == null || !householdId.equals(house.optString("id"))) {
-                        message.setText("Ce foyer n’est plus accessible. Actualisez les foyers."); return;
+                        setStatus(R.string.setup_household_unavailable, false, true); return;
                     }
                     JSONArray entities = result.optJSONArray("entities");
                     addListGroup(entities, householdId, "shopping", "Courses");
@@ -251,8 +259,7 @@ public class WidgetConfigureActivity extends Activity {
                     lists.setSelection(selected);
                     lists.setEnabled(selected != AdapterView.INVALID_POSITION);
                     save.setEnabled(listAt(selected) != null);
-                    message.setText(selected == AdapterView.INVALID_POSITION ? "Créez une liste dans ce foyer, puis actualisez." :
-                            "Le widget sera actualisé après vos actions et environ toutes les 30 minutes selon Android. Le bouton ↻ permet de l’actualiser à tout moment.");
+                    setStatus(selected == AdapterView.INVALID_POSITION ? R.string.setup_no_lists : R.string.setup_ready, false, false);
                 });
             } catch (IOException error) { showError(request, error); }
         });
@@ -267,10 +274,9 @@ public class WidgetConfigureActivity extends Activity {
         runOnUiThread(() -> {
             if (isFinishing() || isDestroyed() || request != generation) return;
             save.setEnabled(false);
-            message.setText(error instanceof ServerClient.ApiException &&
+            setStatus(error instanceof ServerClient.ApiException &&
                     (((ServerClient.ApiException) error).getStatus() == 401 || ((ServerClient.ApiException) error).getStatus() == 403)
-                    ? "Connectez-vous dans MyHomeIA, puis revenez ici et actualisez."
-                    : "Impossible de joindre le NAS. Vérifiez l’adresse, la connexion et le certificat HTTPS, puis actualisez.");
+                    ? R.string.setup_session_expired : R.string.setup_connection_error, false, true);
         });
     }
 

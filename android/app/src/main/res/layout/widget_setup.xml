@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/setup_scroll" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:fillViewport="true" android:background="@color/setup_background" android:clipToPadding="true">
+    <FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="20dp">
+        <LinearLayout android:id="@+id/setup_content" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal" android:orientation="vertical" android:paddingTop="12dp" android:paddingBottom="12dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
+                android:gravity="center_vertical" android:layout_marginBottom="30dp">
+                <ImageView android:layout_width="44dp" android:layout_height="44dp" android:padding="10dp"
+                    android:src="@drawable/setup_home" android:background="@drawable/setup_brand_background" android:importantForAccessibility="no" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="12dp"
+                    android:text="@string/setup_brand" android:textSize="27sp" android:textColor="@color/setup_text" android:fontFamily="sans-serif-medium" android:letterSpacing="-0.04" />
+            </LinearLayout>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/setup_eyebrow"
+                android:textSize="11sp" android:textColor="@color/setup_accent_dark" android:letterSpacing="0.14" android:fontFamily="sans-serif-medium" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp"
+                android:text="@string/setup_title" android:textSize="28sp" android:textColor="@color/setup_text" android:fontFamily="sans-serif-medium" android:lineSpacingExtra="2dp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp"
+                android:text="@string/setup_description" android:textSize="16sp" android:textColor="@color/setup_muted" android:lineSpacingExtra="4dp" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"
+                android:layout_marginTop="24dp" android:padding="20dp" android:background="@drawable/setup_card_background">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                    <TextView android:layout_width="34dp" android:layout_height="wrap_content" android:minHeight="34dp" android:paddingTop="4dp" android:paddingBottom="4dp" android:gravity="center" android:text="@string/setup_step_one"
+                        android:textColor="@color/setup_accent_dark" android:textSize="15sp" android:fontFamily="sans-serif-medium"
+                        android:background="@drawable/setup_status_background" android:importantForAccessibility="no" />
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginStart="12dp">
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/setup_household_label"
+                            android:textColor="@color/setup_text" android:textSize="17sp" android:fontFamily="sans-serif-medium" android:labelFor="@+id/setup_households" />
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="@string/setup_household_hint"
+                            android:textColor="@color/setup_muted" android:textSize="13sp" />
+                    </LinearLayout>
+                </LinearLayout>
+                <Spinner android:id="@id/setup_households" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp" android:minHeight="56dp" android:spinnerMode="dropdown"
+                    android:background="@drawable/setup_spinner_background" android:backgroundTint="@null" android:popupBackground="@drawable/setup_card_background"
+                    android:contentDescription="@string/setup_household_description" />
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginTop="22dp" android:layout_marginBottom="22dp" android:background="@color/setup_border" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                    <TextView android:layout_width="34dp" android:layout_height="wrap_content" android:minHeight="34dp" android:paddingTop="4dp" android:paddingBottom="4dp" android:gravity="center" android:text="@string/setup_step_two"
+                        android:textColor="@color/setup_accent_dark" android:textSize="15sp" android:fontFamily="sans-serif-medium"
+                        android:background="@drawable/setup_status_background" android:importantForAccessibility="no" />
+                    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginStart="12dp">
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/setup_list_label"
+                            android:textColor="@color/setup_text" android:textSize="17sp" android:fontFamily="sans-serif-medium" android:labelFor="@+id/setup_lists" />
+                        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="@string/setup_list_hint"
+                            android:textColor="@color/setup_muted" android:textSize="13sp" />
+                    </LinearLayout>
+                </LinearLayout>
+                <Spinner android:id="@id/setup_lists" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp" android:minHeight="56dp" android:spinnerMode="dropdown"
+                    android:background="@drawable/setup_spinner_background" android:backgroundTint="@null" android:popupBackground="@drawable/setup_card_background"
+                    android:contentDescription="@string/setup_list_description" />
+            </LinearLayout>
+            <Button android:id="@+id/setup_refresh" style="@style/WidgetSetupButton" android:layout_marginTop="12dp"
+                android:text="@string/setup_refresh" android:drawableStart="@drawable/setup_refresh" android:drawablePadding="10dp" />
+            <LinearLayout android:id="@+id/setup_status" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="top" android:padding="16dp" android:layout_marginTop="20dp"
+                android:background="@drawable/setup_status_background">
+                <ProgressBar android:id="@+id/setup_progress" style="?android:attr/progressBarStyleSmall"
+                    android:layout_width="24dp" android:layout_height="24dp" android:indeterminateTint="@color/setup_accent" android:importantForAccessibility="no" />
+                <ImageView android:id="@+id/setup_status_icon" android:layout_width="24dp" android:layout_height="24dp"
+                    android:src="@drawable/setup_info" android:visibility="gone" android:importantForAccessibility="no" />
+                <TextView android:id="@+id/setup_message" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp" android:text="@string/setup_loading_households" android:textColor="@color/setup_accent_dark"
+                    android:textSize="14sp" android:lineSpacingExtra="3dp" android:accessibilityLiveRegion="polite" />
+            </LinearLayout>
+            <Button android:id="@+id/setup_save" style="@style/WidgetSetupButtonPrimary" android:layout_marginTop="24dp"
+                android:text="@string/setup_save" android:enabled="false" />
+            <Button android:id="@+id/setup_cancel" style="@style/WidgetSetupButtonQuiet" android:layout_marginTop="4dp" android:text="@string/setup_cancel" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp"
+                android:gravity="center" android:text="@string/setup_account_hint" android:textSize="13sp" android:textColor="@color/setup_muted" />
+            <Button android:id="@+id/setup_account" style="@style/WidgetSetupButton" android:layout_marginTop="10dp" android:text="@string/setup_account" />
+        </LinearLayout>
+    </FrameLayout>
+</ScrollView>

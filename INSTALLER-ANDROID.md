@@ -8,7 +8,7 @@ L'application **MyHomeIA Android** utilise le même serveur, les mêmes comptes 
 2. Copiez `myhomeia-android.apk` sur le téléphone ou la tablette. Ouvrez ce fichier et autorisez l'installation depuis cette source si Android le demande.
 3. Ouvrez **MyHomeIA**, renseignez l'adresse HTTPS exacte utilisée pour accéder au NAS, puis connectez-vous avec votre compte habituel.
 4. Depuis l'écran d'accueil Android, faites un appui long, choisissez **Widgets**, puis **MyHomeIA**. Le bouton **＋** dans l'application peut également proposer l'ajout d'un widget si le lanceur Android le prend en charge.
-5. Dans la configuration du widget, choisissez le **foyer** puis la **liste de courses ou checklist**, et confirmez **Afficher cette liste**. Les listes sont regroupées sous les en-têtes non sélectionnables **Courses** et **Checklists** ; chaque liste affiche uniquement son nom. Si une connexion est nécessaire, utilisez **Ouvrir MyHomeIA**, connectez-vous, puis touchez **Continuer** dans la barre Android pour retrouver la configuration.
+5. Dans la configuration du widget, choisissez le **foyer** puis la **liste de courses ou checklist**, et confirmez **Afficher cette liste**. Les listes sont regroupées sous les en-têtes non sélectionnables **Courses** et **Checklists** ; chaque liste affiche uniquement son nom. Si une connexion est nécessaire, utilisez **Connexion / serveur**, connectez-vous, puis touchez **Continuer** dans la barre Android pour retrouver la configuration.
 
 Chaque widget conserve son propre choix de foyer et de liste. Vous pouvez en ajouter plusieurs et les redimensionner. Le bouton de réglages du widget permet de modifier ce choix.
 
@@ -34,7 +34,7 @@ L'application demande une actualisation périodique toutes les **30 minutes** et
 
 Installez les prochaines versions de `myhomeia-android.apk` **par-dessus la version existante**, sans désinstaller l'application. Les réglages sont alors conservés. Les mises à jour de l'interface web se font sur le NAS ; les évolutions du widget ou du code Android nécessitent une nouvelle APK.
 
-La version **1.0.1** regroupe les listes dans le sélecteur de configuration du widget. Cette évolution concerne uniquement Android : aucune mise à jour du NAS n'est nécessaire si vous utilisez déjà les widgets de la version 1.0.0.
+La version **1.0.2** reprend le thème violet de MyHomeIA dans la configuration du widget : carte de sélection, champs arrondis, bouton principal et états de chargement ou d'erreur. Les listes restent regroupées sous **Courses** et **Checklists**, avec des en-têtes non sélectionnables. Ces évolutions concernent uniquement Android : aucune mise à jour du NAS n'est nécessaire si vous utilisez déjà les widgets de la version 1.0.0.
 
 La somme de contrôle de l'APK est fournie dans `myhomeia-android.apk.sha256`.
 
@@ -52,7 +52,7 @@ Les outils et caches sont installés dans `.runtime/`, en dehors de Git. La comp
 Pour une version suivante, augmentez le numéro de version Android :
 
 ```powershell
-.\android\scripts\Build-Apk.ps1 -VersionCode 3 -VersionName 1.0.2
+.\android\scripts\Build-Apk.ps1 -VersionCode 4 -VersionName 1.0.3
 ```
 
 **Sauvegardez de manière privée tout le dossier `.runtime/android-signing/`.** Il contient la clé de signature et sa configuration. Cette même clé est indispensable pour installer de futures mises à jour par-dessus cette version. Elle n'est incluse ni dans Git, ni dans le package Synology, ni dans l'APK.
