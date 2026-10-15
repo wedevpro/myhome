@@ -44,6 +44,8 @@ work/
 /myhomeia-*.zip
 /myhomeia-*.zip.sha256
 /myhomeia-*.tar.gz
+/myhomeia-*.apk
+/myhomeia-*.apk.sha256
 
 # Logs and operating system files
 *.log

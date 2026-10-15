@@ -2,6 +2,20 @@
 
 15 octobre 2026, Europe/Paris. Cible : **DS920+, DSM 7.4.1-90080**, Container Manager, Linux amd64.
 
+## Application Android et widgets de listes
+
+L'application compagnon **MyHomeIA Android** ajoute des widgets redimensionnables à l'écran d'accueil, configurés séparément par foyer et par liste de courses ou checklist. Elle réutilise le compte et les API du NAS. Les widgets affichent l'icône personnalisée, les éléments, les quantités supérieures à 1, les notes et l'ordre des checklists, avec les cochés regroupés en bas. Les cases sont modifiables directement ; ajout, scan, édition, suppression et nettoyage ouvrent l'écran web ciblé dans l'application, avec les confirmations existantes. Les listes liées restent accessibles.
+
+Les liens de widget sélectionnent explicitement le foyer et la liste, y compris après connexion. Ils n'exécutent aucune mutation et sont consommés pour ne pas rouvrir une ancienne action au rechargement. Les destinations étrangères, listes supprimées et articles d'une autre liste sont refusés sans repli silencieux. Le cache natif est privé, limité à la liste et lié à la session ; une réponse ancienne ne peut pas être réassociée à un autre compte. Les révisions empêchent d'écraser une modification concurrente et aucune écriture hors ligne n'est rejouée automatiquement.
+
+Android peut différer le rafraîchissement périodique demandé toutes les trente minutes ; le widget propose une actualisation manuelle et affiche la dernière mise à jour ou une erreur. Les actions dans la WebView demandent une actualisation au retour à l'écran d'accueil.
+
+Le [guide Android](INSTALLER-ANDROID.md) décrit l'installation manuelle de l'APK, la configuration HTTPS, l'ajout des widgets et la recompilation. Il faut mettre le NAS à jour avec cette version des sources web avant d'utiliser les liens du widget. Les sources Android restent dans `android/` dans le dépôt et sont exclues du contexte Docker du NAS. La clé de signature privée reste dans `.runtime/android-signing/`, hors Git et hors package Synology ; elle doit être conservée pour les prochaines mises à jour de l'APK.
+
+Validation web : **106 tests unitaires réussis**, compilation de production avec TypeScript et lint ciblé des nouveaux helpers/hooks/tests réussis. **11 scénarios navigateur authentifiés réussis** sur une instance de production et des comptes/foyers fictifs isolés : foyer explicite malgré un autre foyer mémorisé, scan/édition/suppression/nettoyage sans mutation automatique, consommation des actions, rechargement, focus d'ajout courses et checklist, accès invalides et reprise après connexion. Aucun nouveau problème de lint dans `home-app.tsx` ; ses quatre erreurs et deux avertissements antérieurs restent présents.
+
+Validation Android : APK **release 1.0.0**, identifiant `fr.myhomeia.android`, minimum Android 8.0/API 26, cible API 35. Compilation release, lint Android sans erreur et signature v2 RSA 3072 vérifiés ; manifeste et contenu de l'APK inspectés, sans clé privée ni compte embarqué. Des avertissements non bloquants restent pour des textes français non externalisés, des attributs ignorés sur les anciennes versions et l'imbrication du layout. Le parcours web a été testé avec Edge en émulation tactile ; **aucun essai d'installation sur appareil ou émulateur Android ni sur le NAS** n'a été réalisé.
+
 ## Icône personnalisée dans les titres de listes
 
 Les en-têtes des listes de courses et checklists affichent désormais l'icône enregistrée sur la liste, comme leurs boutons de sélection. Le composant partagé `components/list-icon.tsx` couvre les sept icônes disponibles et s'applique aux pages de listes, au tableau de bord, au mode cuisine et aux checklists liées. Si l'icône manque ou est inconnue, un panier est utilisé pour les courses et des cases pour les checklists.

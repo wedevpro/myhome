@@ -1,0 +1,59 @@
+plugins {
+    id 'com.android.application'
+}
+
+def signingPropertiesFile = rootProject.file('../.runtime/android-signing/signing.properties')
+def signingProperties = new Properties()
+if (signingPropertiesFile.isFile()) {
+    signingPropertiesFile.withInputStream { signingProperties.load(it) }
+}
+
+android {
+    namespace 'fr.myhomeia.android'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'fr.myhomeia.android'
+        minSdk 26
+        targetSdk 35
+        versionCode = (project.findProperty('myhomeiaVersionCode') ?: '1').toString().toInteger()
+        versionName = (project.findProperty('myhomeiaVersionName') ?: '1.0.0').toString()
+    }
+
+    signingConfigs {
+        if (signingPropertiesFile.isFile()) {
+            release {
+                storeFile new File(signingPropertiesFile.parentFile, signingProperties.getProperty('storeFile'))
+                storePassword signingProperties.getProperty('storePassword')
+                keyAlias signingProperties.getProperty('keyAlias')
+                keyPassword signingProperties.getProperty('keyPassword')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            if (signingPropertiesFile.isFile()) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError true
+        checkReleaseBuilds true
+    }
+}
+
+gradle.taskGraph.whenReady { graph ->
+    if (graph.allTasks.any { it.name.toLowerCase().contains('release') } && !signingPropertiesFile.isFile()) {
+        throw new GradleException('Release signing key missing. Run android/scripts/Build-Apk.ps1 first.')
+    }
+}

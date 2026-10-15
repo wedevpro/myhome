@@ -6,6 +6,8 @@ Cette version fonctionne de manière autonome sur votre NAS : **Next.js, Node.js
 
 Pour installer le package sur le DS920+, suivez [GUIDE-SYNOLOGY.md](../GUIDE-SYNOLOGY.md). Le détail des fonctionnalités et du stockage est dans [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+L'application Android compagnon et ses widgets de listes sont décrits dans [INSTALLER-ANDROID.md](../INSTALLER-ANDROID.md). Les sources natives sont dans `../android/` ; le serveur et les données restent sur le NAS.
+
 ## Installation sur Synology
 
 Décompressez `myhomeia-synology.zip` dans `/volume1/docker/myhomeia`. Le Dockerfile, le fichier Compose et le dossier `app/` doivent être au même niveau. Copiez le modèle [../.env.example](../.env.example) en `../.env`, configurez votre adresse HTTPS puis préparez les permissions de `data/` comme indiqué dans le guide.
@@ -52,6 +54,7 @@ Le réglage HTTP ci-dessus concerne uniquement le développement local. La produ
 | `npm run test:api` | Démarre une instance standalone isolée, teste les API et vérifie la persistance après redémarrage. Nécessite un build préalable. |
 | `npm run test:browser` | Vérifie l'auto-complétion dans un navigateur isolé, avec clics, défilement tactile et clavier. Nécessite le CSS du build et un navigateur Chromium installé. |
 | `npm run test:browser:checklists` | Vérifie les checklists liées et le bouton Retour mobile dans l'application de production en mode démo, à la souris et en émulation tactile. Nécessite un build et un navigateur Chromium installé. |
+| `npm run test:browser:widget` | Vérifie les liens de widgets sur une instance de production isolée : choix du foyer et de la liste, formulaires ciblés sans mutation automatique, consommation des actions et reprise après connexion. |
 
 Ordre de vérification :
 

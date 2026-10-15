@@ -23,6 +23,18 @@ Le déploiement, le proxy HTTPS et les sauvegardes sont décrits dans [GUIDE-SYN
 
 Les encarts de courses et checklists partagent `components/list-panel.tsx`. Leur titre affiche directement le nom de la liste, sans descriptif ni sélecteur, avec retour à la ligne des noms longs. Les pages de listes utilisent leurs onglets avec icônes pour la sélection ; les encarts du tableau de bord et du mode cuisine suivent les préférences personnelles. Le compteur des articles à acheter figure dans l'en-tête.
 
+## Application Android et widgets
+
+Le dossier `android/` contient une application Java utilisant les composants Android standards, sans dépendance d'interface tierce. `MainActivity` charge l'interface HTTPS du NAS dans une WebView limitée à cette origine ; les liens extérieurs restent dans les applications adaptées. Le widget utilise `AppWidgetProvider`, une collection `RemoteViewsService`, une activité de configuration par instance et des jobs réseau. Les activités de destination sont directement ciblées par les `PendingIntent`, sans lancement d'écran depuis un receiver.
+
+La session HttpOnly de la WebView est réutilisée par le client HTTP natif pour `/api/state` et `/api/command`, avec l'en-tête `Origin` du NAS. Une instance du client reste liée à une session et refuse une requête si celle-ci change. Aucun endpoint, mot de passe stocké ni pont JavaScript privilégié n'est ajouté. Les rôles, audits et contrôles d'accès restent ceux des API existantes.
+
+Chaque widget conserve son foyer et sa liste. Seuls cette liste et ses articles sont mis en cache dans le stockage privé Android, avec une empreinte de la session attendue. Les réponses obtenues pour une ancienne session ne peuvent pas devenir le cache d'une nouvelle connexion. Une erreur d'authentification efface les caches ; la suppression de la liste retire son cache. Les cases envoient une sauvegarde ciblée avec la révision attendue ; aucune écriture n'est rejouée automatiquement après interruption. Les autres widgets du foyer sont actualisés après un cochage réussi.
+
+L'ajout, l'édition, la suppression, le nettoyage et le scan utilisent des liens `/?mobileWidget=1&household=…&list=…&action=…`, avec `item` pour l'édition ou la suppression d'un article. Un helper valide strictement la destination sur le snapshot autorisé ; une URL n'exécute aucune mutation. Le foyer demandé est chargé avant la liste et les erreurs ne basculent pas vers une autre liste. Les actions d'ouverture sont consommées en `action=open` afin d'éviter leur répétition au rechargement. Un chemin canonique sans identifiants de connexion peut être conservé trente minutes en sessionStorage pour reprendre après authentification.
+
+Le widget demande un rafraîchissement périodique toutes les trente minutes, manuel et après les interactions. Android peut différer les jobs en arrière-plan. La WebView demande aussi une actualisation au retour de l'application vers le lanceur. Les composants natifs nécessitent une nouvelle APK ; les écrans web restent actualisables sur le NAS. Voir [INSTALLER-ANDROID.md](../../INSTALLER-ANDROID.md) pour la construction et la clé de signature persistante.
+
 ## Navigation mobile
 
 `lib/app-navigation-history.ts` gère les entrées History API à URL constante. Son curseur `__myhomeia_navigation` est ajouté sans écraser les champs de Next.js. Les scènes restent dans une table en mémoire : page, listes sélectionnées, catalogue, mode cuisine, retour entre checklists liées, recherche, catégorie et défilement de la page. Un changement d'écran crée une entrée ; une saisie ou un défilement actualise la scène courante sans multiplier les étapes de retour.

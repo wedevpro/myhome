@@ -20,5 +20,8 @@
 data
 app/data
 app/runtime
+android
+myhomeia-*.apk
+myhomeia-*.apk.sha256
 myhomeia-*.zip
 myhomeia-*.tar.gz

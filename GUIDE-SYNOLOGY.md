@@ -107,6 +107,12 @@ Le bouton **⋯** de chaque article ouvre les actions **Modifier la quantité et
 
 La note s'affiche sous le nom de l'article et est partagée avec les membres du foyer. Elle appartient uniquement à cette ligne de courses : elle ne modifie pas la fiche produit et n'est pas recopiée lors d'un nouvel ajout du même produit, dans cette liste ou une autre. Cocher l'article conserve sa note ; supprimer la ligne la supprime également. Ces commandes sont disponibles dans les listes de courses, le tableau de bord et le mode cuisine.
 
+## Widgets sur l'écran d'accueil Android
+
+L'application Android compagnon permet d'afficher une liste de courses ou une checklist sur l'écran d'accueil du téléphone ou de la tablette. Chaque widget se configure avec son foyer et sa liste. Installez d'abord cette version du serveur NAS, puis suivez [INSTALLER-ANDROID.md](INSTALLER-ANDROID.md) pour installer l'APK et ajouter les widgets.
+
+Les cases sont utilisables dans le widget. Les actions d'ajout, d'édition, de suppression et de scan ouvrent les écrans correspondants de l'application, avec les mêmes données et droits d'accès. L'adresse HTTPS du NAS doit être joignable depuis l'appareil et correspondre à `SITE_ORIGIN`.
+
 ## Afficher une liste de courses ou une checklist
 
 L'en-tête de chaque encart affiche le **nom de la liste en cours**, aligné avec son **icône personnalisée**, sans descriptif ni liste déroulante. Modifiez cette icône via **⋯ → Nom et icône**. Sur les pages Courses et Checklists, les boutons avec icônes au-dessus de l'encart permettent de changer de liste. Sur le tableau de bord et en mode cuisine, les listes affichées se choisissent dans **Paramètres → Mon tableau de bord**. Le compteur des articles à acheter reste visible dans l'en-tête des courses.
