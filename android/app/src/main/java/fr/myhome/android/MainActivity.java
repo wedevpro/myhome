@@ -1,4 +1,4 @@
-package fr.myhomeia.android;
+package fr.myhome.android;
 
 import android.Manifest;
 import android.app.Activity;
@@ -67,8 +67,8 @@ public final class MainActivity extends Activity {
     };
 
     public static Intent intent(Context context, String householdId, String listId, String itemId, String action) {
-        return new Intent(context, MainActivity.class).setAction("fr.myhomeia.android.OPEN_LIST")
-            .setData(new Uri.Builder().scheme("myhomeia").authority("widget").appendPath(householdId == null ? "" : householdId)
+        return new Intent(context, MainActivity.class).setAction("fr.myhome.android.OPEN_LIST")
+            .setData(new Uri.Builder().scheme("myhome").authority("widget").appendPath(householdId == null ? "" : householdId)
                 .appendPath(listId == null ? "" : listId).appendQueryParameter("item", itemId == null ? "" : itemId)
                 .appendQueryParameter("action", ACTIONS.contains(action) ? action : "open").build())
             .putExtra("householdId", householdId).putExtra("listId", listId).putExtra("itemId", itemId)
@@ -123,13 +123,13 @@ public final class MainActivity extends Activity {
         if (web != null) { web.destroy(); web = null; }
         ScrollView scroll = new ScrollView(this);
         LinearLayout body = new LinearLayout(this); body.setOrientation(LinearLayout.VERTICAL); body.setPadding(dp(24), dp(28), dp(24), dp(24));
-        TextView title = new TextView(this); title.setText("Bienvenue dans MyHomeIA"); title.setTextSize(24); title.setTextColor(getColor(R.color.setup_text)); body.addView(title);
-        TextView description = new TextView(this); description.setText("Indiquez l’adresse HTTPS de votre application sur le NAS, puis connectez-vous avec votre compte MyHomeIA. Les widgets partageront cette connexion.");
+        TextView title = new TextView(this); title.setText("Bienvenue dans myHome"); title.setTextSize(24); title.setTextColor(getColor(R.color.setup_text)); body.addView(title);
+        TextView description = new TextView(this); description.setText("Indiquez l’adresse HTTPS de votre application sur le NAS, puis connectez-vous avec votre compte myHome. Les widgets partageront cette connexion.");
         description.setTextSize(16); description.setPadding(0, dp(18), 0, dp(18)); body.addView(description);
         EditText origin = new EditText(this); origin.setSingleLine(true); origin.setHint("https://maison.exemple.fr"); origin.setText(store.getOrigin());
         origin.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_URI); origin.setContentDescription("Adresse HTTPS du NAS"); body.addView(origin);
         TextView error = new TextView(this); error.setTextColor(getColor(R.color.setup_error)); body.addView(error);
-        body.addView(button("Ouvrir MyHomeIA", view -> {
+        body.addView(button("Ouvrir myHome", view -> {
             final String normalized;
             try { normalized = ServerClient.normalizeOrigin(origin.getText().toString()); }
             catch (IOException invalid) { error.setText(invalid.getMessage()); return; }
@@ -167,13 +167,13 @@ public final class MainActivity extends Activity {
         LinearLayout toolbar = new LinearLayout(this); toolbar.setGravity(android.view.Gravity.CENTER_VERTICAL);
         Button back = button("‹", view -> goBack()); back.setContentDescription("Retour");
         toolbar.addView(back, new LinearLayout.LayoutParams(dp(48), dp(48)));
-        TextView name = new TextView(this); name.setText("MyHomeIA"); name.setTextSize(17); name.setTextColor(getColor(R.color.setup_accent_dark));
+        TextView name = new TextView(this); name.setText("myHome"); name.setTextSize(17); name.setTextColor(getColor(R.color.setup_accent_dark));
         toolbar.addView(name, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         if (getIntent().getBooleanExtra("widgetConfiguration", false)) toolbar.addView(button("Continuer", view -> finish()));
         else {
             Button pin = button("＋", view -> pinWidget()); pin.setContentDescription("Ajouter un widget"); toolbar.addView(pin, new LinearLayout.LayoutParams(dp(48), dp(48)));
         }
-        Button settings = button("⋯", view -> new AlertDialog.Builder(this).setTitle("MyHomeIA Android")
+        Button settings = button("⋯", view -> new AlertDialog.Builder(this).setTitle("myHome Android")
             .setItems(new String[]{"Ajouter un widget", "Actualiser la page et les widgets", "Adresse du NAS", "Se déconnecter"}, (dialog, which) -> {
                 if (which == 0) pinWidget();
                 else if (which == 1) { web.reload(); MyHomeWidgetProvider.refreshAll(this); }
@@ -193,7 +193,7 @@ public final class MainActivity extends Activity {
         settingsWeb.setAllowFileAccess(false); settingsWeb.setAllowContentAccess(false);
         settingsWeb.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settingsWeb.setSafeBrowsingEnabled(true); settingsWeb.setMediaPlaybackRequiresUserGesture(true);
-        settingsWeb.setUserAgentString(settingsWeb.getUserAgentString() + " MyHomeIAAndroid/1.0");
+        settingsWeb.setUserAgentString(settingsWeb.getUserAgentString() + " myHomeAndroid/1.0");
         if (Build.VERSION.SDK_INT >= 29) web.setForceDarkAllowed(false);
         if (Build.VERSION.SDK_INT >= 33) settingsWeb.setAlgorithmicDarkeningAllowed(false);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, false);
@@ -261,7 +261,7 @@ public final class MainActivity extends Activity {
         final String origin = store.getOrigin();
         final long request = ++appearanceReadId;
         appearanceReading = true;
-        source.evaluateJavascript("(function(){try{return localStorage.getItem('myhomeia-theme')||'light';}catch(e){return null;}})()", value -> {
+        source.evaluateJavascript("(function(){try{return localStorage.getItem('myhome-theme')||'light';}catch(e){return null;}})()", value -> {
             if (request != appearanceReadId) return;
             appearanceReading = false;
             if (isDestroyed() || source != web || !origin.equals(store.getOrigin())) return;
@@ -339,14 +339,14 @@ public final class MainActivity extends Activity {
         if (manager.isRequestPinAppWidgetSupported()) {
             // Pin requests skip the provider's usual configuration activity.
             Intent configure = new Intent(this, WidgetConfigureActivity.class)
-                .setData(Uri.parse("myhomeia://pinned-widget/" + (quickScan ? "scan/" : "list/") + System.currentTimeMillis()))
+                .setData(Uri.parse("myhome://pinned-widget/" + (quickScan ? "scan/" : "list/") + System.currentTimeMillis()))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             PendingIntent callback = PendingIntent.getActivity(this, 0, configure,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
             manager.requestPinAppWidget(new ComponentName(this,
                     quickScan ? QuickScanWidgetProvider.class : MyHomeWidgetProvider.class), null, callback);
         }
-        else toast("Sur l’écran d’accueil Android, faites un appui long, puis Widgets → MyHomeIA.");
+        else toast("Sur l’écran d’accueil Android, faites un appui long, puis Widgets → myHome.");
     }
 
     private void hideFullscreen() {

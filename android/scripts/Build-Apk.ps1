@@ -2,8 +2,8 @@
 param(
     [string]$JavaHome,
     [string]$AndroidSdk,
-    [int]$VersionCode = 7,
-    [string]$VersionName = '1.0.6',
+    [int]$VersionCode = 8,
+    [string]$VersionName = '1.0.7',
     [string]$OutputDirectory
 )
 
@@ -24,7 +24,7 @@ $env:GRADLE_USER_HOME = Join-Path $projectRoot '.runtime\gradle-home'
 $env:ANDROID_USER_HOME = Join-Path $projectRoot '.runtime\android-user'
 $signingRoot = Join-Path $projectRoot '.runtime\android-signing'
 $signingFile = Join-Path $signingRoot 'signing.properties'
-$keystorePath = Join-Path $signingRoot 'myhomeia-release.jks'
+$keystorePath = Join-Path $signingRoot 'myhome-release.jks'
 New-Item -ItemType Directory -Force -Path $signingRoot, $OutputDirectory | Out-Null
 
 if (-not (Test-Path -LiteralPath $signingFile)) {
@@ -33,13 +33,13 @@ if (-not (Test-Path -LiteralPath $signingFile)) {
     $random = [System.Security.Cryptography.RandomNumberGenerator]::Create()
     try { $random.GetBytes($randomBytes) } finally { $random.Dispose() }
     $password = [System.BitConverter]::ToString($randomBytes).Replace('-', '').ToLowerInvariant()
-    $env:MYHOMEIA_SIGNING_PASSWORD = $password
+    $env:MYHOME_SIGNING_PASSWORD = $password
     try {
-        & (Join-Path $env:JAVA_HOME 'bin\keytool.exe') -genkeypair -keystore $keystorePath -storetype JKS -storepass:env MYHOMEIA_SIGNING_PASSWORD -keypass:env MYHOMEIA_SIGNING_PASSWORD -alias myhomeia-release -keyalg RSA -keysize 3072 -validity 10000 -dname 'CN=MyHomeIA, O=MyHomeIA' -noprompt
+        & (Join-Path $env:JAVA_HOME 'bin\keytool.exe') -genkeypair -keystore $keystorePath -storetype JKS -storepass:env MYHOME_SIGNING_PASSWORD -keypass:env MYHOME_SIGNING_PASSWORD -alias myhome-release -keyalg RSA -keysize 3072 -validity 10000 -dname 'CN=myHome, O=myHome' -noprompt
         if ($LASTEXITCODE -ne 0) { throw 'Release key generation failed.' }
-        [System.IO.File]::WriteAllText($signingFile, "storeFile=myhomeia-release.jks`nstorePassword=$password`nkeyAlias=myhomeia-release`nkeyPassword=$password`n", [System.Text.Encoding]::ASCII)
+        [System.IO.File]::WriteAllText($signingFile, "storeFile=myhome-release.jks`nstorePassword=$password`nkeyAlias=myhome-release`nkeyPassword=$password`n", [System.Text.Encoding]::ASCII)
     } finally {
-        Remove-Item Env:\MYHOMEIA_SIGNING_PASSWORD -ErrorAction SilentlyContinue
+        Remove-Item Env:\MYHOME_SIGNING_PASSWORD -ErrorAction SilentlyContinue
         $password = $null
     }
     Write-Host 'Persistent release key created in .runtime/android-signing. Keep a private backup of this directory for future updates.'
@@ -50,15 +50,15 @@ Push-Location $androidRoot
 try {
     $gradleLauncher = Join-Path $projectRoot '.runtime\android-tools\gradle-8.11.1\bin\gradle.bat'
     if (-not (Test-Path -LiteralPath $gradleLauncher)) { $gradleLauncher = Join-Path $androidRoot 'gradlew.bat' }
-    & $gradleLauncher --no-daemon --console=plain ("-PmyhomeiaVersionCode=$VersionCode") ("-PmyhomeiaVersionName=$VersionName") ':app:assembleRelease' ':app:lintRelease'
+    & $gradleLauncher --no-daemon --console=plain ("-PmyhomeVersionCode=$VersionCode") ("-PmyhomeVersionName=$VersionName") ':app:assembleRelease' ':app:lintRelease'
     if ($LASTEXITCODE -ne 0) { throw 'Android release build failed.' }
 } finally { Pop-Location }
 
 $apkPath = Join-Path $androidRoot 'app\build\outputs\apk\release\app-release.apk'
 & (Join-Path $env:ANDROID_HOME 'build-tools\35.0.0\apksigner.bat') verify --verbose --print-certs $apkPath
 if ($LASTEXITCODE -ne 0) { throw 'APK signature verification failed.' }
-$deliveryPath = Join-Path $OutputDirectory 'myhomeia-android.apk'
+$deliveryPath = Join-Path $OutputDirectory 'myhome-android.apk'
 Copy-Item -LiteralPath $apkPath -Destination $deliveryPath -Force
 $hash = (Get-FileHash -LiteralPath $deliveryPath -Algorithm SHA256).Hash.ToLowerInvariant()
-[System.IO.File]::WriteAllText(($deliveryPath + '.sha256'), ($hash + '  myhomeia-android.apk' + "`n"), [System.Text.Encoding]::ASCII)
+[System.IO.File]::WriteAllText(($deliveryPath + '.sha256'), ($hash + '  myhome-android.apk' + "`n"), [System.Text.Encoding]::ASCII)
 Write-Host ('Signed APK: ' + $deliveryPath)

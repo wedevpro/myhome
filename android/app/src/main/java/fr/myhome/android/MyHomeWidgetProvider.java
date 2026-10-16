@@ -1,4 +1,4 @@
-package fr.myhomeia.android;
+package fr.myhome.android;
 
 import android.app.PendingIntent;
 import android.app.job.JobInfo;
@@ -36,8 +36,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Android launcher widgets use the same authenticated API as the web application. */
 public class MyHomeWidgetProvider extends AppWidgetProvider {
-    static final String ACTION_REFRESH = "fr.myhomeia.android.WIDGET_REFRESH";
-    static final String ACTION_ITEM = "fr.myhomeia.android.WIDGET_ITEM";
+    static final String ACTION_REFRESH = "fr.myhome.android.WIDGET_REFRESH";
+    static final String ACTION_ITEM = "fr.myhome.android.WIDGET_ITEM";
     static final String EXTRA_ITEM = "itemId";
     static final String EXTRA_ACTION = "action";
     private static final int JOB_BASE = 240_000;
@@ -210,7 +210,7 @@ public class MyHomeWidgetProvider extends AppWidgetProvider {
 
     private static PendingIntent broadcast(Context context, int id, String action) {
         Intent intent = new Intent(context, MyHomeWidgetProvider.class).setAction(action)
-                .setData(Uri.parse("myhomeia-widget://" + id + "/" + action))
+                .setData(Uri.parse("myhome-widget://" + id + "/" + action))
                 .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id);
         return PendingIntent.getBroadcast(context, id, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
@@ -218,7 +218,7 @@ public class MyHomeWidgetProvider extends AppWidgetProvider {
 
     private static PendingIntent itemActions(Context context, int id) {
         Intent intent = new Intent(context, WidgetActionActivity.class).setAction(ACTION_ITEM)
-                .setData(Uri.parse("myhomeia-widget://" + id + "/items/action"))
+                .setData(Uri.parse("myhome-widget://" + id + "/items/action"))
                 .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
         return PendingIntent.getActivity(context, id, intent,
@@ -227,7 +227,7 @@ public class MyHomeWidgetProvider extends AppWidgetProvider {
 
     private static PendingIntent web(Context context, int id, String householdId, String listId, String action) {
         Intent intent = MainActivity.intent(context, householdId, listId, null, action);
-        intent.setData(Uri.parse("myhomeia-widget://" + id + "/web/" + action));
+        intent.setData(Uri.parse("myhome-widget://" + id + "/web/" + action));
         return PendingIntent.getActivity(context, id, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
@@ -244,11 +244,11 @@ public class MyHomeWidgetProvider extends AppWidgetProvider {
         RemoteViews views = new RemoteViews(context.getPackageName(),
                 forced ? R.layout.widget_list_forced : R.layout.widget_list);
         if (forced) applyForcedAppearance(views, widgetThemeContext(context, dark), dark);
-        views.setTextViewText(R.id.widget_title, available ? data(list).optString("name", "Ma liste") : "MyHomeIA");
+        views.setTextViewText(R.id.widget_title, available ? data(list).optString("name", "Ma liste") : "myHome");
         views.setImageViewResource(R.id.widget_icon, icon(list));
         views.setOnClickPendingIntent(R.id.widget_header, web(context, id, householdId, listId, "open"));
         Intent configure = new Intent(context, WidgetConfigureActivity.class)
-                .setData(Uri.parse("myhomeia-widget://" + id + "/configure"))
+                .setData(Uri.parse("myhome-widget://" + id + "/configure"))
                 .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         PendingIntent configureIntent = PendingIntent.getActivity(context, id, configure,
@@ -296,7 +296,7 @@ public class MyHomeWidgetProvider extends AppWidgetProvider {
         Intent service = new Intent(context, WidgetItemsService.class)
                 .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
                 .putExtra("widgetThemeForced", forced).putExtra("widgetThemeDark", dark)
-                .setData(Uri.parse("myhomeia-widget://" + id + "/items/" + mode + (dark ? "/dark" : "/light")));
+                .setData(Uri.parse("myhome-widget://" + id + "/items/" + mode + (dark ? "/dark" : "/light")));
         views.setRemoteAdapter(R.id.widget_items, service);
         views.setEmptyView(R.id.widget_items, R.id.widget_empty);
         views.setPendingIntentTemplate(R.id.widget_items, itemActions(context, id));
@@ -442,7 +442,7 @@ public class MyHomeWidgetProvider extends AppWidgetProvider {
                             ? ((ServerClient.ApiException) exception).getStatus() : 0;
                     if (status == 401 || status == 403) {
                         store.clearCaches();
-                        store.setError(id, "Connexion nécessaire. Ouvrez MyHomeIA pour vous connecter.");
+                        store.setError(id, "Connexion nécessaire. Ouvrez myHome pour vous connecter.");
                         // Remove previously rendered data from every widget immediately.
                         MyHomeWidgetProvider.renderAll(this);
                     } else if (status == 404) {

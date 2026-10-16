@@ -1,15 +1,17 @@
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { resolveDatabasePath } from "./database-path.mjs";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
-if (!process.env.SITE_ORIGIN) throw new Error("SITE_ORIGIN must be configured before starting MyHomeIA.");
+if (!process.env.SITE_ORIGIN) throw new Error("SITE_ORIGIN must be configured before starting myHome.");
 const publicUrl = new URL(process.env.SITE_ORIGIN);
 if (publicUrl.protocol !== "https:" && !(publicUrl.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(publicUrl.hostname))) throw new Error("SITE_ORIGIN must use HTTPS (HTTP is allowed only on loopback for local checks).");
 const server = existsSync("server.js") ? resolve("server.js") : resolve(".next/standalone/server.js");
 const reminders = resolve("runtime/reminders.mjs");
-if (!existsSync(server) || !existsSync(reminders)) throw new Error("Build MyHomeIA before starting: npm run build.");
-const children = [server, reminders].map(script => spawn(process.execPath, [script], { stdio: "inherit", env: { ...process.env, NODE_ENV: "production", HOSTNAME: process.env.HOSTNAME || "0.0.0.0", DB_PATH: process.env.DB_PATH || resolve("data/myhomeia.sqlite"), MIGRATIONS_DIR: process.env.MIGRATIONS_DIR || resolve("drizzle") } }));
+if (!existsSync(server) || !existsSync(reminders)) throw new Error("Build myHome before starting: npm run build.");
+const databasePath = resolveDatabasePath();
+const children = [server, reminders].map(script => spawn(process.execPath, [script], { stdio: "inherit", env: { ...process.env, NODE_ENV: "production", HOSTNAME: process.env.HOSTNAME || "0.0.0.0", DB_PATH: databasePath, MIGRATIONS_DIR: process.env.MIGRATIONS_DIR || resolve("drizzle") } }));
 let stopping = false;
 function stop(code = 0) {
   if (stopping) return;
@@ -20,7 +22,7 @@ function stop(code = 0) {
 }
 for (const child of children) {
   child.once("error", error => { console.error(error); stop(1); });
-  child.once("exit", code => { if (!stopping) { console.error("A MyHomeIA process exited; stopping the service."); stop(code || 1); } });
+  child.once("exit", code => { if (!stopping) { console.error("A myHome process exited; stopping the service."); stop(code || 1); } });
 }
 process.on("SIGTERM", () => stop());
 process.on("SIGINT", () => stop());

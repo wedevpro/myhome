@@ -2,6 +2,7 @@ import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { createHash } from "node:crypto";
+import { resolveDatabasePath } from "../scripts/database-path.mjs";
 
 type Row = Record<string, unknown>;
 type Result<T = Row> = { results: T[]; success: true; meta: { changes: number; last_row_id: number } };
@@ -77,7 +78,7 @@ export class SqliteDatabase {
   close() { this.connection.close(); }
 }
 
-const shared = globalThis as typeof globalThis & { myhomeiaDatabase?: SqliteDatabase };
+const shared = globalThis as typeof globalThis & { myhomeDatabase?: SqliteDatabase };
 export function database() {
-  return shared.myhomeiaDatabase ??= new SqliteDatabase(process.env.DB_PATH || resolve(process.cwd(), "data", "myhomeia.sqlite"));
+  return shared.myhomeDatabase ??= new SqliteDatabase(resolveDatabasePath());
 }

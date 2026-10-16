@@ -3,10 +3,10 @@ import ThemeProvider from "@/components/theme-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MyHomeIA — Votre foyer, simplement",
+  title: "myHome — Votre foyer, simplement",
   description: "Courses, tâches, notes et contacts partagés. Votre maison, en un coup d’œil.",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, title: "MyHomeIA", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "myHome", statusBarStyle: "default" },
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",

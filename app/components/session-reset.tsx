@@ -31,7 +31,7 @@ export default function SessionReset() {
       }
       window.location.replace("/connexion");
     } catch (cause) {
-      console.error("MyHomeIA logout request failed", cause);
+      console.error("myHome logout request failed", cause);
       setServerUnavailable(true);
       setError("Le serveur est injoignable ou ne répond pas. Réessayez après son redémarrage.");
     } finally {
@@ -43,7 +43,7 @@ export default function SessionReset() {
   return (
     <main className="min-h-screen flex items-center justify-center p-6 bg-[#f7f8fc]">
       <section className="management-card settings-section w-full max-w-md">
-        <p className="mb-8 font-semibold text-xl text-[#7761d5]">MyHomeIA</p>
+        <p className="mb-8 font-semibold text-xl text-[#7761d5]">myHome</p>
         <h1 className="text-2xl font-semibold mb-3">Fermer votre session</h1>
         <p className="helper mb-7">Vous pouvez vous déconnecter ici lorsque le tableau de bord ne s'affiche plus, puis retrouver la page de connexion.</p>
         <button type="button" className="primary-button w-full" onClick={() => void logout()} disabled={busy} aria-busy={busy}>

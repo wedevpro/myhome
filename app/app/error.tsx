@@ -7,12 +7,12 @@ export default function ApplicationError({ error, retry, reset }: {
   retry?: () => void;
   reset: () => void;
 }) {
-  useEffect(() => { console.error("MyHomeIA page error", error); }, [error]);
+  useEffect(() => { console.error("myHome page error", error); }, [error]);
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6 bg-[#f7f8fc]">
       <section className="management-card settings-section w-full max-w-md">
-        <p className="mb-8 font-semibold text-xl text-[#7761d5]">MyHomeIA</p>
+        <p className="mb-8 font-semibold text-xl text-[#7761d5]">myHome</p>
         <h1 className="text-2xl font-semibold mb-3">La page n'a pas pu s'afficher</h1>
         <p className="helper mb-7">Une erreur empêche l'affichage de cette page. Réessayez ; si elle persiste, vous pouvez fermer votre session depuis la page de déconnexion.</p>
         <div className="flex flex-wrap gap-3">

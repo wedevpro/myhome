@@ -19,7 +19,7 @@ export async function POST(request:Request){try{
  }else{
   const subscriptions=await db.prepare("SELECT data FROM push_subscriptions WHERE household_id=? AND user_id=? AND endpoint=?").bind(c.householdId,user.id,c.endpoint||"").all<{data:string}>();
   if(!subscriptions.results.length)throw new ApiError(400,"Activez les notifications sur cet appareil avant de les tester.");
-  for(const s of subscriptions.results){const status=await sendPush(JSON.parse(s.data),{title:"Bienvenue à la maison",body:"Les notifications MyHomeIA arrivent sur cet appareil.",url:"/",tag:"myhomeia-test"},process.env.SITE_ORIGIN||new URL(request.url).origin);if(status<200||status>=300)throw new ApiError(502,"Le service de notifications n’a pas accepté le message. Réactivez l’abonnement.");}
+  for(const s of subscriptions.results){const status=await sendPush(JSON.parse(s.data),{title:"Bienvenue à la maison",body:"Les notifications myHome arrivent sur cet appareil.",url:"/",tag:"myhome-test"},process.env.SITE_ORIGIN||new URL(request.url).origin);if(status<200||status>=300)throw new ApiError(502,"Le service de notifications n’a pas accepté le message. Réactivez l’abonnement.");}
  }
  return Response.json({ok:true});
 }catch(e){return failure(e);}}

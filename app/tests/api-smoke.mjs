@@ -6,7 +6,7 @@ import { resolve, sep } from "node:path";
 import { createServer } from "node:net";
 import { fileURLToPath } from "node:url";
 
-const temporary = mkdtempSync(resolve(tmpdir(), "myhomeia-api-"));
+const temporary = mkdtempSync(resolve(tmpdir(), "myhome-api-"));
 const socket = createServer();
 await new Promise(done => socket.listen(0, "127.0.0.1", done));
 const port = socket.address().port;
@@ -712,31 +712,12 @@ try {
   const admin = client(), member = client(), outsider = client(), anonymous = client();
   const password = "Un mot de passe pour le test 2026!";
   let demoPage = await anonymous("/"); assert.equal(demoPage.status, 200);
-  assert.match(demoPage.text, /Trier la checklist de A à Z/);
-  assert.match(demoPage.text, /Trier la checklist de Z à A/);
-  assert.match(demoPage.text, /Filtrer les éléments de Les petites choses à faire/);
-  assert.match(demoPage.text, /aria-label="Actions pour Arroser les plantes, position 1"/);
-  const renderedButtons = demoPage.text.match(/<button\b[^>]*>[\s\S]*?<\/button>/g) || [];
-  const avocadoQuantity = renderedButtons.find(button => /aria-label="Modifier la quantit(?:é|&eacute;|&#0*233;|&#x0*[eE]9;) de Avocats"/.test(button));
-  assert.ok(avocadoQuantity, "Shopping quantity stays directly editable outside its menu");
-  assert.match(avocadoQuantity, /\bquantity-button\b/);
-  assert.match(avocadoQuantity.replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]*>/g, ""), /\b2\s+pi(?:è|&egrave;|&#0*232;|&#x0*[eE]8;)ces\b/, "Shopping quantity and unit stay visible");
-  // Closed Radix menus use a portal: verify their visible triggers in SSR, not hidden menu content.
-  for (const name of ["Avocats", "Pain de campagne"]) {
-    const actions = renderedButtons.find(button => button.includes(`aria-label="Actions pour ${name}"`));
-    assert.ok(actions, "Shopping actions menu is present for " + name);
-    assert.match(actions, /\bitem-actions-trigger\b/);
-    assert.match(actions, /\bshopping-actions-trigger\b/);
-    assert.match(actions, /\blucide-ellipsis\b/);
-  }
-  assert.doesNotMatch(renderedButtons.join(""), /\bshopping-item-edit\b|\bitem-delete\b|aria-label="Retirer /, "Individual shopping pencil and remove buttons are replaced by the menu");
-  const indexOfClass = className => {
-    const match = new RegExp('class="[^"]*\\b' + className + '\\b[^"]*"').exec(demoPage.text);
-    assert.ok(match, "SSR element missing class " + className); return match.index;
-  };
-  assert.ok(indexOfClass("add-item") < indexOfClass("shopping-items"), "Shopping entry appears before the items");
-  assert.ok(indexOfClass("scan-button") < indexOfClass("shopping-items"), "Barcode scanner appears before the shopping items");
-  assert.ok(indexOfClass("add-task") < indexOfClass("task-items"), "Task entry appears before the task items");
+  // Widget routing waits for client hydration before showing lists; HTTP checks
+  // validate the shell. Interactive list controls are exercised in browser tests.
+  assert.match(demoPage.text, /<title>myHome — Votre foyer, simplement<\/title>/);
+  assert.match(demoPage.text, /"myhome-theme"/);
+  assert.match(demoPage.text, /Chargement de votre foyer/);
+  assert.doesNotMatch(demoPage.text, /929290566|Only plain objects|:E\{/);
   let recovery = await anonymous("/deconnexion"); assert.equal(recovery.status, 200); assert.match(recovery.text, /Fermer votre session/);
   let r = await anonymous("/api/state"); assert.equal(r.status, 401);
   r = await anonymous("/api/state", undefined, { "oai-authenticated-user-id": "local_seedy", "oai-authenticated-user-email": "admin@example.fr" }); assert.equal(r.status, 401);
@@ -822,10 +803,10 @@ try {
   r = await member("/api/state?household=" + household.id); assert.equal(r.status, 403);
   r = await member("/api/command", { action: "joinHousehold", code: household.code }); assert.equal(r.status, 403);
   r = await command({ action: "delete", id: list.id, expectedRevision: list.revision }); assert.equal(r.status, 200); assert.equal(r.json.entities.filter(e => e.kind === "item" && e.data.listId === list.id).length, 0); assert.equal(r.json.entities.filter(e => e.kind === "product").length, 1); assert.equal(r.json.entities.filter(e => e.kind === "item" && e.data.listId === orderedChecklist.id).length, orderedChecklist.itemIds.length);
-  console.log("NAS API/pages passed: authenticated dashboard after signup/login/restart, logout recovery page, secure sessions, household sharing/isolation, roles, barcodes/name matching/ambiguity/explicit selection, shopping item quantities/comments/validation/isolation, checklist links/independent completion/audited cleanup/isolation, checklist ordering/sharing/audits/conflicts/reset/rename, completed-item purge/atomicity/isolation, task label edits, entry placement, preferences, CSRF and persistence.");
+  console.log("NAS API/pages passed: authenticated dashboard after signup/login/restart, logout recovery page, secure sessions, household sharing/isolation, roles, barcodes/name matching/ambiguity/explicit selection, shopping item quantities/comments/validation/isolation, checklist links/independent completion/audited cleanup/isolation, checklist ordering/sharing/audits/conflicts/reset/rename, completed-item purge/atomicity/isolation, task label edits, renamed page metadata, preferences, CSRF and persistence.");
 } catch (error) { console.error(logs); throw error; }
 finally {
   await stop();
-  if (!resolve(temporary).startsWith(resolve(tmpdir()) + sep + "myhomeia-api-")) throw new Error("Unexpected temporary path");
+  if (!resolve(temporary).startsWith(resolve(tmpdir()) + sep + "myhome-api-")) throw new Error("Unexpected temporary path");
   rmSync(temporary, { recursive: true, force: true });
 }

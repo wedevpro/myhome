@@ -1,4 +1,4 @@
-# État de livraison — MyHomeIA
+# État de livraison — myHome
 
 9 octobre 2026, Europe/Paris.
 
@@ -34,7 +34,7 @@ L’archive a été créée et envoyée. La source correspondante a été enregi
 | Version enregistrée | `appgprj_6ac8a886a1e88191bcfe92447835dd1c~appgver_775cd304b0888191af346c482e4f137e` |
 | Déploiement échoué | `appgdep_6ac8b605e3e48191b5fb230b16362184` |
 | Commit source | `1020bb8385e607900751cd64b0ff2219c1e27fdb` |
-| Archive | `D:/Projets/MyHomeIA/myhomeia-site.tar.gz` |
+| Archive | `D:/Projets/myHome/myhome-site.tar.gz` |
 | Erreur exacte | `incomplete input: SQLITE_ERROR` |
 | Échec enregistré | 9 octobre 2026 à 11:38:21, Europe/Paris |
 

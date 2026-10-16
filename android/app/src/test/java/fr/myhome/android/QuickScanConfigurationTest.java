@@ -1,4 +1,4 @@
-package fr.myhomeia.android;
+package fr.myhome.android;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -46,13 +46,13 @@ public class QuickScanConfigurationTest {
 
     @Before public void prepareSession() {
         application = RuntimeEnvironment.getApplication();
-        application.getSharedPreferences("myhomeia_widgets", Context.MODE_PRIVATE).edit().clear().commit();
-        application.getSharedPreferences("myhomeia_appearance", Context.MODE_PRIVATE).edit().clear().commit();
+        application.getSharedPreferences("myhome_widgets", Context.MODE_PRIVATE).edit().clear().commit();
+        application.getSharedPreferences("myhome_appearance", Context.MODE_PRIVATE).edit().clear().commit();
         CookieManager.getInstance().removeAllCookies(null);
         RuntimeEnvironment.setQualifiers("+notnight");
         store = new WidgetStore(application);
         store.setOrigin(NAS);
-        CookieManager.getInstance().setCookie(NAS, "myhomeia_session=" + "a".repeat(64));
+        CookieManager.getInstance().setCookie(NAS, "myhome_session=" + "a".repeat(64));
         launcher = Shadows.shadowOf(AppWidgetManager.getInstance(application));
     }
 
@@ -142,9 +142,9 @@ public class QuickScanConfigurationTest {
             assertEquals("shopping-one", store.getListId(WIDGET_ID));
             assertEquals("Cuisine", store.getWidgetListName(WIDGET_ID));
             assertNull("A scan shortcut must not cache the list or its private items", store.getSnapshot(WIDGET_ID));
-            assertFalse(application.getSharedPreferences("myhomeia_widgets", Context.MODE_PRIVATE)
+            assertFalse(application.getSharedPreferences("myhome_widgets", Context.MODE_PRIVATE)
                     .contains("cache_" + WIDGET_ID));
-            assertFalse(application.getSharedPreferences("myhomeia_widgets", Context.MODE_PRIVATE)
+            assertFalse(application.getSharedPreferences("myhome_widgets", Context.MODE_PRIVATE)
                     .getAll().toString().contains("Produit privé"));
             CookieManager.getInstance().removeAllCookies(null);
             assertEquals("The destination name must not remain visible after signing out", "", store.getWidgetListName(WIDGET_ID));

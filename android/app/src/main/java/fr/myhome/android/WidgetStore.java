@@ -1,4 +1,4 @@
-package fr.myhomeia.android;
+package fr.myhome.android;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -12,7 +12,7 @@ import java.security.NoSuchAlgorithmException;
 /** App-private settings; cached list data is bound to the active WebView session. */
 public final class WidgetStore {
     private final SharedPreferences preferences;
-    public WidgetStore(Context context) { preferences = context.getApplicationContext().getSharedPreferences("myhomeia_widgets", Context.MODE_PRIVATE); }
+    public WidgetStore(Context context) { preferences = context.getApplicationContext().getSharedPreferences("myhome_widgets", Context.MODE_PRIVATE); }
     public String getOrigin() { return preferences.getString("origin", ""); }
     public void setOrigin(String origin) {
         if (!origin.equals(getOrigin())) preferences.edit().clear().putString("origin", origin).apply();

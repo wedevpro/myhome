@@ -9,7 +9,7 @@
     android:initialLayout="@layout/quick_scan_widget"
     android:previewLayout="@layout/quick_scan_widget"
     android:description="@string/quick_scan_widget_description"
-    android:configure="fr.myhomeia.android.WidgetConfigureActivity"
+    android:configure="fr.myhome.android.WidgetConfigureActivity"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:widgetFeatures="reconfigurable"

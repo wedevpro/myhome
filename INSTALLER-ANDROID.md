@@ -1,20 +1,22 @@
-# Installer MyHomeIA et ses widgets sur Android
+# Installer myHome et ses widgets sur Android
 
-L'application **MyHomeIA Android** utilise le même serveur, les mêmes comptes et les mêmes foyers que l'application web sur le NAS. Elle nécessite **Android 8.0 ou ultérieur** et une adresse **HTTPS avec un certificat valide**. Elle ne contient ni adresse de NAS, ni compte préconfiguré.
+L'application **myHome Android** utilise le même serveur, les mêmes comptes et les mêmes foyers que l'application web sur le NAS. Elle nécessite **Android 8.0 ou ultérieur** et une adresse **HTTPS avec un certificat valide**. Elle ne contient ni adresse de NAS, ni compte préconfiguré.
 
 ## Première installation
 
-1. Mettez d'abord le NAS à jour avec le nouveau `myhomeia-synology.zip`, selon [GUIDE-SYNOLOGY.md](GUIDE-SYNOLOGY.md). Les sources web de cette livraison permettent d'ouvrir la liste et le formulaire demandés par le widget.
-2. Copiez `myhomeia-android.apk` sur le téléphone ou la tablette. Ouvrez ce fichier et autorisez l'installation depuis cette source si Android le demande.
-3. Ouvrez **MyHomeIA**, renseignez l'adresse HTTPS exacte utilisée pour accéder au NAS, puis connectez-vous avec votre compte habituel.
-4. Depuis l'écran d'accueil Android, faites un appui long, choisissez **Widgets**, puis **MyHomeIA**. Deux widgets sont disponibles : la liste complète et **MyHomeIA · Scan rapide**. Le bouton **＋** dans l'application permet aussi de choisir l'un des deux si le lanceur Android prend en charge leur ajout.
+La version **1.0.7** adopte le nom **myHome** et l'identifiant Android **`fr.myhome.android`**. Si une version antérieure est déjà installée, Android considère myHome comme une autre application : renseignez à nouveau le serveur, connectez-vous et recréez les widgets. Les comptes et listes restent sur le NAS. **Mettez le NAS à jour avec le package renommé avant de connecter cette nouvelle application**, car le nom du cookie de session change également.
+
+1. Mettez d'abord le NAS à jour avec le nouveau `myhome-synology.zip`, selon [GUIDE-SYNOLOGY.md](GUIDE-SYNOLOGY.md). Les sources web de cette livraison permettent d'ouvrir la liste et le formulaire demandés par le widget.
+2. Copiez `myhome-android.apk` sur le téléphone ou la tablette. Ouvrez ce fichier et autorisez l'installation depuis cette source si Android le demande.
+3. Ouvrez **myHome**, renseignez l'adresse HTTPS exacte utilisée pour accéder au NAS, puis connectez-vous avec votre compte habituel.
+4. Depuis l'écran d'accueil Android, faites un appui long, choisissez **Widgets**, puis **myHome**. Deux widgets sont disponibles : la liste complète et **myHome · Scan rapide**. Le bouton **＋** dans l'application permet aussi de choisir l'un des deux si le lanceur Android prend en charge leur ajout.
 5. Dans la configuration du widget, choisissez le **foyer** puis la **liste**, et confirmez **Afficher cette liste** ou **Créer le raccourci scan**. Le widget de liste regroupe les choix sous les en-têtes non sélectionnables **Courses** et **Checklists** ; le raccourci de scan propose uniquement des listes de courses. Si une connexion est nécessaire, utilisez **Connexion / serveur**, connectez-vous, puis touchez **Continuer** dans la barre Android pour retrouver la configuration.
 
 Chaque widget conserve son propre choix de foyer et de liste. Vous pouvez en ajouter plusieurs et les redimensionner. Le bouton de réglages du widget permet de modifier ce choix.
 
 ## Widget Scan rapide
 
-Le widget **MyHomeIA · Scan rapide** affiche un bouton de scan et le nom de la liste choisie, sans ses articles. Il propose trois colonnes sur une ligne par défaut sur les lanceurs récents et peut être redimensionné. Sa hauteur minimale de 48 dp permet de le réduire à une seule rangée, selon la grille du lanceur. Plusieurs raccourcis peuvent viser des foyers ou des listes différents.
+Le widget **myHome · Scan rapide** affiche un bouton de scan et le nom de la liste choisie, sans ses articles. Il propose trois colonnes sur une ligne par défaut sur les lanceurs récents et peut être redimensionné. Sa hauteur minimale de 48 dp permet de le réduire à une seule rangée, selon la grille du lanceur. Plusieurs raccourcis peuvent viser des foyers ou des listes différents.
 
 Après la mise à jour, faites un appui long sur le widget puis réduisez sa hauteur. Si un widget déjà installé reste limité à deux rangées, retirez uniquement ce widget de l'écran d'accueil puis ajoutez-le à nouveau pour que le lanceur recharge ses nouvelles limites. Il faudra alors choisir à nouveau son foyer et sa liste.
 
@@ -24,9 +26,9 @@ Le raccourci ne charge aucun article et ne déclenche pas d'actualisation résea
 
 ## Apparence du widget
 
-Dans **MyHomeIA Android → Paramètres → Apparence**, choisissez **Mode Clair**, **Mode Sombre** ou **Appliquer le mode de l’appareil**. Tous les widgets et leur écran de configuration reprennent ce choix. Le mode clair s'applique par défaut ; le mode de l'appareil suit le thème Android.
+Dans **myHome Android → Paramètres → Apparence**, choisissez **Mode Clair**, **Mode Sombre** ou **Appliquer le mode de l’appareil**. Tous les widgets et leur écran de configuration reprennent ce choix. Le mode clair s'applique par défaut ; le mode de l'appareil suit le thème Android.
 
-Le choix est repris automatiquement pendant que l'application Android est ouverte, puis conservé pour les widgets, y compris hors connexion. Après installation de la mise à jour, ouvrez une fois MyHomeIA pour reprendre le réglage déjà enregistré. Ce réglage est propre à cet appareil et à l'adresse du NAS : un choix fait dans Chrome ou sur un autre appareil n'est pas partagé avec l'application Android.
+Le choix est repris automatiquement pendant que l'application Android est ouverte, puis conservé pour les widgets, y compris hors connexion. Après installation de la mise à jour, ouvrez une fois myHome pour reprendre le réglage déjà enregistré. Ce réglage est propre à cet appareil et à l'adresse du NAS : un choix fait dans Chrome ou sur un autre appareil n'est pas partagé avec l'application Android.
 
 ## Utilisation
 
@@ -50,9 +52,9 @@ L'application demande une actualisation périodique toutes les **30 minutes** et
 
 ## Mises à jour manuelles
 
-Installez les prochaines versions de `myhomeia-android.apk` **par-dessus la version existante**, sans désinstaller l'application. Les réglages sont alors conservés. Les mises à jour de l'interface web se font sur le NAS ; les évolutions du widget ou du code Android nécessitent une nouvelle APK.
+Après cette première installation sous l'identifiant `fr.myhome.android`, installez les prochaines versions de `myhome-android.apk` **par-dessus myHome**, sans désinstaller l'application. Les réglages sont alors conservés. Les mises à jour de l'interface web se font sur le NAS ; les évolutions du widget ou du code Android nécessitent une nouvelle APK.
 
-La version **1.0.2** reprend le thème violet de MyHomeIA dans la configuration du widget : carte de sélection, champs arrondis, bouton principal et états de chargement ou d'erreur. Les listes restent regroupées sous **Courses** et **Checklists**, avec des en-têtes non sélectionnables. Ces évolutions concernent uniquement Android : aucune mise à jour du NAS n'est nécessaire si vous utilisez déjà les widgets de la version 1.0.0.
+La version **1.0.2** reprend le thème violet de myHome dans la configuration du widget : carte de sélection, champs arrondis, bouton principal et états de chargement ou d'erreur. Les listes restent regroupées sous **Courses** et **Checklists**, avec des en-têtes non sélectionnables. Ces évolutions concernent uniquement Android : aucune mise à jour du NAS n'est nécessaire si vous utilisez déjà les widgets de la version 1.0.0.
 
 La version **1.0.3** applique aussi le choix d'apparence de l'application aux widgets, à leurs lignes et à leur configuration. Aucune mise à jour du NAS n'est nécessaire pour cette version.
 
@@ -62,9 +64,11 @@ La version **1.0.5** permet de réduire le widget **Scan rapide** à une seule r
 
 La version **1.0.6** ajoute cette demande de mise au point pour la caméra arrière dans l'application et sa réapplication au toucher. Elle s'applique aussi aux scans ouverts depuis les widgets. Le navigateur web et le serveur restent inchangés : installez uniquement l'APK, sans mise à jour du NAS.
 
-La livraison propose aussi le fichier `myhomeia-android-1.0.6.apk`, identique à `myhomeia-android.apk`, pour identifier explicitement cette version lors du transfert sur l'appareil.
+La version **1.0.7** applique le nouveau nom dans l'application, les widgets, les préférences, les liens et les identifiants techniques. Elle nécessite le serveur renommé et une nouvelle configuration Android, comme expliqué en première installation.
 
-La somme de contrôle de l'APK est fournie dans `myhomeia-android.apk.sha256`.
+La livraison propose aussi le fichier `myhome-android-1.0.7.apk`, identique à `myhome-android.apk`, pour identifier explicitement cette version lors du transfert sur l'appareil.
+
+La somme de contrôle de l'APK est fournie dans `myhome-android.apk.sha256`.
 
 ## Recompiler depuis le projet
 
@@ -75,12 +79,12 @@ Les sources Android se trouvent dans `android/` dans le dépôt. Elles sont dist
 .\android\scripts\Build-Apk.ps1
 ```
 
-Les outils et caches sont installés dans `.runtime/`, en dehors de Git. La compilation produit une APK **release signée**, vérifie sa signature et écrit le fichier de contrôle SHA-256. Aucun compte MyHomeIA ni serveur n'est nécessaire pour compiler.
+Les outils et caches sont installés dans `.runtime/`, en dehors de Git. La compilation produit une APK **release signée**, vérifie sa signature et écrit le fichier de contrôle SHA-256. Aucun compte myHome ni serveur n'est nécessaire pour compiler.
 
 Pour une version suivante, augmentez le numéro de version Android :
 
 ```powershell
-.\android\scripts\Build-Apk.ps1 -VersionCode 8 -VersionName 1.0.7
+.\android\scripts\Build-Apk.ps1 -VersionCode 9 -VersionName 1.0.8
 ```
 
 **Sauvegardez de manière privée tout le dossier `.runtime/android-signing/`.** Il contient la clé de signature et sa configuration. Cette même clé est indispensable pour installer de futures mises à jour par-dessus cette version. Elle n'est incluse ni dans Git, ni dans le package Synology, ni dans l'APK.

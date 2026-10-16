@@ -6,9 +6,9 @@ export default function AuthForm({ signup = false }: { signup?: boolean }) {
   const [busy, setBusy] = useState(false), [error, setError] = useState("");
   return <main className="min-h-screen flex items-center justify-center p-6 bg-[#f7f8fc]">
     <section className="management-card settings-section w-full max-w-md">
-      <a href="/" className="flex items-center gap-3 mb-8 font-semibold text-xl text-[#7761d5]"><House size={28}/>MyHomeIA</a>
+      <a href="/" className="flex items-center gap-3 mb-8 font-semibold text-xl text-[#7761d5]"><House size={28}/>myHome</a>
       <h1 className="text-2xl font-semibold mb-3">{signup ? "Bienvenue chez vous." : "Retrouvez votre foyer."}</h1>
-      <p className="helper mb-7">{signup ? "Créez votre compte, puis créez un foyer ou rejoignez celui de vos proches." : "Connectez-vous avec le compte de votre installation MyHomeIA."}</p>
+      <p className="helper mb-7">{signup ? "Créez votre compte, puis créez un foyer ou rejoignez celui de vos proches." : "Connectez-vous avec le compte de votre installation myHome."}</p>
       <form className="form-stack" onSubmit={async event => {
         event.preventDefault(); setBusy(true); setError("");
         const values = Object.fromEntries(new FormData(event.currentTarget).entries());

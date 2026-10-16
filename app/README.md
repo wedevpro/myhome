@@ -1,8 +1,8 @@
-# MyHomeIA
+# myHome
 
 Application web installable pour le foyer : courses, checklists, notes, contacts, horaires d'électricité et sorties de poubelles. Le mode cuisine propose un tableau de bord destiné à une tablette murale en paysage.
 
-Cette version fonctionne de manière autonome sur votre NAS : **Next.js, Node.js et SQLite**, avec des comptes MyHomeIA par email et mot de passe. Les membres partagent les données de leurs foyers et conservent leurs préférences de tableau de bord.
+Cette version fonctionne de manière autonome sur votre NAS : **Next.js, Node.js et SQLite**, avec des comptes myHome par email et mot de passe. Les membres partagent les données de leurs foyers et conservent leurs préférences de tableau de bord.
 
 Pour installer le package sur le DS920+, suivez [GUIDE-SYNOLOGY.md](../GUIDE-SYNOLOGY.md). Le détail des fonctionnalités et du stockage est dans [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
@@ -10,9 +10,13 @@ L'application Android compagnon et ses widgets de listes sont décrits dans [INS
 
 ## Installation sur Synology
 
-Décompressez `myhomeia-synology.zip` dans `/volume1/docker/myhomeia`. Le Dockerfile, le fichier Compose et le dossier `app/` doivent être au même niveau. Copiez le modèle [../.env.example](../.env.example) en `../.env`, configurez votre adresse HTTPS puis préparez les permissions de `data/` comme indiqué dans le guide.
+Décompressez `myhome-synology.zip` dans `/volume1/docker/myhome`. Le Dockerfile, le fichier Compose et le dossier `app/` doivent être au même niveau. Copiez le modèle [../.env.example](../.env.example) en `../.env`, configurez votre adresse HTTPS puis préparez les permissions de `data/` comme indiqué dans le guide.
 
-Le conteneur utilise **Node.js 24**, un utilisateur non privilégié UID/GID 1000 et le volume `./data:/app/data`. SQLite est stocké dans `/app/data/myhomeia.sqlite`. Le port 3080 est lié uniquement à l'interface locale du NAS ; le proxy HTTPS de DSM fournit l'accès aux appareils.
+Le conteneur utilise **Node.js 24**, un utilisateur non privilégié UID/GID 1000 et le volume `./data:/app/data`. SQLite est stocké dans `/app/data/myhome.sqlite`. Le port 3080 est lié uniquement à l'interface locale du NAS ; le proxy HTTPS de DSM fournit l'accès aux appareils.
+
+Lors d'une mise à jour vers myHome, si ce fichier par défaut n'existe pas, le démarrage recherche une base `*.sqlite` existante dans le même répertoire et vérifie les tables de l'application. Une seule base reconnue est réutilisée sous son nom actuel, sans renommage ni copie ; le serveur et les rappels utilisent le même fichier. Si le choix est ambigu ou si aucun fichier présent ne correspond au schéma attendu, le démarrage s'arrête et demande de définir `DB_PATH`, sans créer une base vide. Un chemin personnalisé dans `DB_PATH` est respecté. Un répertoire sans base initialise normalement la nouvelle installation.
+
+Le cookie de session et les clés locales de l'appareil ont aussi été renommés : reconnectez-vous après cette mise à jour et reconfigurez au besoin le thème et l'affichage propres à l'appareil. Les comptes, foyers et listes restent dans la base existante.
 
 Le serveur web et le planificateur de rappels démarrent ensemble. Aucune planification externe ni compte ChatGPT n'est nécessaire.
 

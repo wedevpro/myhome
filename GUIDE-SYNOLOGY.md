@@ -1,6 +1,6 @@
-# Installer MyHomeIA sur votre Synology
+# Installer myHome sur votre Synology
 
-Ce package vise le DS920+ avec Container Manager, en architecture `linux/amd64`. La version de DSM communiquée est **7.4.1-90080**. Il construit une application Node.js 24 autonome avec SQLite, des comptes propres à MyHomeIA et un planificateur de rappels intégré. Aucun compte Cloudflare ou ChatGPT n'est requis pour cette installation.
+Ce package vise le DS920+ avec Container Manager, en architecture `linux/amd64`. La version de DSM communiquée est **7.4.1-90080**. Il construit une application Node.js 24 autonome avec SQLite, des comptes propres à myHome et un planificateur de rappels intégré. Aucun compte Cloudflare ou ChatGPT n'est requis pour cette installation.
 
 La base, les comptes et les clés de notification restent dans le dossier `data/`. Le planificateur s'exécute dans le conteneur : aucun service de cron ni secret de planification externe n'est à créer. Le NAS et le conteneur doivent rester allumés pour envoyer les rappels.
 
@@ -8,10 +8,10 @@ La compilation Next.js de production et la validation de Docker Compose ont réu
 
 ## 1. Copier le package
 
-Installez **Container Manager** depuis le Centre de paquets. Décompressez `myhomeia-synology.zip` dans le dossier :
+Installez **Container Manager** depuis le Centre de paquets. Décompressez `myhome-synology.zip` dans le dossier :
 
 ```text
-/volume1/docker/myhomeia/
+/volume1/docker/myhome/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── .dockerignore
@@ -21,9 +21,9 @@ Installez **Container Manager** depuis le Centre de paquets. Décompressez `myho
 └── data/                 à créer
 ```
 
-Le dossier `app/` doit être à côté du Dockerfile, sans niveau supplémentaire introduit par la décompression. Vérifiez que les fichiers commençant par un point ont également été copiés. L'archive de publication Sites `myhomeia-site.tar.gz` n'est pas le package à installer ici.
+Le dossier `app/` doit être à côté du Dockerfile, sans niveau supplémentaire introduit par la décompression. Vérifiez que les fichiers commençant par un point ont également été copiés. L'archive de publication Sites `myhome-site.tar.gz` n'est pas le package à installer ici.
 
-Dupliquez `.env.example` en `.env` puis remplacez `SITE_ORIGIN` par l'adresse HTTPS définitive de MyHomeIA, par exemple `https://maison.votredomaine.fr`. Ne mettez pas de slash final. Conservez `AUTH_COOKIE_SECURE=true`.
+Dupliquez `.env.example` en `.env` puis remplacez `SITE_ORIGIN` par l'adresse HTTPS définitive de myHome, par exemple `https://maison.votredomaine.fr`. Ne mettez pas de slash final. Conservez `AUTH_COOKIE_SECURE=true`.
 
 ## 2. Préparer le dossier de données
 
@@ -32,16 +32,16 @@ Le conteneur utilise l'UID **1000** et le GID **1000**. Le dossier `data/` doit 
 Dans DSM, activez SSH dans **Panneau de configuration → Terminal et SNMP → Terminal**, puis connectez-vous avec un compte administrateur. Exécutez :
 
 ```sh
-sudo mkdir -p /volume1/docker/myhomeia/data
-sudo chown 1000:1000 /volume1/docker/myhomeia/data
-sudo chmod 750 /volume1/docker/myhomeia/data
+sudo mkdir -p /volume1/docker/myhome/data
+sudo chown 1000:1000 /volume1/docker/myhome/data
+sudo chmod 750 /volume1/docker/myhome/data
 ```
 
 Ces commandes concernent uniquement ce dossier, pas l'ensemble du partage `docker`. Les dossiers parents doivent permettre au conteneur de les traverser. Si les journaux indiquent `Permission denied` malgré ces réglages, vérifiez aussi les permissions héritées dans **File Station → Propriétés → Permission** du dossier concerné. Conservez l'exécution du conteneur avec l'UID 1000. Vous pourrez désactiver SSH une fois la préparation terminée.
 
 ## 3. Créer le projet Container Manager
 
-Ouvrez **Container Manager → Projet → Créer** : nommez le projet `myhomeia`, choisissez `/volume1/docker/myhomeia` comme chemin et sélectionnez le fichier `docker-compose.yml` fourni. Laissez l'option de portail Web Station désactivée : le proxy sera configuré directement dans DSM. Terminez l'assistant.
+Ouvrez **Container Manager → Projet → Créer** : nommez le projet `myhome`, choisissez `/volume1/docker/myhome` comme chemin et sélectionnez le fichier `docker-compose.yml` fourni. Laissez l'option de portail Web Station désactivée : le proxy sera configuré directement dans DSM. Terminez l'assistant.
 
 Sélectionnez le projet puis **Action → Construire**. La première construction télécharge Node.js et les dépendances ; le NAS doit avoir accès à Internet. Lancez ensuite **Action → Démarrer** si le projet ne démarre pas automatiquement. Consultez ses journaux en cas d'erreur. Cette procédure reprend le fonctionnement documenté dans [Projet — Container Manager](https://kb.synology.com/fr-fr/DSM/help/ContainerManager/docker_project?version=7).
 
@@ -61,7 +61,7 @@ Ouvrez **Panneau de configuration → Portail de connexion → Avancé → Proxy
 
 Le domaine de la source doit être exactement celui de `SITE_ORIGIN`. Dans les en-têtes de requête personnalisés, transmettez `Host` et `X-Forwarded-Host` avec ce domaine et `X-Forwarded-Proto` avec la valeur `https`. La connexion entre le proxy et le conteneur reste locale. Les paramètres de proxy sont décrits par [Synology — Portail de connexion, Avancé](https://kb.synology.com/fr-fr/DSM/help/DSM/AdminCenter/system_login_portal_advanced?version=7).
 
-Ouvrez alors l'adresse HTTPS, créez votre compte MyHomeIA et créez ou rejoignez un foyer. Les comptes DSM ne remplacent pas les comptes de l'application. Pour un accès exclusivement à la maison, il suffit que le domaine soit résolu sur votre réseau local ; aucune redirection de port Internet n'est nécessaire.
+Ouvrez alors l'adresse HTTPS, créez votre compte myHome et créez ou rejoignez un foyer. Les comptes DSM ne remplacent pas les comptes de l'application. Pour un accès exclusivement à la maison, il suffit que le domaine soit résolu sur votre réseau local ; aucune redirection de port Internet n'est nécessaire.
 
 La caméra et les notifications web demandent une adresse HTTPS reconnue par l'appareil. Activez les notifications depuis l'application sur chaque appareil souhaité. Sur iPhone/iPad avec iOS/iPadOS 16.4 ou supérieur, installez d'abord l'application sur l'écran d'accueil. L'envoi des notifications demande aussi que le NAS puisse joindre les services Push sur Internet. [Documentation WebKit](https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/).
 
@@ -77,7 +77,7 @@ En cas d'échec : consultez les journaux du conteneur, les permissions de `data/
 
 ## Sauvegarder et restaurer
 
-Dans Container Manager, sélectionnez le projet et faites **Action → Arrêter**. Quand le conteneur est arrêté, copiez **tout le dossier `data/`** et le fichier `.env` vers votre sauvegarde, puis redémarrez le projet. Cette copie à l'arrêt préserve aussi les éventuels fichiers journaux SQLite ; ne copiez pas uniquement `myhomeia.sqlite` pendant que l'application fonctionne.
+Dans Container Manager, sélectionnez le projet et faites **Action → Arrêter**. Quand le conteneur est arrêté, copiez **tout le dossier `data/`** et le fichier `.env` vers votre sauvegarde, puis redémarrez le projet. Cette copie à l'arrêt préserve aussi les éventuels fichiers journaux SQLite ; ne copiez pas uniquement `myhome.sqlite` pendant que l'application fonctionne.
 
 La sauvegarde contient les comptes, les données des foyers et les clés Push. Pour restaurer, arrêtez le projet, remplacez `data/` par sa sauvegarde et rétablissez ses permissions pour `1000:1000`, ainsi que le fichier `.env`, puis redémarrez. Les données de l'ancienne publication Cloudflare ne sont pas importées automatiquement dans cette installation.
 
@@ -159,35 +159,49 @@ Ces choix restent mémorisés **dans ce navigateur sur cet appareil**, pour tous
 
 ## Choisir le mode d'affichage
 
-MyHomeIA s'affiche en mode clair par défaut, même si l'appareil est configuré en sombre. Dans **Paramètres → Apparence → Mode d'affichage**, choisissez **Mode Clair**, **Mode Sombre** ou **Appliquer le mode de l'appareil**.
+myHome s'affiche en mode clair par défaut, même si l'appareil est configuré en sombre. Dans **Paramètres → Apparence → Mode d'affichage**, choisissez **Mode Clair**, **Mode Sombre** ou **Appliquer le mode de l'appareil**.
 
 Le choix s'applique immédiatement et reste mémorisé dans ce navigateur sur cet appareil. Le troisième choix suit automatiquement les changements d'apparence de l'appareil. Vous pouvez ainsi garder la tablette de cuisine en clair et le téléphone en sombre. Les couleurs personnalisées des heures d'électricité sont conservées.
 
 ## Mettre à jour
 
+### Passage au nom myHome
+
+Le nouveau package s'appelle **`myhome-synology.zip`**, avec un service et un conteneur **`myhome`**. Les comptes, foyers et listes restent conservés dans `data/`. Si le dossier conserve son ancien nom sur le NAS, indiquez son chemin réel au script sans déplacer les données :
+
+```sh
+sudo env MYHOME_DIR="/volume1/docker/chemin-actuel-de-votre-installation" sh /volume1/docker/METTRE-A-JOUR-SYNOLOGY.sh /volume1/docker/myhome-synology.zip
+```
+
+Remplacez le chemin d'exemple par celui qui contient votre `.env`, `docker-compose.yml` et `data/`. Le script retrouve le conteneur par son volume de données, conserve le nom du projet Compose existant et lance le nouveau service `myhome`. L'ancien conteneur reste arrêté après le changement de service ; ne le redémarrez pas en parallèle du nouveau et ne relancez pas l'ancien service depuis DSM. Les données sauvegardées restent disponibles.
+
+Au démarrage, si `data/myhome.sqlite` est absent, l'application peut reprendre une base SQLite existante dont le schéma myHome est reconnu dans ce même dossier. Une ambiguïté provoque un arrêt explicite plutôt qu'une création de base vide. Un chemin `DB_PATH` personnalisé reste respecté. Le fichier de base repris garde son nom ; ses données ne sont pas renommées par un remplacement de texte.
+
+Le changement des noms du cookie et des préférences du navigateur nécessite une reconnexion et une nouvelle configuration des préférences propres à l'appareil. Les données partagées du foyer restent dans la base. L'application Android 1.0.7 doit être installée après cette mise à jour du NAS.
+
 ### Avec le script de mise à jour
 
-Copiez [METTRE-A-JOUR-SYNOLOGY.sh](METTRE-A-JOUR-SYNOLOGY.sh) sur le NAS **hors de l'installation**, par exemple dans `/volume1/docker/`. Déposez aussi le nouveau ZIP dans `/volume1/docker/myhomeia-synology.zip`. Le script est inclus à la racine du package ; vous pouvez le copier depuis le PC avant de lancer la mise à jour.
+Copiez [METTRE-A-JOUR-SYNOLOGY.sh](METTRE-A-JOUR-SYNOLOGY.sh) sur le NAS **hors de l'installation**, par exemple dans `/volume1/docker/`. Déposez aussi le nouveau ZIP dans `/volume1/docker/myhome-synology.zip`. Le script est inclus à la racine du package ; vous pouvez le copier depuis le PC avant de lancer la mise à jour.
 
 En SSH, exécutez :
 
 ```sh
-sudo sh /volume1/docker/METTRE-A-JOUR-SYNOLOGY.sh /volume1/docker/myhomeia-synology.zip
+sudo sh /volume1/docker/METTRE-A-JOUR-SYNOLOGY.sh /volume1/docker/myhome-synology.zip
 ```
 
-Le chemin du ZIP est facultatif si le fichier est à cet emplacement. Le script utilise `/volume1/docker/myhomeia` comme installation. Il :
+Le chemin du ZIP est facultatif si le fichier est à cet emplacement. Le script utilise `/volume1/docker/myhome` comme installation. Il :
 
 1. Vérifie le package, le projet/service Compose existant et le volume `data/` réellement monté.
 2. Arrête le conteneur avant de copier `.env` et tout `data/`, pour sauvegarder SQLite et ses fichiers associés de manière cohérente.
-3. Conserve la sauvegarde dans `/volume1/docker/myhomeia-backups/AAAAMMJJ-HHMMSS-PID/`, avec accès restreint. L'ancien dossier `app/` y est également déplacé avant remplacement, afin de retirer les fichiers applicatifs disparus du nouveau package.
+3. Conserve la sauvegarde dans `/volume1/docker/myhome-backups/AAAAMMJJ-HHMMSS-PID/`, avec accès restreint. L'ancien dossier `app/` y est également déplacé avant remplacement, afin de retirer les fichiers applicatifs disparus du nouveau package.
 4. Extrait le ZIP dans l'installation et recopie `.env` puis le contenu de `data/`, en conservant leurs permissions et sans créer `data/data`.
-5. Lance `up -d --build --force-recreate myhomeia` avec le nom du projet existant, puis attend le contrôle de santé du conteneur pendant au maximum 120 secondes.
+5. Lance `up -d --build --force-recreate myhome` avec le nom du projet existant, puis attend le contrôle de santé du conteneur pendant au maximum 120 secondes.
 
 Le script détecte `docker compose` ou `docker-compose`. Il ne demande pas de recopier la sauvegarde manuellement et la conserve après succès. Le fichier `SAUVEGARDE-TERMINEE.txt` confirme que la copie de `.env` et `data/` a abouti avant remplacement. Les valeurs de `.env` ne sont pas affichées.
 
-En cas d'échec avant le remplacement des sources, le conteneur précédemment actif est redémarré. Après le début du remplacement ou du déploiement, le script conserve la sauvegarde et affiche le diagnostic à consulter ; il ne restaure pas automatiquement une base qui aurait déjà été migrée. Après une interruption brutale, le dossier `.myhomeia-update.lock` peut rester présent : vérifiez qu'aucune mise à jour n'est en cours avant de le retirer.
+En cas d'échec avant le remplacement des sources, le conteneur précédemment actif est redémarré. Après le début du remplacement ou du déploiement, le script conserve la sauvegarde et affiche le diagnostic à consulter ; il ne restaure pas automatiquement une base qui aurait déjà été migrée. Après une interruption brutale, le dossier `.myhome-update.lock` peut rester présent : vérifiez qu'aucune mise à jour n'est en cours avant de le retirer.
 
-Pour une installation différente, les variables `MYHOMEIA_DIR` et `MYHOMEIA_BACKUP_DIR` permettent de changer les chemins. Elles doivent désigner respectivement l'installation existante et un dossier de sauvegarde situé hors de celle-ci.
+Pour une installation différente, les variables `MYHOME_DIR` et `MYHOME_BACKUP_DIR` permettent de changer les chemins. Elles doivent désigner respectivement l'installation existante et un dossier de sauvegarde situé hors de celle-ci.
 
 ### Mise à jour manuelle
 
@@ -195,34 +209,34 @@ Sauvegardez d'abord comme ci-dessus. Arrêtez le projet, remplacez les fichiers 
 
 Les migrations SQL sont exécutées intégralement au démarrage et suivies avec un checksum. Ne modifiez pas une migration déjà appliquée ; les mises à jour ajoutent de nouveaux fichiers versionnés. Conservez la sauvegarde d'avant mise à jour : revenir à une ancienne image après une modification du schéma peut nécessiter de restaurer aussi cette sauvegarde.
 
-Pour une première installation en SSH au lieu de l'interface, utilisez explicitement le nom de projet `myhomeia` :
+Pour une première installation en SSH au lieu de l'interface, utilisez explicitement le nom de projet `myhome` :
 
 ```sh
-cd /volume1/docker/myhomeia
-sudo docker compose -p myhomeia up -d --build
-sudo docker compose -p myhomeia ps
-sudo docker compose -p myhomeia logs --tail=100 myhomeia
+cd /volume1/docker/myhome
+sudo docker compose -p myhome up -d --build
+sudo docker compose -p myhome ps
+sudo docker compose -p myhome logs --tail=100 myhome
 ```
 
 Selon la version de Container Manager, la commande peut être `docker-compose` au lieu de `docker compose`. Le projet doit conserver une seule instance du conteneur : sa base SQLite et son planificateur sont partagés dans cette instance.
 
-### Conflit « container name /myhomeia is already in use »
+### Conflit « container name /myhome is already in use »
 
-Ce message signifie qu'un conteneur porte déjà le nom `myhomeia`. Si l'installation a été créée par Container Manager, son nom de projet Compose peut différer de celui déduit par la commande SSH. `--force-recreate` ne reprend pas un conteneur appartenant à un autre projet. Il faut utiliser le nom de projet déjà enregistré sur le conteneur, avec `-p`. [Noms de projets Compose](https://docs.docker.com/compose/how-tos/project-name/).
+Ce message signifie qu'un conteneur porte déjà le nom `myhome`. Si l'installation a été créée par Container Manager, son nom de projet Compose peut différer de celui déduit par la commande SSH. `--force-recreate` ne reprend pas un conteneur appartenant à un autre projet. Il faut utiliser le nom de projet déjà enregistré sur le conteneur, avec `-p`. [Noms de projets Compose](https://docs.docker.com/compose/how-tos/project-name/).
 
 Vérifiez d'abord le dossier contenant réellement la base existante :
 
 ```sh
-sudo docker inspect --format '{{range .Mounts}}{{if eq .Destination "/app/data"}}{{.Source}}{{end}}{{end}}' myhomeia
+sudo docker inspect --format '{{range .Mounts}}{{if eq .Destination "/app/data"}}{{.Source}}{{end}}{{end}}' myhome
 ```
 
-Le chemin affiché doit correspondre au dossier `data/` de cette installation. Depuis **le même dossier que lors de l'installation**, après avoir conservé votre `.env` et sauvegardé `data/`, exécutez le bloc suivant. Adaptez le chemin si votre installation n'est pas dans `/volume1/docker/myhomeia` :
+Le chemin affiché doit correspondre au dossier `data/` de cette installation. Depuis **le même dossier que lors de l'installation**, après avoir conservé votre `.env` et sauvegardé `data/`, exécutez le bloc suivant. Adaptez le chemin si votre installation n'est pas dans `/volume1/docker/myhome` :
 
 ```sh
-cd /volume1/docker/myhomeia
-projet=$(sudo docker inspect --format '{{with index .Config.Labels "com.docker.compose.project"}}{{.}}{{end}}' myhomeia)
-service=$(sudo docker inspect --format '{{with index .Config.Labels "com.docker.compose.service"}}{{.}}{{end}}' myhomeia)
-if [ -n "$projet" ] && [ "$service" = "myhomeia" ]; then
+cd /volume1/docker/myhome
+projet=$(sudo docker inspect --format '{{with index .Config.Labels "com.docker.compose.project"}}{{.}}{{end}}' myhome)
+service=$(sudo docker inspect --format '{{with index .Config.Labels "com.docker.compose.service"}}{{.}}{{end}}' myhome)
+if [ -n "$projet" ] && [ "$service" = "myhome" ]; then
   sudo docker compose -p "$projet" up -d --build --force-recreate
 else
   echo "Projet ou service inattendu : projet=$projet service=$service. Conservez le conteneur pour diagnostic."
@@ -239,4 +253,4 @@ Pour installer le correctif, arrêtez le projet et sauvegardez `data/`. Remplace
 
 Cette commande reconstruit l'image, recrée le service et conserve le dossier de données monté. [Documentation Docker Compose](https://docs.docker.com/reference/cli/docker/compose/up/).
 
-Rechargez ensuite l'adresse habituelle dans votre navigateur. Votre compte existant doit fonctionner. Si vous souhaitez fermer la session, la nouvelle page `/deconnexion` reste accessible même lorsque le tableau de bord est en erreur : ajoutez `/deconnexion` à l'adresse de MyHomeIA et utilisez son bouton. Vous n'avez pas besoin de recréer un compte ni de supprimer la base.
+Rechargez ensuite l'adresse habituelle dans votre navigateur. Votre compte existant doit fonctionner. Si vous souhaitez fermer la session, la nouvelle page `/deconnexion` reste accessible même lorsque le tableau de bord est en erreur : ajoutez `/deconnexion` à l'adresse de myHome et utilisez son bouton. Vous n'avez pas besoin de recréer un compte ni de supprimer la base.

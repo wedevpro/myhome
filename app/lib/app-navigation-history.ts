@@ -1,5 +1,5 @@
 /** Each browser entry carries only a cursor; page snapshots stay in this tab. */
-const STATE_KEY = "__myhomeia_navigation";
+const STATE_KEY = "__myhome_navigation";
 let nextSession = 0;
 
 type Cursor = { session: string; index: number };

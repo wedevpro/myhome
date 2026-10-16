@@ -1,4 +1,4 @@
-package fr.myhomeia.android;
+package fr.myhome.android;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -9,7 +9,7 @@ public final class AppAppearance {
     private AppAppearance() {}
 
     private static SharedPreferences preferences(Context context) {
-        return context.getApplicationContext().getSharedPreferences("myhomeia_appearance", Context.MODE_PRIVATE);
+        return context.getApplicationContext().getSharedPreferences("myhome_appearance", Context.MODE_PRIVATE);
     }
 
     public static boolean validMode(String mode) {

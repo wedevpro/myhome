@@ -10,7 +10,7 @@ const compiled = ts.transpileModule(source, {
 const { createAppNavigationHistory } = await import('data:text/javascript;base64,' + Buffer.from(compiled).toString('base64'));
 
 function fakeBrowser() {
-  const href = 'https://myhomeia.test/';
+  const href = 'https://myhome.test/';
   const nextState = { __NA: true, __PRIVATE_NEXTJS_INTERNALS_TREE: { route: 'home' }, unrelated: 'keep' };
   const entries = [{ state: { external: true }, href: 'https://before.test/' }, { state: nextState, href }];
   let pointer = 1;
@@ -175,7 +175,7 @@ test('Les métadonnées Next restent intactes et les données privées de page r
     assert.deepEqual(state.__PRIVATE_NEXTJS_INTERNALS_TREE, { route: 'home' });
     assert.equal(state.unrelated, 'keep');
     assert.ok(!JSON.stringify(state).includes('private-'));
-    assert.deepEqual(Object.keys(state.__myhomeia_navigation).sort(), ['index', 'session']);
+    assert.deepEqual(Object.keys(state.__myhome_navigation).sort(), ['index', 'session']);
   }
 });
 
@@ -221,7 +221,7 @@ test('Strict Mode dispose puis recrée le contrôleur sans restaurer de vieilles
 
 test('Un ancien état de rechargement ne restaure ni les anciennes données ni une autre URL', () => {
   const browser = fakeBrowser();
-  browser.host.history.replaceState({ __NA: true, __myhomeia_navigation: { session: 'before-reload', index: 6 } }, '', browser.host.location.href);
+  browser.host.history.replaceState({ __NA: true, __myhome_navigation: { session: 'before-reload', index: 6 } }, '', browser.host.location.href);
   const restored = [];
   const navigation = createAppNavigationHistory(browser.host, { initial: 'reloaded dashboard', onRestore: scene => restored.push(scene) });
   navigation.back(); browser.flush();
@@ -298,8 +298,8 @@ test('Une ancienne entrée d’un autre foyer ne peut pas révéler ses données
   navigation.reset({ household: 'B', page: 'dashboard' });
   browser.host.history.go(-2); browser.flush();
   assert.deepEqual(restored, []);
-  const currentSession = browser.host.history.state.__myhomeia_navigation.session;
-  assert.notEqual(currentSession, oldState.__myhomeia_navigation.session);
+  const currentSession = browser.host.history.state.__myhome_navigation.session;
+  assert.notEqual(currentSession, oldState.__myhome_navigation.session);
   navigation.record({ household: 'B', page: 'shopping' });
   navigation.back(); browser.flush();
   assert.deepEqual(restored, [{ household: 'B', page: 'dashboard' }]);
@@ -312,9 +312,9 @@ test('Un curseur inconnu ou malformé recrée une borne sûre et garde la page c
     const restored = [];
     const navigation = createAppNavigationHistory(browser.host, { initial: 'dashboard', onRestore: scene => restored.push(scene) });
     navigation.record('notes');
-    const session = browser.host.history.state.__myhomeia_navigation.session;
+    const session = browser.host.history.state.__myhome_navigation.session;
     const marker = invalid && typeof invalid === 'object' ? { session, ...invalid } : invalid;
-    browser.host.history.replaceState({ ...browser.host.history.state, __myhomeia_navigation: marker }, '', browser.host.location.href);
+    browser.host.history.replaceState({ ...browser.host.history.state, __myhome_navigation: marker }, '', browser.host.location.href);
     browser.emit();
     navigation.back(); browser.flush();
     assert.deepEqual(restored, []);

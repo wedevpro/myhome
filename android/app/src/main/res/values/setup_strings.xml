@@ -17,12 +17,12 @@
     <string name="setup_account">Connexion / serveur</string>
     <string name="setup_loading_households">Chargement de vos foyers…</string>
     <string name="setup_loading_lists">Chargement de vos listes…</string>
-    <string name="setup_sign_in_needed">Connectez-vous à votre NAS dans MyHomeIA, puis revenez ici pour choisir votre liste.</string>
-    <string name="setup_no_households">Créez ou rejoignez un foyer dans MyHomeIA, puis actualisez les listes.</string>
+    <string name="setup_sign_in_needed">Connectez-vous à votre NAS dans myHome, puis revenez ici pour choisir votre liste.</string>
+    <string name="setup_no_households">Créez ou rejoignez un foyer dans myHome, puis actualisez les listes.</string>
     <string name="setup_household_unavailable">Ce foyer n’est plus accessible. Actualisez les listes pour choisir un autre foyer.</string>
     <string name="setup_no_lists">Créez une liste dans ce foyer, puis actualisez les listes.</string>
     <string name="setup_ready">Actualisation après vos actions et environ toutes les 30 minutes. Le bouton ↻ du widget permet de l’actualiser à tout moment.</string>
-    <string name="setup_session_expired">Reconnectez-vous dans MyHomeIA, puis revenez ici et actualisez les listes.</string>
+    <string name="setup_session_expired">Reconnectez-vous dans myHome, puis revenez ici et actualisez les listes.</string>
     <string name="setup_connection_error">Impossible de joindre le NAS. Vérifiez la connexion, l’adresse et le certificat HTTPS, puis réessayez.</string>
     <string name="setup_step_one">1</string>
     <string name="setup_step_two">2</string>

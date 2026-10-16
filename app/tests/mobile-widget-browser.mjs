@@ -107,7 +107,7 @@ async function assertList(name, houseName) {
 async function assertConsumed() {
   assert.equal(await evaluate("new URL(location.href).searchParams.get('action')"), "open");
   assert.equal(await evaluate("new URL(location.href).searchParams.has('item')"), false);
-  assert.equal(await evaluate("sessionStorage.getItem('myhomeia-pending-widget')"), null);
+  assert.equal(await evaluate("sessionStorage.getItem('myhome-pending-widget')"), null);
 }
 
 try {
@@ -159,10 +159,10 @@ try {
   assert.equal((await cdp.send("Network.setCookie", { name: cookie.slice(0, separator), value: cookie.slice(separator + 1), url: origin + "/", httpOnly: true, secure: false, sameSite: "Lax" })).success, true);
   await navigate(origin);
   await until("!!document.querySelector('.status-grid')", "initial authenticated dashboard");
-  await evaluate(`localStorage.setItem('myhomeia-active-household',${JSON.stringify(houseA.id)})`);
+  await evaluate(`localStorage.setItem('myhome-active-household',${JSON.stringify(houseA.id)})`);
   await navigate(link(houseB.id, shopping.id));
   await assertList(shopping.data.name, houseB.name);
-  assert.equal(await evaluate("localStorage.getItem('myhomeia-active-household')"), houseB.id, "Explicit widget household wins over local storage");
+  assert.equal(await evaluate("localStorage.getItem('myhome-active-household')"), houseB.id, "Explicit widget household wins over local storage");
   await unchanged(); outcomes.push("explicit-household");
 
   for (const [action, item, expected] of [["scan", undefined, "Scanner un produit"], ["edit", milk.id, "Modifier l’article"], ["delete", milk.id, "Supprimer Lait du widget ?"], ["clearCompleted", undefined, "Supprimer les éléments terminés ?"]]) {
@@ -205,7 +205,7 @@ try {
   await cdp.send("Network.clearBrowserCookies");
   await navigate(link(houseB.id, shopping.id, "edit", milk.id));
   await until(`!!${named("Se connecter", "a")}`, "login required before widget destination");
-  assert.ok(await evaluate("!!sessionStorage.getItem('myhomeia-pending-widget')"));
+  assert.ok(await evaluate("!!sessionStorage.getItem('myhome-pending-widget')"));
   await press(named("Se connecter", "a"));
   await until("location.pathname==='/connexion'&&!!document.querySelector('input[name=email]')", "login form");
   await input('input[name="email"]', account.email); await input('input[name="password"]', account.password);

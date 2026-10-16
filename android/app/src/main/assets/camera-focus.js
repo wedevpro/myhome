@@ -4,7 +4,7 @@
     // by WebView, on the NAS's top-level HTTPS document.
     if (window.top !== window || window.location.protocol !== "https:" || window.location.origin !== origin) return;
     const devices = navigator.mediaDevices;
-    const marker = Symbol.for("fr.myhomeia.android.cameraFocus");
+    const marker = Symbol.for("fr.myhome.android.cameraFocus");
     if (!devices || typeof devices.getUserMedia !== "function" || devices.getUserMedia[marker]) return;
     const original = devices.getUserMedia;
     const streams = new WeakMap();

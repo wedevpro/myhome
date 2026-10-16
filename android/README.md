@@ -1,8 +1,10 @@
-# MyHomeIA Android
+# myHome Android
 
-Application compagnon et widgets d'écran d'accueil pour le serveur MyHomeIA sur NAS Synology. Java et composants Android standards, Android 8.0+ (API 26), cible API 35. L'interface complète reste servie en HTTPS par le NAS ; seuls les widgets et l'intégration du téléphone sont natifs.
+Application compagnon et widgets d'écran d'accueil pour le serveur myHome sur NAS Synology. Java et composants Android standards, Android 8.0+ (API 26), cible API 35. L'interface complète reste servie en HTTPS par le NAS ; seuls les widgets et l'intégration du téléphone sont natifs.
 
 L'installation, l'usage et les mises à jour sont décrits dans [INSTALLER-ANDROID.md](../INSTALLER-ANDROID.md).
+
+L'identifiant Android est désormais `fr.myhome.android`. Cette application s'installe séparément de l'ancienne application : renseignez à nouveau l'adresse du NAS, connectez-vous puis ajoutez les widgets souhaités. Les données du foyer restent sur le NAS.
 
 ## Construire l'APK sous Windows
 
@@ -13,7 +15,7 @@ Depuis la racine du dépôt, dans PowerShell :
 .\android\scripts\Build-Apk.ps1
 ```
 
-Les versions des outils et les sommes SHA-256 de leurs distributions sont fixées dans le script d'installation. Les téléchargements, SDK et caches restent dans `.runtime/`. `Build-Apk.ps1` compile `assembleRelease` et `lintRelease`, vérifie la signature et produit `myhomeia-android.apk` et son fichier `.sha256` à la racine du dépôt. Pour changer de version, utilisez `-VersionCode` et `-VersionName`.
+Les versions des outils et les sommes SHA-256 de leurs distributions sont fixées dans le script d'installation. Les téléchargements, SDK et caches restent dans `.runtime/`. `Build-Apk.ps1` compile `assembleRelease` et `lintRelease`, vérifie la signature et produit `myhome-android.apk` et son fichier `.sha256` à la racine du dépôt. Pour changer de version, utilisez `-VersionCode` et `-VersionName`.
 
 La clé release persistante est générée une seule fois sous `.runtime/android-signing/` et doit être sauvegardée de manière privée. Elle n'est pas versionnée. Une compilation release sans cette clé est refusée ; les outils ne remplacent pas une clé existante dont le mot de passe aurait été perdu.
 

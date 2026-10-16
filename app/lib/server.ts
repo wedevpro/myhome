@@ -38,6 +38,6 @@ export function failure(error:unknown) {
  if(error instanceof ApiError) return Response.json({error:error.message},{status:error.status});
  if(error instanceof Error && /UNIQUE constraint/.test(error.message)) return Response.json({error:"Ce code-barres est déjà associé à un autre produit du foyer."},{status:409});
  if(error instanceof Error && /MYHOME_REFERENCE|MYHOME_CYCLE/.test(error.message)) return Response.json({error:"Une liste, une catégorie ou un produit référencé a changé. Actualisez les données puis réessayez."},{status:409});
- console.error("MyHomeIA API error",error);
+ console.error("myHome API error",error);
  return Response.json({error:"L’enregistrement a échoué. Vos données saisies sont conservées ; réessayez."},{status:500});
 }

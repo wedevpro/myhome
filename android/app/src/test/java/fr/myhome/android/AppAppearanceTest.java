@@ -1,4 +1,4 @@
-package fr.myhomeia.android;
+package fr.myhome.android;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -38,8 +38,8 @@ public class AppAppearanceTest {
 
     @Before public void resetAppearance() {
         application = RuntimeEnvironment.getApplication();
-        application.getSharedPreferences("myhomeia_widgets", Context.MODE_PRIVATE).edit().clear().commit();
-        application.getSharedPreferences("myhomeia_appearance", Context.MODE_PRIVATE).edit().clear().commit();
+        application.getSharedPreferences("myhome_widgets", Context.MODE_PRIVATE).edit().clear().commit();
+        application.getSharedPreferences("myhome_appearance", Context.MODE_PRIVATE).edit().clear().commit();
         CookieManager.getInstance().removeAllCookies(null);
         setDeviceDark(false);
         new WidgetStore(application).setOrigin(NAS);

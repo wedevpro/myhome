@@ -8,7 +8,7 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     <NextThemeProvider
       attribute="class"
       defaultTheme="light"
-      storageKey="myhomeia-theme"
+      storageKey="myhome-theme"
       enableSystem
       disableTransitionOnChange
     >

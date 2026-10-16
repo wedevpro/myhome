@@ -1,4 +1,4 @@
-package fr.myhomeia.android;
+package fr.myhome.android;
 
 import android.content.Context;
 import android.webkit.CookieManager;
@@ -33,7 +33,7 @@ public final class ServerClient {
                 || uri.getRawQuery() != null || uri.getRawFragment() != null
                 || (uri.getPath() != null && !uri.getPath().isEmpty() && !"/".equals(uri.getPath()))
                 || uri.getPort() == 0 || uri.getPort() > 65535) {
-                throw new IOException("Indiquez l’adresse HTTPS de MyHomeIA, sans chemin ni identifiants.");
+                throw new IOException("Indiquez l’adresse HTTPS de myHome, sans chemin ni identifiants.");
             }
             return new URI("https", null, uri.getHost().toLowerCase(java.util.Locale.ROOT), uri.getPort() == 443 ? -1 : uri.getPort(), null, null, null).toASCIIString();
         } catch (URISyntaxException error) {
@@ -47,7 +47,7 @@ public final class ServerClient {
         if (cookies == null) return "";
         for (String part : cookies.split(";")) {
             String cookie = part.trim();
-            if (cookie.matches("myhomeia_session=[A-Za-z0-9_-]{64}")) return cookie;
+            if (cookie.matches("myhome_session=[A-Za-z0-9_-]{64}")) return cookie;
         }
         return "";
     }
@@ -67,7 +67,7 @@ public final class ServerClient {
         if (!session.equals(sessionCookie(origin))) throw new IOException("La session a changé. Actualisez le widget.");
         if (session.isEmpty()) {
             store.clearCaches();
-            throw new ApiException(401, "Connectez-vous dans l’application MyHomeIA.");
+            throw new ApiException(401, "Connectez-vous dans l’application myHome.");
         }
         HttpURLConnection connection = (HttpURLConnection) new java.net.URL(origin + path).openConnection();
         try {
@@ -106,7 +106,7 @@ public final class ServerClient {
             }
             JSONObject result;
             try { result = new JSONObject(text); }
-            catch (JSONException error) { throw new ApiException(status, "Le NAS n’a pas renvoyé une réponse MyHomeIA valide."); }
+            catch (JSONException error) { throw new ApiException(status, "Le NAS n’a pas renvoyé une réponse myHome valide."); }
             if (status < 200 || status >= 300) {
                 String message = result.optString("error", "Connexion au NAS indisponible.");
                 throw new ApiException(status, message.length() > 400 ? message.substring(0, 400) : message);

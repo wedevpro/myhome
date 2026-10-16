@@ -3,12 +3,12 @@ Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $packageRoot = [System.IO.Path]::GetFullPath($PSScriptRoot)
-$archivePath = Join-Path $packageRoot 'myhomeia-synology.zip'
+$archivePath = Join-Path $packageRoot 'myhome-synology.zip'
 $sourceFiles = [System.Collections.Generic.List[string]]::new()
 $rootFiles = @('Dockerfile', 'docker-compose.yml', '.dockerignore', '.env.example', 'GUIDE-SYNOLOGY.md', 'INSTALLER-ANDROID.md', 'ETAT-LIVRAISON.md', 'METTRE-A-JOUR-SYNOLOGY.sh', 'PREPARER-PACKAGE.ps1')
 $appFiles = @('package.json', 'package-lock.json', 'tsconfig.json', 'next.config.ts', 'postcss.config.mjs', 'eslint.config.mjs', 'components.json', 'README.md', '.env.example', '.gitignore')
 $appFolders = @('app', 'components', 'db', 'drizzle', 'hooks', 'lib', 'public', 'tests', 'vendor', 'docs')
-$appScripts = @('build-nas.mjs', 'nas-entrypoint.mjs', 'reminder-worker.ts')
+$appScripts = @('build-nas.mjs', 'nas-entrypoint.mjs', 'database-path.mjs', 'reminder-worker.ts')
 
 foreach ($name in $rootFiles) { $sourceFiles.Add((Join-Path $packageRoot $name)) }
 foreach ($name in $appFiles) { $sourceFiles.Add((Join-Path $packageRoot ('app/' + $name))) }
@@ -36,7 +36,7 @@ try {
     }
 } finally { $archive.Dispose(); $stream.Dispose() }
 $packageHash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
-Set-Content -LiteralPath ($archivePath + '.sha256') -Value ($packageHash + '  myhomeia-synology.zip') -Encoding Ascii
+Set-Content -LiteralPath ($archivePath + '.sha256') -Value ($packageHash + '  myhome-synology.zip') -Encoding Ascii
 Write-Output ('Package: ' + $archivePath)
 Write-Output ('Files: ' + $sourceFiles.Count)
 Write-Output ('SHA256: ' + $packageHash)

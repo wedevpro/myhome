@@ -1,13 +1,15 @@
 #!/bin/sh
 # Lancer depuis un fichier situe hors du dossier de l'installation :
-# sudo sh /volume1/docker/METTRE-A-JOUR-SYNOLOGY.sh /volume1/docker/myhomeia-synology.zip
+# sudo sh /volume1/docker/METTRE-A-JOUR-SYNOLOGY.sh /volume1/docker/myhome-synology.zip
 set -eu
 umask 077
 
-installation=${MYHOMEIA_DIR:-/volume1/docker/myhomeia}
-backup_root=${MYHOMEIA_BACKUP_DIR:-/volume1/docker/myhomeia-backups}
-package=${1:-/volume1/docker/myhomeia-synology.zip}
-container=myhomeia
+installation=${MYHOME_DIR:-/volume1/docker/myhome}
+backup_root=${MYHOME_BACKUP_DIR:-/volume1/docker/myhome-backups}
+package=${1:-/volume1/docker/myhome-synology.zip}
+target_container=myhome
+target_service=myhome
+container=
 staging=
 temporary_root=
 backup=
@@ -47,16 +49,16 @@ cleanup() {
             docker start "$container" >&2 || printf 'Le redemarrage a echoue. Verifiez le conteneur dans Container Manager.\n' >&2
         elif [ "$installation_changed" -eq 1 ]; then
             printf 'Verifiez le conteneur dans Container Manager avant toute restauration.\n' >&2
-            printf 'Diagnostic : docker logs --tail=100 %s\n' "$container" >&2
+            printf 'Diagnostic : docker logs --tail=100 %s\n' "$target_container" >&2
         fi
     fi
     if [ -n "$staging" ] && [ -n "$temporary_root" ]; then
         case "$staging" in
-            "$temporary_root"/myhomeia-update.*) rm -rf "$staging" || : ;;
+            "$temporary_root"/myhome-update.*) rm -rf "$staging" || : ;;
         esac
     fi
     if [ "$lock_owned" -eq 1 ]; then
-        rmdir "$installation/.myhomeia-update.lock" 2>/dev/null || :
+        rmdir "$installation/.myhome-update.lock" 2>/dev/null || :
     fi
     exit "$result"
 }
@@ -65,7 +67,7 @@ trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-[ "$#" -le 1 ] || fail "Utilisation : sudo sh $0 [chemin/myhomeia-synology.zip]"
+[ "$#" -le 1 ] || fail "Utilisation : sudo sh $0 [chemin/myhome-synology.zip]"
 [ "$(id -u)" -eq 0 ] || fail "Lancez ce script avec sudo sh $0 [chemin du ZIP]."
 
 # Le PATH standard de sudo sur DSM ne contient pas toujours Docker.
@@ -74,7 +76,7 @@ export PATH
 for required in docker 7z cp mv mkdir mktemp date sleep rm rmdir; do
     command -v "$required" >/dev/null 2>&1 || fail "Commande introuvable : $required"
 done
-[ -d "$installation" ] || fail "Installation introuvable : $installation"
+[ -d "$installation" ] || fail "Installation introuvable : $installation. Pour une installation existante dans un autre dossier, indiquez son chemin avec MYHOME_DIR."
 installation=$(cd "$installation" && pwd -P)
 [ "$installation" != / ] || fail "Le dossier d'installation ne peut pas etre la racine."
 [ -f "$installation/.env" ] && [ ! -L "$installation/.env" ] || fail "Le fichier .env doit exister et ne pas etre un lien symbolique."
@@ -97,14 +99,51 @@ else
     fail "Docker Compose est indisponible. Verifiez Container Manager."
 fi
 
-projet=$(docker inspect --format '{{with index .Config.Labels "com.docker.compose.project"}}{{.}}{{end}}' "$container")
-service=$(docker inspect --format '{{with index .Config.Labels "com.docker.compose.service"}}{{.}}{{end}}' "$container")
-[ -n "$projet" ] && [ "$service" = myhomeia ] || fail "Projet ou service inattendu : projet=$projet service=$service. Le conteneur est conserve."
-data_source=$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/app/data"}}{{.Source}}{{end}}{{end}}' "$container")
-[ -n "$data_source" ] && [ -d "$data_source" ] || fail "Le volume /app/data du conteneur est introuvable."
-data_source=$(cd "$data_source" && pwd -P)
 expected_data=$(cd "$installation/data" && pwd -P)
-[ "$data_source" = "$expected_data" ] || fail "Le conteneur utilise $data_source, mais cette installation utilise $expected_data. Aucune mise a jour effectuee."
+# Le nom du service peut avoir change. Le montage physique et les labels Compose
+# permettent de retrouver l'installation sans supposer son ancien nom.
+candidate_count=0
+preferred_container=
+matching_containers=
+target_name_present=0
+container_ids=$(docker ps -aq)
+for candidate in $container_ids; do
+    candidate_name=$(docker inspect --format '{{.Name}}' "$candidate")
+    [ "$candidate_name" != "/$target_container" ] || target_name_present=1
+    data_source=$(docker inspect --format '{{range .Mounts}}{{if and (eq .Destination "/app/data") (eq .Type "bind")}}{{.Source}}{{end}}{{end}}' "$candidate")
+    [ -n "$data_source" ] && [ -d "$data_source" ] || continue
+    data_source=$(cd "$data_source" && pwd -P)
+    [ "$data_source" = "$expected_data" ] || continue
+    candidate_project=$(docker inspect --format '{{with index .Config.Labels "com.docker.compose.project"}}{{.}}{{end}}' "$candidate")
+    candidate_service=$(docker inspect --format '{{with index .Config.Labels "com.docker.compose.service"}}{{.}}{{end}}' "$candidate")
+    case "$candidate_project" in ''|[!a-z0-9]*|*[!a-z0-9_-]*) continue ;; esac
+    case "$candidate_service" in ''|[!a-zA-Z0-9]*|*[!a-zA-Z0-9_.-]*) continue ;; esac
+    candidate_count=$((candidate_count + 1))
+    matching_containers="$matching_containers $candidate"
+    if [ "$candidate_count" -eq 1 ]; then
+        container=$candidate
+        projet=$candidate_project
+        service=$candidate_service
+    fi
+    if [ "$candidate_name" = "/$target_container" ] && [ "$candidate_service" = "$target_service" ]; then
+        preferred_container=$candidate
+        preferred_project=$candidate_project
+    fi
+done
+[ "$candidate_count" -gt 0 ] || fail "Aucun conteneur Compose valide ne monte $expected_data dans /app/data. Aucun service arrete."
+if [ -n "$preferred_container" ]; then
+    container=$preferred_container
+    projet=$preferred_project
+    service=$target_service
+elif [ "$target_name_present" -eq 1 ]; then
+    fail "Le nom $target_container appartient a un autre conteneur. Aucun service arrete."
+elif [ "$candidate_count" -ne 1 ]; then
+    fail "Plusieurs conteneurs Compose utilisent $expected_data. Impossible de choisir l'installation. Aucun service arrete."
+fi
+for candidate in $matching_containers; do
+    [ "$candidate" != "$container" ] || continue
+    [ "$(docker inspect --format '{{.State.Running}}' "$candidate")" = false ] || fail "Un autre conteneur utilise encore ces donnees : $candidate. Arretez-le avant la mise a jour."
+done
 
 mkdir -p "$backup_root"
 backup_root=$(cd "$backup_root" && pwd -P)
@@ -115,11 +154,11 @@ temporary_root=$(cd "${TMPDIR:-/tmp}" && pwd -P)
 case "$temporary_root/" in
     "$installation/"*) fail "Le dossier temporaire doit etre hors du dossier d'installation." ;;
 esac
-if ! mkdir "$installation/.myhomeia-update.lock" 2>/dev/null; then
-    fail "Une mise a jour est deja en cours (.myhomeia-update.lock)."
+if ! mkdir "$installation/.myhome-update.lock" 2>/dev/null; then
+    fail "Une mise a jour est deja en cours (.myhome-update.lock)."
 fi
 lock_owned=1
-staging=$(mktemp -d "$temporary_root/myhomeia-update.XXXXXX")
+staging=$(mktemp -d "$temporary_root/myhome-update.XXXXXX")
 
 printf 'Verification du package...\n'
 # L'extraction preliminaire verifie aussi les CRC, avant tout arret du service.
@@ -167,13 +206,15 @@ cp -a "$backup/.env" "$installation/.env"
 cp -a "$backup/data/." "$installation/data/"
 
 cd "$installation"
-printf 'Reconstruction et recreation du service %s...\n' "$service"
-compose --env-file "$installation/.env" -f "$installation/docker-compose.yml" -p "$projet" up -d --build --force-recreate "$service"
+printf 'Reconstruction et recreation du service %s...\n' "$target_service"
+# Un ancien service reste arrete pour permettre un diagnostic. Ne pas retirer
+# les autres services du projet avec --remove-orphans.
+compose --env-file "$installation/.env" -f "$installation/docker-compose.yml" -p "$projet" up -d --build --force-recreate "$target_service"
 
 printf 'Verification du demarrage (jusqu a 120 secondes)...\n'
 attempt=0
 while [ "$attempt" -lt 60 ]; do
-    health=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container")
+    health=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$target_container")
     case "$health" in
         healthy) break ;;
         unhealthy|exited|dead) fail "Le service ne demarre pas correctement (etat : $health)." ;;
@@ -184,3 +225,6 @@ done
 [ "$health" = healthy ] || fail "Le service n'est pas devenu healthy en 120 secondes."
 compose --env-file "$installation/.env" -f "$installation/docker-compose.yml" -p "$projet" ps
 printf '\nMise a jour terminee. Sauvegarde conservee : %s\n' "$backup"
+if [ "$service" != "$target_service" ]; then
+    printf 'Le conteneur de l\047ancien service %s reste arrete : %s.\n' "$service" "$container"
+fi

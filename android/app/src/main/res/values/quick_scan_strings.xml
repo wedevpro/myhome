@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="quick_scan_widget_label">MyHomeIA · Scan rapide</string>
+    <string name="quick_scan_widget_label">myHome · Scan rapide</string>
     <string name="quick_scan_widget_description">Scannez un article pour l’ajouter à votre liste de courses.</string>
     <string name="quick_scan_title">Scanner un article</string>
     <string name="quick_scan_action_label">Scanner</string>

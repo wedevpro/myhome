@@ -9,15 +9,15 @@ if (signingPropertiesFile.isFile()) {
 }
 
 android {
-    namespace 'fr.myhomeia.android'
+    namespace 'fr.myhome.android'
     compileSdk 35
 
     defaultConfig {
-        applicationId 'fr.myhomeia.android'
+        applicationId 'fr.myhome.android'
         minSdk 26
         targetSdk 35
-        versionCode = (project.findProperty('myhomeiaVersionCode') ?: '7').toString().toInteger()
-        versionName = (project.findProperty('myhomeiaVersionName') ?: '1.0.6').toString()
+        versionCode = (project.findProperty('myhomeVersionCode') ?: '8').toString().toInteger()
+        versionName = (project.findProperty('myhomeVersionName') ?: '1.0.7').toString()
     }
 
     signingConfigs {
@@ -60,7 +60,7 @@ android {
                 systemProperty 'user.home', rootProject.file('../.runtime').absolutePath
                 systemProperty 'sun.net.client.defaultConnectTimeout', '15000'
                 systemProperty 'sun.net.client.defaultReadTimeout', '60000'
-                systemProperty 'robolectric.enabledSdks', project.findProperty('myhomeiaTestSdks') ?: '28,35'
+                systemProperty 'robolectric.enabledSdks', project.findProperty('myhomeTestSdks') ?: '28,35'
             }
         }
     }

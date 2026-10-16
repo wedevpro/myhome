@@ -1,4 +1,4 @@
-package fr.myhomeia.android;
+package fr.myhome.android;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -46,8 +46,8 @@ public class WidgetAppearanceTest {
 
     @Before public void resetWidget() {
         application = RuntimeEnvironment.getApplication();
-        application.getSharedPreferences("myhomeia_widgets", Context.MODE_PRIVATE).edit().clear().commit();
-        application.getSharedPreferences("myhomeia_appearance", Context.MODE_PRIVATE).edit().clear().commit();
+        application.getSharedPreferences("myhome_widgets", Context.MODE_PRIVATE).edit().clear().commit();
+        application.getSharedPreferences("myhome_appearance", Context.MODE_PRIVATE).edit().clear().commit();
         CookieManager.getInstance().removeAllCookies(null);
         RuntimeEnvironment.setQualifiers("+notnight");
         new WidgetStore(application).setOrigin(NAS);
@@ -137,7 +137,7 @@ public class WidgetAppearanceTest {
     }
 
     private void cacheListWithTwoItems(int id) throws Exception {
-        CookieManager.getInstance().setCookie(NAS, "myhomeia_session=" + "a".repeat(64));
+        CookieManager.getInstance().setCookie(NAS, "myhome_session=" + "a".repeat(64));
         WidgetStore store = new WidgetStore(application);
         store.saveWidget(id, "household-one", "shopping-one");
         JSONArray entities = new JSONArray()

@@ -1,4 +1,4 @@
-package fr.myhomeia.android;
+package fr.myhome.android;
 
 import android.webkit.WebView;
 import org.json.JSONObject;

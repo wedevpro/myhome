@@ -13,8 +13,8 @@ const { runDuePushNotifications, vapidKeys } = await moduleFrom("../lib/push.ts"
 
 test("Rappels NAS : envoi réel construit, déduplication, abonnement retiré et échec réseau", async () => {
   const db = new SqliteDatabase(":memory:", fileURLToPath(new URL("../drizzle", import.meta.url)));
-  const previousDb = globalThis.myhomeiaDatabase, originalFetch = globalThis.fetch;
-  globalThis.myhomeiaDatabase = db;
+  const previousDb = globalThis.myhomeDatabase, originalFetch = globalThis.fetch;
+  globalThis.myhomeDatabase = db;
   const audit = ["u", "2026-10-09T10:00:00Z", "u", "2026-10-09T10:00:00Z"];
   try {
     await db.prepare("INSERT INTO users VALUES(?,?,?,?,?,?,?)").bind("u", "Test", "test@example.fr", ...audit).run();
@@ -23,7 +23,7 @@ test("Rappels NAS : envoi réel construit, déduplication, abonnement retiré et
     await db.prepare("INSERT INTO preferences VALUES(?,?,?,?,?,?,?)").bind("h", "u", JSON.stringify({ notifications: true }), ...audit).run();
     await db.prepare("INSERT INTO records(id,household_id,kind,data,revision,created_by,created_at,updated_by,updated_at) VALUES(?,?,?,?,?,?,?,?,?)").bind("w", "h", "waste", JSON.stringify({ name: "Bac jaune", weekday: 5, frequency: 1, reminder: "19:00" }), "r", ...audit).run();
     const pair = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
-    const subscription = { endpoint: "https://updates.push.services.mozilla.com/wpush/v2/myhomeia-test", keys: { p256dh: Buffer.from(await crypto.subtle.exportKey("raw", pair.publicKey)).toString("base64url"), auth: randomBytes(16).toString("base64url") } };
+    const subscription = { endpoint: "https://updates.push.services.mozilla.com/wpush/v2/myhome-test", keys: { p256dh: Buffer.from(await crypto.subtle.exportKey("raw", pair.publicKey)).toString("base64url"), auth: randomBytes(16).toString("base64url") } };
     await db.prepare("INSERT INTO push_subscriptions VALUES(?,?,?,?,?,?,?,?,?)").bind("s", "h", "u", subscription.endpoint, JSON.stringify(subscription), ...audit).run();
     let calls = 0;
     globalThis.fetch = async (url, init) => {
@@ -53,5 +53,5 @@ test("Rappels NAS : envoi réel construit, déduplication, abonnement retiré et
     await db.prepare("UPDATE memberships SET status='removed'").run();
     globalThis.fetch = async () => { throw new Error("Removed member must not receive push"); };
     assert.deepEqual(await runDuePushNotifications(due, "https://maison.example.fr"), { sent: 0, failed: 0 });
-  } finally { globalThis.fetch = originalFetch; globalThis.myhomeiaDatabase = previousDb; db.close(); }
+  } finally { globalThis.fetch = originalFetch; globalThis.myhomeDatabase = previousDb; db.close(); }
 });

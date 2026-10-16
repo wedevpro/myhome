@@ -1,4 +1,4 @@
-package fr.myhomeia.android;
+package fr.myhome.android;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -46,8 +46,8 @@ public class WidgetQuickScanTest {
 
     @Before public void resetWidget() {
         application = RuntimeEnvironment.getApplication();
-        application.getSharedPreferences("myhomeia_widgets", Context.MODE_PRIVATE).edit().clear().commit();
-        application.getSharedPreferences("myhomeia_appearance", Context.MODE_PRIVATE).edit().clear().commit();
+        application.getSharedPreferences("myhome_widgets", Context.MODE_PRIVATE).edit().clear().commit();
+        application.getSharedPreferences("myhome_appearance", Context.MODE_PRIVATE).edit().clear().commit();
         CookieManager.getInstance().removeAllCookies(null);
         RuntimeEnvironment.setQualifiers("+notnight");
         store = new WidgetStore(application);
@@ -116,7 +116,7 @@ public class WidgetQuickScanTest {
     @Test public void anotherSessionCannotReadThePreviousAccountsListName() {
         int id = configured("house-private", "list-private", "Liste privée");
         assertEquals("Liste privée", name(id));
-        CookieManager.getInstance().setCookie(NAS, "myhomeia_session=" + "b".repeat(64));
+        CookieManager.getInstance().setCookie(NAS, "myhome_session=" + "b".repeat(64));
         QuickScanWidgetProvider.renderAll(application);
         assertEquals("", store.getWidgetListName(id));
         assertFalse(name(id).contains("Liste privée"));
@@ -187,7 +187,7 @@ public class WidgetQuickScanTest {
     }
 
     private void signIn() {
-        CookieManager.getInstance().setCookie(NAS, "myhomeia_session=" + "a".repeat(64));
+        CookieManager.getInstance().setCookie(NAS, "myhome_session=" + "a".repeat(64));
     }
 
     private String name(int id) {

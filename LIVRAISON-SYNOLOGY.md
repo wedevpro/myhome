@@ -2,9 +2,11 @@
 
 ## 1. Copier le package
 
-Copier le fichier myhomeia-synology.zip sur le NAS dans le répertoire \\NAS\docker
+Copier le fichier myhome-synology.zip sur le NAS dans le répertoire \\NAS\docker
 
 ## 2. Déployer le package
+
+Pour la première livraison renommée, si le dossier d'installation conserve son ancien nom, utilisez le script fourni avec `MYHOME_DIR` renseigné au chemin réel, comme indiqué dans [GUIDE-SYNOLOGY.md](GUIDE-SYNOLOGY.md#passage-au-nom-myhome). Ne créez pas un dossier `data/` vide à la place des données existantes.
 
 1. Ouvrir une fenêtre bash
 2. Se connecter en SSH
@@ -15,9 +17,9 @@ ssh 192.168.1.46
 ```sh
 cd /volume1/docker
 ```
-4. Exécuter le fichier update-myhomeia.sh
+4. Exécuter le fichier update-myhome.sh
 ```sh
-sudo sh update-myhomeia.sh myhomeia-synology.zip
+sudo sh update-myhome.sh myhome-synology.zip
 ```
 
 Note : à l'invite "Would you like to replace the existing file [...]", renseigner "A" (Always)
@@ -27,5 +29,5 @@ Note : à l'invite "Would you like to replace the existing file [...]", renseign
 ```sh
 ssh 192.168.1.46
 cd /volume1/docker
-sudo sh update-myhomeia.sh myhomeia-synology.zip
+sudo sh update-myhome.sh myhome-synology.zip
 ```

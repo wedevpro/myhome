@@ -7,8 +7,8 @@ RUN npm ci
 FROM node:24-bookworm-slim AS builder
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1 \
-    DB_PATH=/tmp/myhomeia-build.sqlite \
-    SITE_ORIGIN=https://myhomeia.example.com \
+    DB_PATH=/tmp/myhome-build.sqlite \
+    SITE_ORIGIN=https://myhome.example.com \
     AUTH_COOKIE_SECURE=true
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY app/ ./
@@ -20,13 +20,14 @@ ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     HOSTNAME=0.0.0.0 \
     PORT=3000 \
-    DB_PATH=/app/data/myhomeia.sqlite
+    DB_PATH=/app/data/myhome.sqlite
 
 COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 COPY --from=builder --chown=node:node /app/public ./public
 COPY --from=builder --chown=node:node /app/drizzle ./drizzle
 COPY --from=builder --chown=node:node /app/scripts/nas-entrypoint.mjs ./scripts/nas-entrypoint.mjs
+COPY --from=builder --chown=node:node /app/scripts/database-path.mjs ./scripts/database-path.mjs
 COPY --from=builder --chown=node:node /app/runtime ./runtime
 RUN mkdir -p /app/data /app/.next/cache && chown node:node /app/data /app/.next/cache
 

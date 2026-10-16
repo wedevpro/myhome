@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = 'MyHomeIA'
+rootProject.name = 'myHome'
 include ':app'

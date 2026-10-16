@@ -69,11 +69,11 @@ function zip(entries) {
 
 const validEntries = [
   ['Dockerfile', 'FROM scratch\n'],
-  ['docker-compose.yml', 'services:\n  myhomeia:\n    image: fixture:latest\n'],
+  ['docker-compose.yml', 'services:\n  myhome:\n    image: fixture:latest\n'],
   ['.dockerignore', 'data\n.env\n'],
-  ['.env.example', 'SITE_ORIGIN=https://myhomeia.example.test\n'],
+  ['.env.example', 'SITE_ORIGIN=https://myhome.example.test\n'],
   ['GUIDE-SYNOLOGY.md', 'Updated fixture guide\n'],
-  ['app/.env.example', 'DB_PATH=../data/myhomeia.sqlite\n'],
+  ['app/.env.example', 'DB_PATH=../data/myhome.sqlite\n'],
   ['app/package.json', '{"name":"updated-fixture","version":"2.0.0"}\n'],
   ['app/package-lock.json', '{"name":"updated-fixture","lockfileVersion":3}\n'],
   ['app/next.config.ts', 'export default { output: "standalone" };\n'],
@@ -103,9 +103,9 @@ case " $* " in
   *' config '*) [ "\${TEST_CONFIG_FAIL:-0}" != 1 ] || exit 23; exit 0 ;;
   *' up '*)
     [ "\${TEST_BUILD_FAIL:-0}" != 1 ] || exit 24
-    rm -f "$TEST_STOPPED"
+    : > "$TEST_CREATED"
     exit 0 ;;
-  *' ps '*) printf 'myhomeia fixture running (healthy)\\n'; exit 0 ;;
+  *' ps '*) printf 'myhome fixture running (healthy)\\n'; exit 0 ;;
 esac
 exit 64
 `;
@@ -134,11 +134,13 @@ function fixture() {
   const bin = path.join(directory, 'bin');
   const eventsFile = path.join(directory, 'events.tsv');
   const stoppedFile = path.join(directory, 'stopped');
-  const archive = path.join(directory, 'myhomeia-synology.zip');
+  const containersFile = path.join(directory, 'containers.txt');
+  const createdFile = path.join(directory, 'created');
+  const archive = path.join(directory, 'myhome-synology.zip');
   const otherData = path.join(directory, 'other-data');
   for (const name of [install, backup, staging, bin, otherData, path.join(install, 'data', 'nested'), path.join(install, 'app')]) fs.mkdirSync(name, { recursive: true });
   fs.writeFileSync(path.join(install, '.env'), environmentContents);
-  fs.writeFileSync(path.join(install, 'data', 'myhomeia.sqlite'), databaseContents);
+  fs.writeFileSync(path.join(install, 'data', 'myhome.sqlite'), databaseContents);
   fs.writeFileSync(path.join(install, 'data', '.hidden'), 'hidden file remains\n');
   fs.writeFileSync(path.join(install, 'data', 'nested', 'attachment.bin'), Buffer.from([0, 1, 2, 253, 254, 255]));
   fs.writeFileSync(path.join(install, 'Dockerfile'), 'old Dockerfile\n');
@@ -150,14 +152,38 @@ function fixture() {
   executable(path.join(bin, 'docker'), logArguments('docker') + `
 if [ "$1" = compose ]; then mock_command=docker; ${composeMock}
 fi
+if [ "$1" = ps ]; then
+  while IFS='|' read -r identifier name project service source mount_type running; do
+    printf '%s\\n' "$identifier"
+  done < "$TEST_CONTAINERS"
+  exit 0
+fi
 if [ "$1" = inspect ]; then
+  requested=
+  for argument do requested=$argument; done
+  found=0
+  while IFS='|' read -r identifier name project service source mount_type running; do
+    if [ "$requested" = "$identifier" ] || [ "$requested" = "$name" ]; then found=1; break; fi
+  done < "$TEST_CONTAINERS"
+  if [ -f "$TEST_CREATED" ] && [ "$requested" = myhome ]; then
+    identifier=myhome
+    name=myhome
+    project=$TEST_PROJECT
+    service=myhome
+    source="$MYHOME_DIR/data"
+    mount_type=bind
+    running=true
+    found=1
+  fi
+  [ "$found" = 1 ] || exit 67
   case "$*" in
-    *com.docker.compose.project*) printf '%s\\n' "$TEST_PROJECT" ;;
-    *com.docker.compose.service*) printf '%s\\n' "$TEST_SERVICE" ;;
-    *.Mounts*) printf '%s\\n' "$TEST_DATA_SOURCE" ;;
+    *com.docker.compose.project*) printf '%s\\n' "$project" ;;
+    *com.docker.compose.service*) printf '%s\\n' "$service" ;;
+    *.Name*) printf '/%s\\n' "$name" ;;
+    *.Mounts*) [ "$mount_type" != bind ] || printf '%s\\n' "$source" ;;
     *.State.Running*)
-      if [ -f "$TEST_STOPPED" ]; then running=false; else running=true; fi
-      printf 'running\\t%s\\n' "$running" >> "$TEST_EVENTS"
+      if [ -f "$TEST_STOPPED-$identifier" ]; then running=false; fi
+      printf 'running\\t%s\\t%s\\n' "$running" "$identifier" >> "$TEST_EVENTS"
       printf '%s\\n' "$running" ;;
     *.State.Health*) printf 'healthy\\n' ;;
     *) exit 65 ;;
@@ -165,52 +191,62 @@ if [ "$1" = inspect ]; then
   exit 0
 fi
 if [ "$1" = stop ]; then
-  if [ "\${TEST_STOP_STAYS_RUNNING:-0}" != 1 ]; then : > "$TEST_STOPPED"; fi
-  printf 'myhomeia\\n'
+  for argument do identifier=$argument; done
+  if [ "\${TEST_STOP_STAYS_RUNNING:-0}" != 1 ]; then : > "$TEST_STOPPED-$identifier"; fi
+  printf '%s\\n' "$identifier"
   exit 0
 fi
-if [ "$1" = start ]; then rm -f "$TEST_STOPPED"; printf 'myhomeia\\n'; exit 0; fi
+if [ "$1" = start ]; then rm -f "$TEST_STOPPED-$2"; printf '%s\\n' "$2"; exit 0; fi
 exit 66
 `);
   executable(path.join(bin, 'docker-compose'), logArguments('docker-compose') + 'mock_command=docker-compose\n' + composeMock);
   executable(path.join(bin, 'cp'), logArguments('cp') + `
 if [ "\${TEST_COPY_FAIL:-0}" = 1 ]; then
-  for argument do if [ "$argument" = "$MYHOMEIA_DIR/data" ]; then exit 25; fi; done
+  for argument do if [ "$argument" = "$MYHOME_DIR/data" ]; then exit 25; fi; done
 fi
 exec /usr/bin/cp "$@"
 `);
   executable(path.join(bin, 'mv'), logArguments('mv') + 'exec /usr/bin/mv "$@"\n');
-  executable(path.join(bin, 'unzip'), logArguments('unzip') + `
+  executable(path.join(bin, '7z'), logArguments('7z') + `
+[ "$1" = x ] || exit 68
+archive=$2
 target=
-previous=
 for argument do
-  if [ "$previous" = -d ]; then target=$argument; fi
-  previous=$argument
+  case "$argument" in -o*) target=\${argument#-o} ;; esac
 done
-if [ -n "$target" ]; then printf 'extract\\t%s\\n' "$target" >> "$TEST_EVENTS"; fi
-exec /usr/bin/unzip "$@"
+[ -n "$target" ] || exit 69
+printf 'extract\\t%s\\n' "$target" >> "$TEST_EVENTS"
+exec /usr/bin/unzip -o "$archive" -d "$target"
 `);
 
   const environment = { ...process.env };
   for (const key of Object.keys(environment)) if (key.toLowerCase() === 'path') delete environment[key];
   Object.assign(environment, {
     PATH: toShellPath(bin) + ':/usr/bin:/bin',
-    MYHOMEIA_DIR: toShellPath(install),
-    MYHOMEIA_BACKUP_DIR: toShellPath(backup),
+    MYHOME_DIR: toShellPath(install),
+    MYHOME_BACKUP_DIR: toShellPath(backup),
     TMPDIR: toShellPath(staging),
     TEST_EVENTS: toShellPath(eventsFile),
     TEST_STOPPED: toShellPath(stoppedFile),
+    TEST_CREATED: toShellPath(createdFile),
+    TEST_CONTAINERS: toShellPath(containersFile),
     TEST_PROJECT: project,
-    TEST_SERVICE: 'myhomeia',
+    TEST_SERVICE: 'myhome',
     TEST_DATA_SOURCE: toShellPath(path.join(install, 'data')),
     LC_ALL: 'C',
   });
+  let containerModels;
   return {
     directory, install, backup, staging, archive, otherData,
+    setContainers(containers) { containerModels = containers; },
+    isStopped(identifier) { return fs.existsSync(stoppedFile + '-' + identifier); },
     writeZip(entries) { fs.writeFileSync(archive, zip(entries)); },
     run(extraEnvironment = {}) {
+      const options = { ...environment, ...extraEnvironment };
+      const containers = containerModels ?? [{ id: 'myhome', name: 'myhome', project: options.TEST_PROJECT, service: options.TEST_SERVICE, source: options.TEST_DATA_SOURCE }];
+      fs.writeFileSync(containersFile, containers.map(container => [container.id, container.name ?? container.id, container.project ?? project, container.service ?? 'myhome', container.source ?? toShellPath(path.join(install, 'data')), container.type ?? 'bind', String(container.running ?? true)].join('|')).join('\n') + '\n');
       const result = spawnSync(shellPath, [toShellPath(scriptPath), toShellPath(archive)], {
-        cwd: directory, env: { ...environment, ...extraEnvironment }, encoding: 'utf8', timeout: 20_000, maxBuffer: 2 * 1024 * 1024,
+        cwd: directory, env: options, encoding: 'utf8', timeout: 20_000, maxBuffer: 2 * 1024 * 1024,
       });
       assert.ifError(result.error);
       const output = result.stdout + result.stderr;
@@ -225,7 +261,7 @@ function withFixture(run) {
 }
 function assertOriginalData(directory) {
   assert.equal(fs.readFileSync(path.join(directory, '.env'), 'utf8'), environmentContents);
-  assert.deepEqual(fs.readFileSync(path.join(directory, 'data', 'myhomeia.sqlite')), databaseContents);
+  assert.deepEqual(fs.readFileSync(path.join(directory, 'data', 'myhome.sqlite')), databaseContents);
   assert.equal(fs.readFileSync(path.join(directory, 'data', '.hidden'), 'utf8'), 'hidden file remains\n');
   assert.deepEqual(fs.readFileSync(path.join(directory, 'data', 'nested', 'attachment.bin')), Buffer.from([0, 1, 2, 253, 254, 255]));
   assert.equal(fs.existsSync(path.join(directory, 'data', 'data')), false, 'Restoration must not create data/data');
@@ -233,7 +269,7 @@ function assertOriginalData(directory) {
 const isCompose = (event, action) => (event[0] === 'docker-compose' || (event[0] === 'docker' && event[1] === 'compose')) && event.includes(action);
 const isStop = event => event[0] === 'docker' && event[1] === 'stop';
 function assertCleanup(context) {
-  assert.equal(fs.existsSync(path.join(context.install, '.myhomeia-update.lock')), false, 'The update lock must be removed');
+  assert.equal(fs.existsSync(path.join(context.install, '.myhome-update.lock')), false, 'The update lock must be removed');
   assert.deepEqual(fs.readdirSync(context.staging), [], 'Temporary extracted sources must be removed');
 }
 function backups(context) { return fs.readdirSync(context.backup).map(name => path.join(context.backup, name)); }
@@ -258,7 +294,7 @@ test('Mise à jour Synology : extraction réelle, données conservées et ordre 
   assertOriginalData(saved[0]);
   assert.equal(fs.existsSync(path.join(context.install, 'app', 'obsolete-route.ts')), false, 'Deleted application routes must not survive the update');
   assert.equal(fs.readFileSync(path.join(saved[0], 'app', 'obsolete-route.ts'), 'utf8'), 'old route must be removed\n');
-  assert.equal(fs.readFileSync(path.join(saved[0], 'compose.txt'), 'utf8'), 'projet=' + project + '\nservice=myhomeia\n');
+  assert.equal(fs.readFileSync(path.join(saved[0], 'compose.txt'), 'utf8'), 'projet=' + project + '\nservice=myhome\n');
   assert.ok(fs.existsSync(path.join(saved[0], 'SAUVEGARDE-TERMINEE.txt')));
   const version = result.events.findIndex(event => isCompose(event, 'version'));
   const config = result.events.findIndex(event => isCompose(event, 'config'));
@@ -271,14 +307,14 @@ test('Mise à jour Synology : extraction réelle, données conservées et ordre 
   assert.ok(version >= 0 && config > version && stop > config && confirmedStopped > stop && copy > confirmedStopped && extractInstall > copy, JSON.stringify(result.events));
   assert.ok(copyData > confirmedStopped && moveApplication > copyData && extractInstall > moveApplication, 'Application replacement must follow the data backup');
   assert.ok(result.events[config].includes('--quiet'));
-  assert.deepEqual(result.events[stop].slice(1), ['stop', '-t', '30', 'myhomeia']);
+  assert.deepEqual(result.events[stop].slice(1), ['stop', '-t', '30', 'myhome']);
   for (const action of ['up', 'ps']) {
     const event = result.events.find(entry => isCompose(entry, action));
     assert.ok(event, action + ' must be called');
     assert.equal(event[event.indexOf('-p') + 1], project, 'The existing Compose project must be retained');
     assert.equal(event[event.indexOf('-f') + 1], toShellPath(path.join(context.install, 'docker-compose.yml')));
     assert.equal(event[event.indexOf('--env-file') + 1], toShellPath(path.join(context.install, '.env')));
-    if (action === 'up') for (const option of ['-d', '--build', '--force-recreate', 'myhomeia']) assert.ok(event.includes(option));
+    if (action === 'up') for (const option of ['-d', '--build', '--force-recreate', 'myhome']) assert.ok(event.includes(option));
   }
   assertCleanup(context);
 }));
@@ -325,8 +361,86 @@ test('Mise à jour Synology : label de projet absent refusé sans arrêt', () =>
   assertRejectedBeforeStop(context, context.run({ TEST_PROJECT: '' }));
 }));
 
-test('Mise à jour Synology : service Compose différent refusé sans arrêt', () => withFixture(context => {
-  assertRejectedBeforeStop(context, context.run({ TEST_SERVICE: 'another-service' }));
+test('Mise à jour Synology : label de service absent refusé sans arrêt', () => withFixture(context => {
+  assertRejectedBeforeStop(context, context.run({ TEST_SERVICE: '' }));
+}));
+
+test('Mise à jour Synology : ancien nom retrouvé par montage et nouveau service ciblé', () => withFixture(context => {
+  context.setContainers([{ id: 'legacy-id', name: 'previous-house', service: 'previous-service' }]);
+  const result = context.run();
+  assert.equal(result.status, 0, result.output);
+  assert.deepEqual(result.events.find(isStop).slice(1), ['stop', '-t', '30', 'legacy-id']);
+  const up = result.events.find(event => isCompose(event, 'up'));
+  assert.equal(up.at(-1), 'myhome');
+  assert.equal(up[up.indexOf('-p') + 1], project);
+  assert.equal(up.includes('--remove-orphans'), false);
+  assert.equal(result.events.some(event => event[0] === 'docker' && ['rm', 'rename', 'start'].includes(event[1])), false);
+  assert.ok(context.isStopped('legacy-id'), 'The former container must remain stopped');
+  assert.ok(result.events.some(event => event[0] === 'docker' && event[1] === 'inspect' && event[3].includes('.State.Health') && event.at(-1) === 'myhome'));
+  assert.equal(fs.readFileSync(path.join(backups(context)[0], 'compose.txt'), 'utf8'), 'projet=' + project + '\nservice=previous-service\n');
+  assertOriginalData(context.install);
+  assertCleanup(context);
+}));
+
+test('Mise à jour Synology : nom actuel préféré aux anciens conteneurs arrêtés', () => withFixture(context => {
+  context.setContainers([
+    { id: 'legacy-id', name: 'previous-house', service: 'previous-service', running: false },
+    { id: 'current-id', name: 'myhome', service: 'myhome' },
+  ]);
+  const result = context.run();
+  assert.equal(result.status, 0, result.output);
+  assert.deepEqual(result.events.find(isStop).slice(1), ['stop', '-t', '30', 'current-id']);
+  assertOriginalData(context.install);
+  assertCleanup(context);
+}));
+
+test('Mise à jour Synology : plusieurs candidats sans nom actuel refusés', () => withFixture(context => {
+  context.setContainers([
+    { id: 'first-id', name: 'first-house', service: 'first-service' },
+    { id: 'second-id', name: 'second-house', service: 'second-service', running: false },
+  ]);
+  const result = context.run();
+  assertRejectedBeforeStop(context, result);
+  assert.match(result.output, /Plusieurs conteneurs/);
+}));
+
+test('Mise à jour Synology : autre conteneur actif sur les données refusé', () => withFixture(context => {
+  context.setContainers([
+    { id: 'legacy-id', name: 'previous-house', service: 'previous-service' },
+    { id: 'current-id', name: 'myhome', service: 'myhome' },
+  ]);
+  assertRejectedBeforeStop(context, context.run());
+}));
+
+test('Mise à jour Synology : nom actuel appartenant à une autre installation refusé', () => withFixture(context => {
+  context.setContainers([
+    { id: 'legacy-id', name: 'previous-house', service: 'previous-service' },
+    { id: 'foreign-id', name: 'myhome', source: toShellPath(context.otherData) },
+  ]);
+  const result = context.run();
+  assertRejectedBeforeStop(context, result);
+  assert.match(result.output, /appartient a un autre conteneur/);
+}));
+
+test('Mise à jour Synology : conteneur étranger sans montage correspondant ignoré', () => withFixture(context => {
+  context.setContainers([
+    { id: 'foreign-id', name: 'other-app', source: toShellPath(context.otherData) },
+    { id: 'legacy-id', name: 'previous-house', service: 'previous-service' },
+  ]);
+  const result = context.run();
+  assert.equal(result.status, 0, result.output);
+  assert.deepEqual(result.events.find(isStop).slice(1), ['stop', '-t', '30', 'legacy-id']);
+  assertOriginalData(context.install);
+  assertCleanup(context);
+}));
+
+test('Mise à jour Synology : volume Docker au lieu du bind mount refusé', () => withFixture(context => {
+  context.setContainers([{ id: 'myhome', type: 'volume' }]);
+  assertRejectedBeforeStop(context, context.run());
+}));
+
+test('Mise à jour Synology : labels Compose invalides refusés', () => withFixture(context => {
+  assertRejectedBeforeStop(context, context.run({ TEST_PROJECT: '../other-project' }));
 }));
 
 test('Mise à jour Synology : volume de données différent refusé sans arrêt', () => withFixture(context => {

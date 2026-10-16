@@ -1,4 +1,4 @@
-# Architecture MyHomeIA — version NAS
+# Architecture myHome — version NAS
 
 Application web responsive installable (PWA), avec **Next.js, React et TypeScript**, exécutée dans Node.js. Le stockage utilise SQLite natif via `node:sqlite`. L'installation Synology construit un conteneur Linux amd64 avec Node.js 24 et ne dépend ni de Firebase, ni de Cloudflare, ni de l'identité ChatGPT.
 
@@ -37,7 +37,7 @@ Le widget demande un rafraîchissement périodique toutes les trente minutes, ma
 
 ## Navigation mobile
 
-`lib/app-navigation-history.ts` gère les entrées History API à URL constante. Son curseur `__myhomeia_navigation` est ajouté sans écraser les champs de Next.js. Les scènes restent dans une table en mémoire : page, listes sélectionnées, catalogue, mode cuisine, retour entre checklists liées, recherche, catégorie et défilement de la page. Un changement d'écran crée une entrée ; une saisie ou un défilement actualise la scène courante sans multiplier les étapes de retour.
+`lib/app-navigation-history.ts` gère les entrées History API à URL constante. Son curseur `__myhome_navigation` est ajouté sans écraser les champs de Next.js. Les scènes restent dans une table en mémoire : page, listes sélectionnées, catalogue, mode cuisine, retour entre checklists liées, recherche, catégorie et défilement de la page. Un changement d'écran crée une entrée ; une saisie ou un défilement actualise la scène courante sans multiplier les étapes de retour.
 
 `hooks/use-app-navigation-history.ts` active le contrôleur après hydratation, sous 768 px ou avec un pointeur tactile. L'activation persiste pendant les redimensionnements. `popstate` restaure l'écran sans recharger le document ni annuler les mutations de données. Les menus et fenêtres consomment d'abord le retour via leur fermeture. Une entrée de garde avant la première scène renvoie vers celle-ci avec `history.go(1)` pour rester dans l'application tout en conservant la branche Suivant.
 
@@ -47,7 +47,7 @@ Les tests unitaires simulent les traversées asynchrones, les branches, les fen�
 
 ## Comptes et isolation des foyers
 
-Chaque personne crée un compte MyHomeIA avec un nom, une adresse email et un mot de passe d'au moins **12 caractères**. L'adresse email est normalisée ; les mots de passe sont dérivés avec `scrypt` et un sel aléatoire. Aucun mot de passe en clair n'est stocké.
+Chaque personne crée un compte myHome avec un nom, une adresse email et un mot de passe d'au moins **12 caractères**. L'adresse email est normalisée ; les mots de passe sont dérivés avec `scrypt` et un sel aléatoire. Aucun mot de passe en clair n'est stocké.
 
 Les sessions durent **30 jours**. Le navigateur reçoit un cookie `HttpOnly`, `SameSite=Lax` et `Secure` en production ; la base conserve seulement le hash du jeton de session. Une déconnexion retire la session serveur. Les tentatives de connexion et les inscriptions sont limitées.
 
@@ -57,7 +57,7 @@ Les requêtes de mutation vérifient leur origine et bornent le corps reçu. En 
 
 ## Stockage et migrations
 
-Le conteneur s'exécute avec **UID/GID 1000** et monte `./data:/app/data`. La base est définie par `DB_PATH=/app/data/myhomeia.sqlite`. En développement, `DB_PATH` peut désigner un autre fichier ; aucun fichier de base de production n'est incorporé à l'image.
+Le conteneur s'exécute avec **UID/GID 1000** et monte `./data:/app/data`. La base est définie par `DB_PATH=/app/data/myhome.sqlite`. En développement, `DB_PATH` peut désigner un autre fichier ; aucun fichier de base de production n'est incorporé à l'image.
 
 Le wrapper `lib/sqlite.ts` conserve le contrat de statements préparés de l'application sur `node:sqlite` :
 
@@ -110,7 +110,7 @@ Les déclencheurs de menus Radix conservent leurs handlers souris/clavier, ARIA 
 
 Les données sont persistées sur le NAS. Les mutations sont ciblées par élément. Le client relit l'état toutes les **2,5 secondes** lorsque l'application est visible, après chaque mutation et au retour sur la fenêtre. Cette synchronisation se fait donc en quelques secondes. Une modification fondée sur une ancienne révision est rejetée avec HTTP 409.
 
-Le navigateur conserve des états propres à l'appareil, comme le foyer actif et les marqueurs des rappels locaux. La visibilité des cartes électricité/poubelles utilise uniquement la clé `myhomeia-device-dashboard` du `localStorage`, avec les deux cartes visibles par défaut. Un store à snapshots immuables/cachés se synchronise entre onglets ; un stockage inaccessible laisse les choix utilisables en mémoire pour la session. Le rendu serveur ne lit pas ce stockage et les cartes attendent la lecture initiale côté client avant de devenir visibles. Une carte seule occupe la ligne ; aucune zone n'est rendue si les deux sont masquées. Ces réglages ne modifient ni les règles du foyer, ni les notifications, ni les préférences serveur.
+Le navigateur conserve des états propres à l'appareil, comme le foyer actif et les marqueurs des rappels locaux. La visibilité des cartes électricité/poubelles utilise uniquement la clé `myhome-device-dashboard` du `localStorage`, avec les deux cartes visibles par défaut. Un store à snapshots immuables/cachés se synchronise entre onglets ; un stockage inaccessible laisse les choix utilisables en mémoire pour la session. Le rendu serveur ne lit pas ce stockage et les cartes attendent la lecture initiale côté client avant de devenir visibles. Une carte seule occupe la ligne ; aucune zone n'est rendue si les deux sont masquées. Ces réglages ne modifient ni les règles du foyer, ni les notifications, ni les préférences serveur.
 
 Les autres préférences de tableau de bord (listes, disposition, rotation, caméra, couleurs) restent en base, par utilisateur et par foyer. Il n'existe pas de file d'écritures hors ligne synchronisée au retour du réseau.
 

@@ -1,4 +1,4 @@
-package fr.myhomeia.android;
+package fr.myhome.android;
 
 import android.appwidget.AppWidgetManager;
 import android.content.Context;

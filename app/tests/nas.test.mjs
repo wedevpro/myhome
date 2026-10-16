@@ -4,21 +4,20 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
-import ts from 'typescript';
+import { build } from 'esbuild';
+import { resolveDatabasePath } from '../scripts/database-path.mjs';
 
 const migrationsDirectory = fileURLToPath(new URL('../drizzle/', import.meta.url));
 const migrationNames = fs.readdirSync(migrationsDirectory).filter(name => /^\d+.*\.sql$/.test(name)).sort();
-const source = fs.readFileSync(new URL('../lib/sqlite.ts', import.meta.url), 'utf8');
-const compiled = ts.transpileModule(source, {
-  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
-}).outputText;
+const bundled = await build({ entryPoints: [fileURLToPath(new URL('../lib/sqlite.ts', import.meta.url))], write: false, bundle: true, platform: 'node', format: 'esm', target: 'node22' });
+const compiled = bundled.outputFiles[0].text;
 const { SqliteDatabase } = await import('data:text/javascript;base64,' + Buffer.from(compiled).toString('base64'));
 
 function fixture(t, { copyMigrations = false } = {}) {
   const temporaryPath = fileURLToPath(new URL('../.sites-runtime/nas-test-fixtures/', import.meta.url));
   fs.mkdirSync(temporaryPath, { recursive: true });
   const temporaryParent = fs.realpathSync(temporaryPath);
-  const directory = fs.mkdtempSync(path.join(temporaryParent, 'myhomeia-nas-'));
+  const directory = fs.mkdtempSync(path.join(temporaryParent, 'myhome-nas-'));
   const verifiedDirectory = fs.realpathSync(directory);
   const connections = new Set();
   let migrations = migrationsDirectory;
@@ -29,7 +28,7 @@ function fixture(t, { copyMigrations = false } = {}) {
     const relative = path.relative(temporaryParent, actualDirectory);
     assert.equal(actualDirectory, verifiedDirectory);
     assert.ok(relative && !path.isAbsolute(relative) && relative !== '..' && !relative.startsWith('..' + path.sep));
-    assert.ok(path.basename(actualDirectory).startsWith('myhomeia-nas-'));
+    assert.ok(path.basename(actualDirectory).startsWith('myhome-nas-'));
     return actualDirectory;
   }
   assertTemporaryDirectory();
@@ -50,7 +49,7 @@ function fixture(t, { copyMigrations = false } = {}) {
     fs.mkdirSync(migrations);
     for (const name of migrationNames) fs.copyFileSync(path.join(migrationsDirectory, name), path.join(migrations, name));
   }
-  const filename = path.join(directory, 'data', 'myhomeia.sqlite');
+  const filename = path.join(directory, 'data', 'myhome.sqlite');
   const open = () => {
     const db = new SqliteDatabase(filename, migrations);
     connections.add(db);
@@ -68,6 +67,65 @@ function insertUser(db, id) {
   return db.prepare('INSERT INTO users(id,name,email,created_by,created_at,updated_by,updated_at) VALUES(?,?,?,?,?,?,?)')
     .bind(id, 'Utilisateur ' + id, id + '@example.fr', id, '2026-10-09T12:00:00.000Z', id, '2026-10-09T12:00:00.000Z');
 }
+
+test('NAS : le nouveau nom par défaut réutilise la base existante sans créer de base vide', async t => {
+  const storage = fixture(t);
+  const db = storage.open();
+  await insertUser(db, 'preserved-name-change').run();
+  storage.close(db);
+  const previousFilename = path.join(path.dirname(storage.filename), 'household.sqlite');
+  fs.renameSync(storage.filename, previousFilename);
+  const before = fs.readFileSync(previousFilename);
+
+  assert.equal(resolveDatabasePath(storage.filename, storage.filename), previousFilename);
+  assert.equal(fs.existsSync(storage.filename), false);
+  assert.deepEqual(fs.readFileSync(previousFilename), before);
+  const reused = new SqliteDatabase(resolveDatabasePath(storage.filename, storage.filename), storage.migrations);
+  try {
+    assert.equal(await reused.prepare('SELECT id FROM users').first('id'), 'preserved-name-change');
+  } finally { reused.close(); }
+});
+
+test('NAS : DB_PATH personnalisé et base par défaut déjà présente sont prioritaires', t => {
+  const storage = fixture(t);
+  storage.close(storage.open());
+  const oldFile = path.join(path.dirname(storage.filename), 'household.sqlite');
+  fs.copyFileSync(storage.filename, oldFile);
+  assert.equal(resolveDatabasePath(storage.filename, storage.filename), storage.filename);
+  const customFile = path.join(path.dirname(storage.filename), 'custom.sqlite');
+  assert.equal(resolveDatabasePath(customFile, storage.filename), customFile);
+  assert.equal(fs.existsSync(customFile), false);
+  assert.equal(resolveDatabasePath(':memory:', storage.filename), ':memory:');
+});
+
+test('NAS : plusieurs bases reconnues interdisent un choix ambigu sans modifier les données', t => {
+  const storage = fixture(t);
+  storage.close(storage.open());
+  const first = path.join(path.dirname(storage.filename), 'first.sqlite');
+  const second = path.join(path.dirname(storage.filename), 'second.sqlite');
+  fs.renameSync(storage.filename, first);
+  fs.copyFileSync(first, second);
+  const before = fs.readFileSync(first);
+  assert.throws(() => resolveDatabasePath(storage.filename, storage.filename), /Set DB_PATH/);
+  assert.equal(fs.existsSync(storage.filename), false);
+  assert.deepEqual(fs.readFileSync(first), before);
+  assert.deepEqual(fs.readFileSync(second), before);
+});
+
+test('NAS : un fichier invalide ou une base étrangère ne déclenche pas une initialisation silencieuse', t => {
+  const storage = fixture(t);
+  fs.mkdirSync(path.dirname(storage.filename), { recursive: true });
+  assert.equal(resolveDatabasePath(storage.filename, storage.filename), storage.filename);
+  const unrelated = path.join(path.dirname(storage.filename), 'unrelated.sqlite');
+  const foreign = new DatabaseSync(unrelated);
+  foreign.exec('CREATE TABLE unrelated(value TEXT)');
+  foreign.close();
+  const invalid = path.join(path.dirname(storage.filename), 'invalid.sqlite');
+  fs.writeFileSync(invalid, 'not a SQLite database');
+  assert.throws(() => resolveDatabasePath(storage.filename, storage.filename), /Set DB_PATH/);
+  assert.equal(fs.existsSync(storage.filename), false);
+  assert.equal(fs.readFileSync(invalid, 'utf8'), 'not a SQLite database');
+});
 
 test('NAS : résultats SQLite sérialisables vers les composants React clients', async t => {
   const storage = fixture(t);

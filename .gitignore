@@ -41,11 +41,11 @@ outputs/
 work/
 
 # Generated delivery packages
-/myhomeia-*.zip
-/myhomeia-*.zip.sha256
-/myhomeia-*.tar.gz
-/myhomeia-*.apk
-/myhomeia-*.apk.sha256
+/myhome-*.zip
+/myhome-*.zip.sha256
+/myhome-*.tar.gz
+/myhome-*.apk
+/myhome-*.apk.sha256
 
 # Logs and operating system files
 *.log

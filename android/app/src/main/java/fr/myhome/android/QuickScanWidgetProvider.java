@@ -1,4 +1,4 @@
-package fr.myhomeia.android;
+package fr.myhome.android;
 
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
@@ -58,7 +58,7 @@ public final class QuickScanWidgetProvider extends AppWidgetProvider {
                 height >= 72 && !(configured && signedIn) ? View.VISIBLE : View.GONE);
 
         Intent configure = new Intent(context, WidgetConfigureActivity.class)
-                .setData(Uri.parse("myhomeia-widget://" + id + "/quick-scan/configure"))
+                .setData(Uri.parse("myhome-widget://" + id + "/quick-scan/configure"))
                 .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         PendingIntent configureIntent = PendingIntent.getActivity(context, id, configure,
@@ -68,7 +68,7 @@ public final class QuickScanWidgetProvider extends AppWidgetProvider {
         PendingIntent scanIntent = configureIntent;
         if (configured) {
             Intent scan = MainActivity.intent(context, householdId, listId, null, "scan")
-                    .setData(Uri.parse("myhomeia-widget://" + id + "/quick-scan/scan"));
+                    .setData(Uri.parse("myhome-widget://" + id + "/quick-scan/scan"));
             scanIntent = PendingIntent.getActivity(context, id, scan,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         }

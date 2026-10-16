@@ -5,7 +5,7 @@ import type { User } from "./model";
 import { allowedRequestOrigin, hashPassword, hashToken, newSessionToken, normalizeEmail, verifyPassword } from "./auth-crypto";
 import { AuthBodyError, readAuthJson } from "./auth-body";
 
-const SESSION_COOKIE = "myhomeia_session";
+const SESSION_COOKIE = "myhome_session";
 const SESSION_SECONDS = 30 * 24 * 60 * 60;
 export class AuthError extends Error { constructor(public status: number, message: string) { super(message); } }
 export function requestOriginAllowed(request: Request): boolean {
@@ -88,6 +88,6 @@ export async function signOut(): Promise<void> {
 }
 export function authFailure(error: unknown) {
   if (error instanceof AuthError || error instanceof AuthBodyError) return Response.json({ error: error.message }, { status: error.status, headers: { "Cache-Control": "no-store", ...(error.status === 429 ? { "Retry-After": "900" } : {}) } });
-  console.error("MyHomeIA authentication error", error);
+  console.error("myHome authentication error", error);
   return Response.json({ error: "La connexion est momentanément indisponible. Réessayez." }, { status: 500, headers: { "Cache-Control": "no-store" } });
 }

@@ -1,4 +1,4 @@
-export const DEVICE_DASHBOARD_STORAGE_KEY = "myhomeia-device-dashboard"
+export const DEVICE_DASHBOARD_STORAGE_KEY = "myhome-device-dashboard"
 
 export type DeviceDashboardSettings = Readonly<{
   showElectricity: boolean
