@@ -18,13 +18,24 @@ public final class WidgetStore {
         if (!origin.equals(getOrigin())) preferences.edit().clear().putString("origin", origin).apply();
     }
     public void saveWidget(int id, String householdId, String listId) {
+        saveWidget(id, householdId, listId, "");
+    }
+    public void saveWidget(int id, String householdId, String listId, String listName) {
         preferences.edit().putString("household_" + id, householdId).putString("list_" + id, listId)
+            .putString("name_" + id, listName == null ? "" : listName)
+            .putString("nameSession_" + id, sessionHash())
             .remove("cache_" + id).remove("session_" + id).remove("error_" + id).remove("updated_" + id).apply();
     }
     public String getHouseholdId(int id) { return preferences.getString("household_" + id, ""); }
     public String getListId(int id) { return preferences.getString("list_" + id, ""); }
+    public String getWidgetListName(int id) {
+        String session = sessionHash();
+        return !session.isEmpty() && session.equals(preferences.getString("nameSession_" + id, ""))
+                ? preferences.getString("name_" + id, "") : "";
+    }
     public void removeWidget(int id) {
         preferences.edit().remove("household_" + id).remove("list_" + id).remove("cache_" + id)
+            .remove("name_" + id).remove("nameSession_" + id)
             .remove("session_" + id).remove("error_" + id).remove("updated_" + id).apply();
     }
     public String getError(int id) { return preferences.getString("error_" + id, ""); }
@@ -36,7 +47,8 @@ public final class WidgetStore {
     public void clearCaches() {
         SharedPreferences.Editor edit = preferences.edit();
         for (String key : preferences.getAll().keySet()) {
-            if (key.startsWith("cache_") || key.startsWith("session_") || key.startsWith("updated_") || key.startsWith("error_")) edit.remove(key);
+            if (key.startsWith("cache_") || key.startsWith("session_") || key.startsWith("updated_") || key.startsWith("error_") ||
+                    key.startsWith("name_") || key.startsWith("nameSession_")) edit.remove(key);
         }
         edit.apply();
     }

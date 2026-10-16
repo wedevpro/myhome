@@ -99,12 +99,14 @@ public class MyHomeWidgetProvider extends AppWidgetProvider {
         int[] ids = AppWidgetManager.getInstance(context).getAppWidgetIds(
                 new ComponentName(context, MyHomeWidgetProvider.class));
         for (int id : ids) { render(context, id); schedule(context, id, null); }
+        QuickScanWidgetProvider.renderAll(context);
     }
 
     /** Repaint cached content immediately after an appearance change, without a network job. */
     public static void renderAll(Context context) {
         for (int id : AppWidgetManager.getInstance(context).getAppWidgetIds(
                 new ComponentName(context, MyHomeWidgetProvider.class))) render(context, id);
+        QuickScanWidgetProvider.renderAll(context);
     }
 
     /** Keep a collection factory on its captured palette while a new theme is being bound. */
@@ -442,8 +444,7 @@ public class MyHomeWidgetProvider extends AppWidgetProvider {
                         store.clearCaches();
                         store.setError(id, "Connexion nécessaire. Ouvrez MyHomeIA pour vous connecter.");
                         // Remove previously rendered data from every widget immediately.
-                        for (int widgetId : AppWidgetManager.getInstance(this).getAppWidgetIds(
-                                new ComponentName(this, MyHomeWidgetProvider.class))) render(this, widgetId);
+                        MyHomeWidgetProvider.renderAll(this);
                     } else if (status == 404) {
                         store.clearSnapshot(id);
                         store.setError(id, "Liste supprimée ou inaccessible. Touchez ⚙ pour la remplacer.");

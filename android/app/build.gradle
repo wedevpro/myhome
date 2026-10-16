@@ -16,8 +16,8 @@ android {
         applicationId 'fr.myhomeia.android'
         minSdk 26
         targetSdk 35
-        versionCode = (project.findProperty('myhomeiaVersionCode') ?: '4').toString().toInteger()
-        versionName = (project.findProperty('myhomeiaVersionName') ?: '1.0.3').toString()
+        versionCode = (project.findProperty('myhomeiaVersionCode') ?: '6').toString().toInteger()
+        versionName = (project.findProperty('myhomeiaVersionName') ?: '1.0.5').toString()
     }
 
     signingConfigs {

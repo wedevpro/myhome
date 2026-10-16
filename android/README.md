@@ -23,6 +23,7 @@ La clé release persistante est générée une seule fois sous `.runtime/android
 - `WidgetConfigureActivity` : foyer et liste propres à chaque instance, avec le thème choisi dans l'application.
 - `AppAppearance` : préférence clair/sombre/appareil liée à l'origine du NAS, lue depuis le réglage web existant sans interface JavaScript native ; contextes et ressources de rendu adaptés.
 - `MyHomeWidgetProvider` et `WidgetItemsService` : rendu, liste défilante, ordre, coches et rafraîchissement par jobs Android.
+- `QuickScanWidgetProvider` : raccourci compact vers le scanner d'une liste de courses configurée, sans collection d'articles ni tâche réseau en arrière-plan.
 - `WidgetActionActivity` : destination directe des clics sur les éléments, compatible avec les restrictions de lancement d'activités récentes.
 - `ServerClient` : API existante, session HttpOnly partagée, origine exacte, refus des redirections et sessions modifiées.
 - `WidgetStore` : configuration privée et cache de la seule liste, lié à l'empreinte de la session attendue ; aucune conservation de mot de passe.

@@ -3,4 +3,5 @@
     <!-- Distinct layout IDs prevent launchers from retaining forced colors in system mode. -->
     <item type="layout" name="widget_list_forced">@layout/widget_list</item>
     <item type="layout" name="widget_item_forced">@layout/widget_item</item>
+    <item type="layout" name="quick_scan_widget_forced">@layout/quick_scan_widget</item>
 </resources>

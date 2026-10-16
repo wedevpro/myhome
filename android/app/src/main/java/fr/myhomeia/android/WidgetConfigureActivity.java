@@ -2,6 +2,8 @@ package fr.myhomeia.android;
 
 import android.app.Activity;
 import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProviderInfo;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Typeface;
@@ -47,6 +49,7 @@ public class WidgetConfigureActivity extends Activity {
     private String loadedOrigin = "", loadedCookie = "", selectedHousehold = "";
     private boolean openedLogin;
     private boolean appliedDark;
+    private boolean quickScan;
 
     @Override protected void attachBaseContext(Context base) {
         super.attachBaseContext(AppAppearance.themedContext(base));
@@ -59,6 +62,8 @@ public class WidgetConfigureActivity extends Activity {
         setResult(RESULT_CANCELED);
         widgetId = getIntent().getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID);
         if (widgetId == AppWidgetManager.INVALID_APPWIDGET_ID) { finish(); return; }
+        AppWidgetProviderInfo info = AppWidgetManager.getInstance(this).getAppWidgetInfo(widgetId);
+        quickScan = info != null && new ComponentName(this, QuickScanWidgetProvider.class).equals(info.provider);
         store = new WidgetStore(this);
         openedLogin = state != null && state.getBoolean("openedLogin");
         selectedHousehold = store.getHouseholdId(widgetId);
@@ -103,6 +108,13 @@ public class WidgetConfigureActivity extends Activity {
         refresh = findViewById(R.id.setup_refresh);
         refresh.setOnClickListener(view -> loadHouseholds());
         save = findViewById(R.id.setup_save);
+        if (quickScan) {
+            ((TextView) findViewById(R.id.setup_eyebrow)).setText(R.string.setup_scan_eyebrow);
+            ((TextView) findViewById(R.id.setup_title)).setText(R.string.setup_scan_title);
+            ((TextView) findViewById(R.id.setup_description)).setText(R.string.setup_scan_description);
+            ((TextView) findViewById(R.id.setup_list_hint)).setText(R.string.setup_scan_list_hint);
+            save.setText(R.string.setup_scan_save);
+        }
         save.setEnabled(false);
         save.setOnClickListener(view -> finishConfiguration());
         findViewById(R.id.setup_cancel).setOnClickListener(view -> finish());
@@ -248,30 +260,41 @@ public class WidgetConfigureActivity extends Activity {
                 JSONObject result = new ServerClient(this, origin).snapshot(householdId);
                 runOnUiThread(() -> {
                     if (!accept(request, origin, cookie)) return;
-                    JSONObject user = result.optJSONObject("user"), house = result.optJSONObject("household");
-                    if (user == null || house == null || !householdId.equals(house.optString("id"))) {
-                        setStatus(R.string.setup_household_unavailable, false, true); return;
-                    }
-                    JSONArray entities = result.optJSONArray("entities");
-                    addListGroup(entities, householdId, "shopping", "Courses");
-                    addListGroup(entities, householdId, "checklist", "Checklists");
-                    snapshot = result; loadedOrigin = origin; loadedCookie = cookie;
-                    lists.setAdapter(new GroupedListAdapter());
-                    int selected = AdapterView.INVALID_POSITION;
-                    String savedListId = store.getListId(widgetId);
-                    for (int i = 0; i < listOptions.size(); i++) {
-                        JSONObject list = listAt(i);
-                        if (list == null) continue;
-                        if (selected == AdapterView.INVALID_POSITION) selected = i;
-                        if (savedListId.equals(list.optString("id"))) { selected = i; break; }
-                    }
-                    lists.setSelection(selected);
-                    lists.setEnabled(selected != AdapterView.INVALID_POSITION);
-                    save.setEnabled(listAt(selected) != null);
-                    setStatus(selected == AdapterView.INVALID_POSITION ? R.string.setup_no_lists : R.string.setup_ready, false, false);
+                    applyLists(result, householdId, origin, cookie);
                 });
             } catch (IOException error) { showError(request, error); }
         });
+    }
+
+    void applyLists(JSONObject result, String householdId, String origin, String cookie) {
+        snapshot = null;
+        listOptions.clear();
+        lists.setAdapter(adapter(new ArrayList<>()));
+        lists.setEnabled(false);
+        save.setEnabled(false);
+        JSONObject user = result.optJSONObject("user"), house = result.optJSONObject("household");
+        if (user == null || house == null || !householdId.equals(house.optString("id"))) {
+            setStatus(R.string.setup_household_unavailable, false, true); return;
+        }
+        JSONArray entities = result.optJSONArray("entities");
+        addListGroup(entities, householdId, "shopping", "Courses");
+        if (!quickScan) addListGroup(entities, householdId, "checklist", "Checklists");
+        snapshot = result; loadedOrigin = origin; loadedCookie = cookie;
+        lists.setAdapter(new GroupedListAdapter());
+        int selected = AdapterView.INVALID_POSITION;
+        String savedListId = store.getListId(widgetId);
+        for (int i = 0; i < listOptions.size(); i++) {
+            JSONObject list = listAt(i);
+            if (list == null) continue;
+            if (selected == AdapterView.INVALID_POSITION) selected = i;
+            if (savedListId.equals(list.optString("id"))) { selected = i; break; }
+        }
+        lists.setSelection(selected);
+        lists.setEnabled(selected != AdapterView.INVALID_POSITION);
+        save.setEnabled(listAt(selected) != null);
+        setStatus(selected == AdapterView.INVALID_POSITION
+                ? (quickScan ? R.string.setup_scan_no_lists : R.string.setup_no_lists)
+                : (quickScan ? R.string.setup_scan_ready : R.string.setup_ready), false, false);
     }
 
     private boolean accept(int request, String origin, String cookie) {
@@ -283,9 +306,10 @@ public class WidgetConfigureActivity extends Activity {
         runOnUiThread(() -> {
             if (isFinishing() || isDestroyed() || request != generation) return;
             save.setEnabled(false);
-            setStatus(error instanceof ServerClient.ApiException &&
-                    (((ServerClient.ApiException) error).getStatus() == 401 || ((ServerClient.ApiException) error).getStatus() == 403)
-                    ? R.string.setup_session_expired : R.string.setup_connection_error, false, true);
+            boolean authenticationError = error instanceof ServerClient.ApiException &&
+                    (((ServerClient.ApiException) error).getStatus() == 401 || ((ServerClient.ApiException) error).getStatus() == 403);
+            setStatus(authenticationError ? R.string.setup_session_expired : R.string.setup_connection_error, false, true);
+            if (authenticationError) MyHomeWidgetProvider.renderAll(this);
         });
     }
 
@@ -296,10 +320,15 @@ public class WidgetConfigureActivity extends Activity {
                 !loadedOrigin.equals(store.getOrigin()) || !loadedCookie.equals(ServerClient.sessionCookie(loadedOrigin))) {
             loadHouseholds(); return;
         }
-        if (MyHomeWidgetProvider.findList(snapshot, selectedHousehold, list.optString("id")) == null) return;
-        store.saveWidget(widgetId, selectedHousehold, list.optString("id"));
-        store.saveSnapshot(widgetId, snapshot, loadedOrigin, loadedCookie);
-        MyHomeWidgetProvider.render(this, widgetId);
+        JSONObject current = MyHomeWidgetProvider.findList(snapshot, selectedHousehold, list.optString("id"));
+        if (current == null || (quickScan && !"shopping".equals(current.optString("kind")))) return;
+        store.saveWidget(widgetId, selectedHousehold, current.optString("id"),
+                MyHomeWidgetProvider.data(current).optString("name", "Ma liste"));
+        if (quickScan) QuickScanWidgetProvider.render(this, widgetId);
+        else {
+            store.saveSnapshot(widgetId, snapshot, loadedOrigin, loadedCookie);
+            MyHomeWidgetProvider.render(this, widgetId);
+        }
         setResult(RESULT_OK, new Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId));
         MyHomeWidgetProvider.refreshAll(this);
         finish();

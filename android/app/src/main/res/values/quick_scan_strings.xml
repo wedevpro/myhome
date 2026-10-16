@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="quick_scan_widget_label">MyHomeIA · Scan rapide</string>
+    <string name="quick_scan_widget_description">Scannez un article pour l’ajouter à votre liste de courses.</string>
+    <string name="quick_scan_title">Scanner un article</string>
+    <string name="quick_scan_action_label">Scanner</string>
+    <string name="quick_scan_choose_list">Choisir une liste</string>
+    <string name="quick_scan_default_list">Ma liste</string>
+    <string name="quick_scan_action_description">Scanner un article pour %1$s</string>
+    <string name="quick_scan_settings_description">Choisir le foyer et la liste de courses</string>
+    <string name="quick_scan_setup_hint">Choisissez le foyer et la liste de courses.</string>
+    <string name="quick_scan_login_required">Connexion nécessaire</string>
+    <string name="quick_scan_login_hint">Ouvrez le scan pour vous connecter.</string>
+    <string name="setup_scan_eyebrow">VOTRE SCAN RAPIDE</string>
+    <string name="setup_scan_title">Votre raccourci scan</string>
+    <string name="setup_scan_description">Un appui pour scanner un article et l’ajouter à votre liste de courses.</string>
+    <string name="setup_scan_list_hint">Une liste de courses pour vos scans</string>
+    <string name="setup_scan_save">Créer le raccourci scan</string>
+    <string name="setup_scan_no_lists">Créez une liste de courses dans ce foyer, puis actualisez.</string>
+    <string name="setup_scan_ready">Touchez le widget pour ouvrir le scanner et ajouter un article à cette liste.</string>
+</resources>

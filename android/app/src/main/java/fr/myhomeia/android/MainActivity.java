@@ -322,15 +322,22 @@ public final class MainActivity extends Activity {
     }
 
     private void pinWidget() {
+        new AlertDialog.Builder(this).setTitle("Ajouter un widget")
+                .setItems(new String[]{"Liste de courses ou checklist", "Scan rapide"},
+                        (dialog, which) -> pinWidget(which == 1)).show();
+    }
+
+    private void pinWidget(boolean quickScan) {
         AppWidgetManager manager = getSystemService(AppWidgetManager.class);
         if (manager.isRequestPinAppWidgetSupported()) {
             // Pin requests skip the provider's usual configuration activity.
             Intent configure = new Intent(this, WidgetConfigureActivity.class)
-                .setData(Uri.parse("myhomeia://pinned-widget/" + System.currentTimeMillis()))
+                .setData(Uri.parse("myhomeia://pinned-widget/" + (quickScan ? "scan/" : "list/") + System.currentTimeMillis()))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             PendingIntent callback = PendingIntent.getActivity(this, 0, configure,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
-            manager.requestPinAppWidget(new ComponentName(this, MyHomeWidgetProvider.class), null, callback);
+            manager.requestPinAppWidget(new ComponentName(this,
+                    quickScan ? QuickScanWidgetProvider.class : MyHomeWidgetProvider.class), null, callback);
         }
         else toast("Sur l’écran d’accueil Android, faites un appui long, puis Widgets → MyHomeIA.");
     }

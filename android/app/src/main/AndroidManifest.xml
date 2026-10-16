@@ -32,6 +32,13 @@
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/myhome_widget_info" />
         </receiver>
+        <receiver android:name=".QuickScanWidgetProvider" android:exported="false"
+            android:label="@string/quick_scan_widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/quick_scan_widget_info" />
+        </receiver>
         <service android:name=".WidgetItemsService" android:exported="false"
             android:permission="android.permission.BIND_REMOTEVIEWS" />
         <service android:name=".MyHomeWidgetProvider$RefreshJobService" android:exported="true"

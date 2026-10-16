@@ -7,10 +7,20 @@ L'application **MyHomeIA Android** utilise le même serveur, les mêmes comptes 
 1. Mettez d'abord le NAS à jour avec le nouveau `myhomeia-synology.zip`, selon [GUIDE-SYNOLOGY.md](GUIDE-SYNOLOGY.md). Les sources web de cette livraison permettent d'ouvrir la liste et le formulaire demandés par le widget.
 2. Copiez `myhomeia-android.apk` sur le téléphone ou la tablette. Ouvrez ce fichier et autorisez l'installation depuis cette source si Android le demande.
 3. Ouvrez **MyHomeIA**, renseignez l'adresse HTTPS exacte utilisée pour accéder au NAS, puis connectez-vous avec votre compte habituel.
-4. Depuis l'écran d'accueil Android, faites un appui long, choisissez **Widgets**, puis **MyHomeIA**. Le bouton **＋** dans l'application peut également proposer l'ajout d'un widget si le lanceur Android le prend en charge.
-5. Dans la configuration du widget, choisissez le **foyer** puis la **liste de courses ou checklist**, et confirmez **Afficher cette liste**. Les listes sont regroupées sous les en-têtes non sélectionnables **Courses** et **Checklists** ; chaque liste affiche uniquement son nom. Si une connexion est nécessaire, utilisez **Connexion / serveur**, connectez-vous, puis touchez **Continuer** dans la barre Android pour retrouver la configuration.
+4. Depuis l'écran d'accueil Android, faites un appui long, choisissez **Widgets**, puis **MyHomeIA**. Deux widgets sont disponibles : la liste complète et **MyHomeIA · Scan rapide**. Le bouton **＋** dans l'application permet aussi de choisir l'un des deux si le lanceur Android prend en charge leur ajout.
+5. Dans la configuration du widget, choisissez le **foyer** puis la **liste**, et confirmez **Afficher cette liste** ou **Créer le raccourci scan**. Le widget de liste regroupe les choix sous les en-têtes non sélectionnables **Courses** et **Checklists** ; le raccourci de scan propose uniquement des listes de courses. Si une connexion est nécessaire, utilisez **Connexion / serveur**, connectez-vous, puis touchez **Continuer** dans la barre Android pour retrouver la configuration.
 
 Chaque widget conserve son propre choix de foyer et de liste. Vous pouvez en ajouter plusieurs et les redimensionner. Le bouton de réglages du widget permet de modifier ce choix.
+
+## Widget Scan rapide
+
+Le widget **MyHomeIA · Scan rapide** affiche un bouton de scan et le nom de la liste choisie, sans ses articles. Il propose trois colonnes sur une ligne par défaut sur les lanceurs récents et peut être redimensionné. Sa hauteur minimale de 48 dp permet de le réduire à une seule rangée, selon la grille du lanceur. Plusieurs raccourcis peuvent viser des foyers ou des listes différents.
+
+Après la mise à jour, faites un appui long sur le widget puis réduisez sa hauteur. Si un widget déjà installé reste limité à deux rangées, retirez uniquement ce widget de l'écran d'accueil puis ajoutez-le à nouveau pour que le lanceur recharge ses nouvelles limites. Il faudra alors choisir à nouveau son foyer et sa liste.
+
+Touchez sa grande zone **Scanner** pour ouvrir le scanner dans l'application, directement pour cette liste. Le scanner habituel propose la caméra, la douchette et la saisie manuelle. Un code connu ajoute le produit à la liste ; un code inconnu demande d'abord son association à un produit existant ou nouveau. Le petit bouton de réglages permet de changer de foyer ou de liste.
+
+Le raccourci ne charge aucun article et ne déclenche pas d'actualisation réseau en arrière-plan. Une connexion au NAS reste nécessaire pour scanner et ajouter le produit. Si la session a expiré, l'application demande une connexion puis reprend la destination prévue ; une liste supprimée ou inaccessible est refusée sans choisir une autre liste à sa place. Le nom mémorisé est masqué hors de sa session de connexion.
 
 ## Apparence du widget
 
@@ -44,6 +54,12 @@ La version **1.0.2** reprend le thème violet de MyHomeIA dans la configuration 
 
 La version **1.0.3** applique aussi le choix d'apparence de l'application aux widgets, à leurs lignes et à leur configuration. Aucune mise à jour du NAS n'est nécessaire pour cette version.
 
+La version **1.0.4** ajoute le widget **Scan rapide**, à côté du widget de liste existant. Cette version réutilise le scanner déjà présent sur le NAS et ne nécessite pas de mise à jour du NAS si les widgets précédents fonctionnent déjà.
+
+La version **1.0.5** permet de réduire le widget **Scan rapide** à une seule rangée : hauteur minimale abaissée de 80 à 48 dp, marges compactées et indications secondaires masquées lorsque la hauteur est réduite. Aucune mise à jour du NAS n'est nécessaire.
+
+La livraison propose aussi le fichier `myhomeia-android-1.0.5.apk`, identique à `myhomeia-android.apk`, pour identifier explicitement cette version lors du transfert sur l'appareil.
+
 La somme de contrôle de l'APK est fournie dans `myhomeia-android.apk.sha256`.
 
 ## Recompiler depuis le projet
@@ -60,7 +76,7 @@ Les outils et caches sont installés dans `.runtime/`, en dehors de Git. La comp
 Pour une version suivante, augmentez le numéro de version Android :
 
 ```powershell
-.\android\scripts\Build-Apk.ps1 -VersionCode 5 -VersionName 1.0.4
+.\android\scripts\Build-Apk.ps1 -VersionCode 7 -VersionName 1.0.6
 ```
 
 **Sauvegardez de manière privée tout le dossier `.runtime/android-signing/`.** Il contient la clé de signature et sa configuration. Cette même clé est indispensable pour installer de futures mises à jour par-dessus cette version. Elle n'est incluse ni dans Git, ni dans le package Synology, ni dans l'APK.
