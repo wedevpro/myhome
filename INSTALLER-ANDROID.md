@@ -38,6 +38,8 @@ Le choix est repris automatiquement pendant que l'application Android est ouvert
 
 Le widget ne contient pas de véritable champ de texte ni d'aperçu caméra dans l'écran d'accueil : Android impose d'ouvrir une fenêtre de l'application pour ces actions.
 
+Dans l'application Android, la caméra arrière demande explicitement la **mise au point continue** lorsque WebView et l'objectif la prennent en charge. Un toucher sur l'aperçu réapplique ce réglage. Si WebView ne l'expose pas ou si le pilote le refuse, la caméra continue à fonctionner avec ses réglages habituels. L'efficacité de cette demande dépend donc de l'appareil et de sa version d'Android System WebView ; elle ne remplace pas un essai sur le téléphone.
+
 ## Connexion et actualisation
 
 Le NAS doit être joignable par le téléphone : réseau local, VPN ou adresse HTTPS extérieure selon votre installation. Utilisez la même adresse que celle configurée comme `SITE_ORIGIN` sur le NAS. Un certificat invalide n'est pas contourné par l'application.
@@ -58,7 +60,9 @@ La version **1.0.4** ajoute le widget **Scan rapide**, à côté du widget de li
 
 La version **1.0.5** permet de réduire le widget **Scan rapide** à une seule rangée : hauteur minimale abaissée de 80 à 48 dp, marges compactées et indications secondaires masquées lorsque la hauteur est réduite. Aucune mise à jour du NAS n'est nécessaire.
 
-La livraison propose aussi le fichier `myhomeia-android-1.0.5.apk`, identique à `myhomeia-android.apk`, pour identifier explicitement cette version lors du transfert sur l'appareil.
+La version **1.0.6** ajoute cette demande de mise au point pour la caméra arrière dans l'application et sa réapplication au toucher. Elle s'applique aussi aux scans ouverts depuis les widgets. Le navigateur web et le serveur restent inchangés : installez uniquement l'APK, sans mise à jour du NAS.
+
+La livraison propose aussi le fichier `myhomeia-android-1.0.6.apk`, identique à `myhomeia-android.apk`, pour identifier explicitement cette version lors du transfert sur l'appareil.
 
 La somme de contrôle de l'APK est fournie dans `myhomeia-android.apk.sha256`.
 
@@ -76,7 +80,7 @@ Les outils et caches sont installés dans `.runtime/`, en dehors de Git. La comp
 Pour une version suivante, augmentez le numéro de version Android :
 
 ```powershell
-.\android\scripts\Build-Apk.ps1 -VersionCode 7 -VersionName 1.0.6
+.\android\scripts\Build-Apk.ps1 -VersionCode 8 -VersionName 1.0.7
 ```
 
 **Sauvegardez de manière privée tout le dossier `.runtime/android-signing/`.** Il contient la clé de signature et sa configuration. Cette même clé est indispensable pour installer de futures mises à jour par-dessus cette version. Elle n'est incluse ni dans Git, ni dans le package Synology, ni dans l'APK.

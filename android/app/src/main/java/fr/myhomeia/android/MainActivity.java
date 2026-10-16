@@ -208,10 +208,12 @@ public final class MainActivity extends Activity {
                 return true;
             }
             @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap icon) { progress.setVisibility(View.VISIBLE); }
+            @Override public void onPageCommitVisible(WebView view, String url) { installCameraFocus(view, url); }
             @Override public void onPageFinished(WebView view, String url) {
                 progress.setVisibility(View.GONE); CookieManager.getInstance().flush();
                 String session = ServerClient.sessionCookie(store.getOrigin());
                 if (!session.equals(lastSession)) { lastSession = session; store.clearCaches(); MyHomeWidgetProvider.refreshAll(MainActivity.this); }
+                installCameraFocus(view, url);
                 syncAppearance();
             }
             @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
@@ -243,6 +245,11 @@ public final class MainActivity extends Activity {
     private boolean isTrusted(Uri uri) {
         try { return store.getOrigin().equals(ServerClient.normalizeOrigin(new Uri.Builder().scheme(uri.getScheme()).encodedAuthority(uri.getEncodedAuthority()).build().toString())); }
         catch (IOException error) { return false; }
+    }
+
+    private void installCameraFocus(WebView view, String url) {
+        if (view == web && url != null && isTrusted(Uri.parse(url)))
+            CameraFocusSupport.install(view, store.getOrigin());
     }
 
     /** Read one existing setting from our HTTPS origin; expose no native JS interface. */

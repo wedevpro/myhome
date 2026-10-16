@@ -20,6 +20,7 @@ La clé release persistante est générée une seule fois sous `.runtime/android
 ## Organisation
 
 - `MainActivity` : serveur HTTPS configurable, WebView limitée à cette origine, authentification, caméra à la demande, liens vers les listes et ajout des widgets.
+- `CameraFocusSupport` et `assets/camera-focus.js` : demande facultative de mise au point continue sur les pistes arrière déjà autorisées, puis réapplication au toucher de la vidéo. Le script reste limité au document principal de l'origine HTTPS du NAS, conserve les autres contraintes et ne bloque jamais le retour du flux. Aucun autofocus matériel n'est garanti si WebView n'expose pas cette capacité.
 - `WidgetConfigureActivity` : foyer et liste propres à chaque instance, avec le thème choisi dans l'application.
 - `AppAppearance` : préférence clair/sombre/appareil liée à l'origine du NAS, lue depuis le réglage web existant sans interface JavaScript native ; contextes et ressources de rendu adaptés.
 - `MyHomeWidgetProvider` et `WidgetItemsService` : rendu, liste défilante, ordre, coches et rafraîchissement par jobs Android.
@@ -31,5 +32,7 @@ La clé release persistante est générée une seule fois sous `.runtime/android
 Les actions de saisie, caméra et confirmation s'ouvrent dans l'application ; les widgets Android ne peuvent pas embarquer les formulaires web. Les permissions caméra restent demandées uniquement pour l'origine du NAS. Aucun pont JavaScript privilégié, contournement de certificat HTTPS ni écriture automatiquement rejouée n'est utilisé.
 
 Les tests natifs de la tâche Gradle `:app:testDebugUnitTest` utilisent Robolectric sur API 28 et 35, avec les ressources et les préférences Android réelles. Les dépendances AndroidX de ce banc de tests restent limitées à `testImplementation` et ne sont pas embarquées dans l'APK.
+
+Le comportement du script caméra se vérifie avec Node.js 22 ou ultérieur, depuis la racine du dépôt : `node --test android/tests/camera-focus.test.mjs`. Ces tests utilisent des pistes simulées ; ils ne vérifient pas la netteté sur un objectif physique.
 
 Références : [widgets Android](https://developer.android.com/develop/ui/views/appwidgets), [collections](https://developer.android.com/develop/ui/views/appwidgets/collections), [WebView](https://developer.android.com/develop/ui/views/layout/webapps/webview), [thème sombre dans WebView](https://developer.android.com/develop/ui/views/layout/webapps/dark-theme).
