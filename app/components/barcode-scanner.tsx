@@ -2,11 +2,25 @@
 import { useEffect,useRef,useState } from "react";
 import { Camera,ScanBarcode } from "lucide-react";
 import { DialogTitle,DialogDescription } from "@/components/ui/dialog";
+import { scanWithNativeCamera } from "@/lib/native-barcode-scanner";
 import { Choice } from "./entity-editor";
 export default function BarcodeScanner({camera,onCamera,onCode}:{camera:"user"|"environment";onCamera:(v:"user"|"environment")=>void;onCode:(code:string)=>void}) {
  const video=useRef<HTMLVideoElement>(null);
  const [active,setActive]=useState(false),[error,setError]=useState(""),[code,setCode]=useState("");
- const callback=useRef(onCode);callback.current=onCode;
+ const callback=useRef(onCode);
+ useEffect(()=>{callback.current=onCode;},[onCode]);
+ const nativePending=useRef(false);
+ function toggleCamera(){
+  if(nativePending.current)return;
+  setError("");
+  if(active){setActive(false);return;}
+  nativePending.current=true;
+  try{
+   const result=scanWithNativeCamera(window.myHomeNativeScanner,camera,value=>{setActive(false);callback.current(value);});
+   if(result.status==="unavailable")setActive(true);
+   else if(result.status==="error")setError(result.message);
+  }finally{nativePending.current=false;}
+ }
  useEffect(()=>{
   if(!active||!video.current)return;
   let cancelled=false,controls:{stop:()=>void}|undefined;
@@ -20,5 +34,5 @@ export default function BarcodeScanner({camera,onCamera,onCode}:{camera:"user"|"
   void start();const current=video.current;
   return ()=>{cancelled=true;controls?.stop();if(current?.srcObject instanceof MediaStream)current.srcObject.getTracks().forEach(t=>t.stop());};
  },[active,camera]);
- return <><DialogTitle className="dialog-title">Scanner un produit</DialogTitle><DialogDescription>Un code reconnu ajoute directement le produit à la liste.</DialogDescription><div className="form-stack"><Choice label="Caméra à utiliser" value={camera} onChange={v=>onCamera(v as "user"|"environment")} options={[{value:"environment",label:"Caméra arrière — téléphone"},{value:"user",label:"Caméra avant — tablette murale"}]}/>{active&&<video ref={video} className="camera-video" playsInline muted autoPlay/>}<button className="secondary-button" onClick={()=>{setError("");setActive(v=>!v);}}><Camera size={17}/>{active?"Arrêter la caméra":"Ouvrir la caméra"}</button>{error&&<p className="error-text" role="alert">{error}</p>}<form className="form-stack" onSubmit={e=>{e.preventDefault();const value=code.trim();if(value){setActive(false);onCode(value);}}}><label className="field">Douchette ou saisie manuelle<input autoFocus aria-label="Code-barres" placeholder="Placez le curseur ici, puis scannez" value={code} onChange={e=>setCode(e.target.value)} maxLength={80}/></label><p className="helper">Une douchette en mode clavier USB ou Bluetooth saisit le code ici. Configurez le suffixe « Entrée » pour valider automatiquement.</p><button className="primary-button" type="submit" disabled={!code.trim()}><ScanBarcode size={17}/>Ajouter ce code</button></form></div></>;
+ return <><DialogTitle className="dialog-title">Scanner un produit</DialogTitle><DialogDescription>Un code reconnu ajoute directement le produit à la liste.</DialogDescription><div className="form-stack"><Choice label="Caméra à utiliser" value={camera} onChange={v=>onCamera(v as "user"|"environment")} options={[{value:"environment",label:"Caméra arrière — téléphone"},{value:"user",label:"Caméra avant — tablette murale"}]}/>{active&&<video ref={video} className="camera-video" playsInline muted autoPlay/>}<button className="secondary-button" onClick={toggleCamera}><Camera size={17}/>{active?"Arrêter la caméra":"Ouvrir la caméra"}</button>{error&&<p className="error-text" role="alert">{error}</p>}<form className="form-stack" onSubmit={e=>{e.preventDefault();const value=code.trim();if(value){setActive(false);onCode(value);}}}><label className="field">Douchette ou saisie manuelle<input autoFocus aria-label="Code-barres" placeholder="Placez le curseur ici, puis scannez" value={code} onChange={e=>setCode(e.target.value)} maxLength={80}/></label><p className="helper">Une douchette en mode clavier USB ou Bluetooth saisit le code ici. Configurez le suffixe « Entrée » pour valider automatiquement.</p><button className="primary-button" type="submit" disabled={!code.trim()}><ScanBarcode size={17}/>Ajouter ce code</button></form></div></>;
 }

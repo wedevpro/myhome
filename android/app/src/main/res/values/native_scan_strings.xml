@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="native_scan_title">Scanner un code-barres</string>
+    <string name="native_scan_brand">myHome · Scan rapide</string>
+    <string name="native_scan_cancel">Annuler</string>
+    <string name="native_scan_rear">Caméra arrière</string>
+    <string name="native_scan_front">Caméra avant</string>
+    <string name="native_scan_guide">Cadrez le code-barres au centre de l’image. La mise au point se règle automatiquement.</string>
+    <string name="native_scan_return">Le code reconnu sera transmis à votre liste de courses.</string>
+    <string name="native_scan_permission_error">L’accès à la caméra est refusé. Autorisez la caméra pour myHome dans les paramètres Android, puis réessayez.</string>
+    <string name="native_scan_camera_error">Impossible d’ouvrir la caméra. Fermez les autres applications qui l’utilisent, puis réessayez.</string>
+    <string name="native_scan_invalid_camera">La caméra demandée n’est pas reconnue.</string>
+    <string name="native_scan_no_rear">Cet appareil ne possède pas de caméra arrière disponible.</string>
+    <string name="native_scan_no_front">Cet appareil ne possède pas de caméra avant disponible.</string>
+</resources>

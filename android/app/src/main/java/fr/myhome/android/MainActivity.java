@@ -19,6 +19,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ContextThemeWrapper;
 import android.webkit.CookieManager;
+import android.webkit.JsPromptResult;
 import android.webkit.PermissionRequest;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
@@ -52,6 +53,7 @@ public final class MainActivity extends Activity {
     private FrameLayout content;
     private ProgressBar progress;
     private PermissionRequest cameraRequest;
+    private NativeScanBridge nativeScanner;
     private View fullscreen;
     private WebChromeClient.CustomViewCallback fullscreenCallback;
     private String lastSession = "";
@@ -80,6 +82,7 @@ public final class MainActivity extends Activity {
         setTheme(AppAppearance.isDeviceDark(this) ? R.style.AppThemeDark : R.style.AppTheme);
         super.onCreate(state);
         store = new WidgetStore(this);
+        nativeScanner = new NativeScanBridge(this, () -> web, () -> store.getOrigin());
         CookieManager.getInstance().setAcceptCookie(true);
         if (Build.VERSION.SDK_INT >= 33) getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
             android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::goBack);
@@ -119,6 +122,7 @@ public final class MainActivity extends Activity {
     private void showSetup() {
         hideFullscreen();
         cancelCameraRequest();
+        if (nativeScanner != null) nativeScanner.cancel();
         appearanceReadId++; appearanceReading = false;
         if (web != null) { web.destroy(); web = null; }
         ScrollView scroll = new ScrollView(this);
@@ -161,6 +165,7 @@ public final class MainActivity extends Activity {
     private void showBrowser() {
         hideFullscreen();
         cancelCameraRequest();
+        if (nativeScanner != null) nativeScanner.cancel();
         appearanceReadId++; appearanceReading = false;
         if (web != null) { web.destroy(); web = null; }
         frame = new LinearLayout(this); frame.setOrientation(LinearLayout.VERTICAL); frame.setBackgroundColor(getColor(R.color.setup_background));
@@ -207,7 +212,10 @@ public final class MainActivity extends Activity {
                 }
                 return true;
             }
-            @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap icon) { progress.setVisibility(View.VISIBLE); }
+            @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap icon) {
+                if (view == web && nativeScanner != null) nativeScanner.cancel();
+                progress.setVisibility(View.VISIBLE);
+            }
             @Override public void onPageCommitVisible(WebView view, String url) { installCameraFocus(view, url); }
             @Override public void onPageFinished(WebView view, String url) {
                 progress.setVisibility(View.GONE); CookieManager.getInstance().flush();
@@ -224,6 +232,9 @@ public final class MainActivity extends Activity {
             }
         });
         web.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onJsPrompt(WebView view, String url, String message, String defaultValue, JsPromptResult result) {
+                return nativeScanner != null && nativeScanner.handlePrompt(view, url, message, defaultValue, result::confirm);
+            }
             @Override public void onProgressChanged(WebView view, int value) { progress.setProgress(value); }
             @Override public void onPermissionRequest(PermissionRequest request) {
                 runOnUiThread(() -> requestCamera(request));
@@ -248,8 +259,15 @@ public final class MainActivity extends Activity {
     }
 
     private void installCameraFocus(WebView view, String url) {
-        if (view == web && url != null && isTrusted(Uri.parse(url)))
+        if (view == web && url != null && isTrusted(Uri.parse(url))) {
             CameraFocusSupport.install(view, store.getOrigin());
+            if (nativeScanner != null) nativeScanner.install(view, url);
+        }
+    }
+
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (nativeScanner != null) nativeScanner.handleActivityResult(requestCode, resultCode, data);
     }
 
     /** Read one existing setting from our HTTPS origin; expose no native JS interface. */
@@ -358,7 +376,8 @@ public final class MainActivity extends Activity {
     }
 
     private void goBack() {
-        if (fullscreen != null) hideFullscreen();
+        if (nativeScanner != null && nativeScanner.hasPending()) nativeScanner.cancel();
+        else if (fullscreen != null) hideFullscreen();
         else if (web != null && web.canGoBack()) web.goBack();
         else if (getIntent().getBooleanExtra("widgetConfiguration", false)) finish();
     }
@@ -385,6 +404,7 @@ public final class MainActivity extends Activity {
         super.onSaveInstanceState(state); if (web != null) { state.putString("origin", store.getOrigin()); web.saveState(state); }
     }
     @Override protected void onDestroy() {
+        if (nativeScanner != null) nativeScanner.cancel();
         appearanceActive = false;
         appearanceHandler.removeCallbacks(appearancePoll);
         appearanceReadId++;

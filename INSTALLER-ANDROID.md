@@ -40,7 +40,9 @@ Le choix est repris automatiquement pendant que l'application Android est ouvert
 
 Le widget ne contient pas de véritable champ de texte ni d'aperçu caméra dans l'écran d'accueil : Android impose d'ouvrir une fenêtre de l'application pour ces actions.
 
-Dans l'application Android, la caméra arrière demande explicitement la **mise au point continue** lorsque WebView et l'objectif la prennent en charge. Un toucher sur l'aperçu réapplique ce réglage. Si WebView ne l'expose pas ou si le pilote le refuse, la caméra continue à fonctionner avec ses réglages habituels. L'efficacité de cette demande dépend donc de l'appareil et de sa version d'Android System WebView ; elle ne remplace pas un essai sur le téléphone.
+Avec **l'APK 1.0.8 et le NAS à jour**, le bouton **Ouvrir la caméra** ouvre un écran de scan Android natif. La mise au point est déclenchée directement et renouvelée pendant la lecture, sans dépendre de l'autofocus de WebView. Le choix caméra arrière/avant reste celui du formulaire. Un code valide revient dans la liste choisie ; les codes inconnus suivent l'association habituelle à un produit. **Annuler** ou le bouton Retour referme le scanner sans ajouter d'article. Un refus de permission affiche un message et laisse la saisie manuelle disponible.
+
+Le navigateur et les anciennes APK gardent le scanner web existant. La tentative de réglage continu ajoutée précédemment reste un complément pour ce chemin web dans l'application ; elle avait été insuffisante sur l'appareil signalé. La netteté réelle du nouveau scanner natif reste à vérifier sur le téléphone.
 
 ## Connexion et actualisation
 
@@ -66,7 +68,9 @@ La version **1.0.6** ajoute cette demande de mise au point pour la caméra arri�
 
 La version **1.0.7** applique le nouveau nom dans l'application, les widgets, les préférences, les liens et les identifiants techniques. Elle nécessite le serveur renommé et une nouvelle configuration Android, comme expliqué en première installation.
 
-La livraison propose aussi le fichier `myhome-android-1.0.7.apk`, identique à `myhome-android.apk`, pour identifier explicitement cette version lors du transfert sur l'appareil.
+La version **1.0.8** ajoute le scanner caméra natif avec autofocus piloté par Android. **Mettez d'abord le NAS à jour avec `myhome-synology.zip`, puis installez l'APK par-dessus myHome 1.0.7**, sans désinstallation. Les réglages et widgets restent conservés. Le bouton caméra du formulaire existant et les scans ouverts depuis les widgets utilisent alors ce nouvel écran. Cette mise à jour ne modifie pas le schéma SQLite.
+
+La livraison propose aussi le fichier `myhome-android-1.0.8.apk`, identique à `myhome-android.apk`, pour identifier explicitement cette version lors du transfert sur l'appareil.
 
 La somme de contrôle de l'APK est fournie dans `myhome-android.apk.sha256`.
 
@@ -84,7 +88,7 @@ Les outils et caches sont installés dans `.runtime/`, en dehors de Git. La comp
 Pour une version suivante, augmentez le numéro de version Android :
 
 ```powershell
-.\android\scripts\Build-Apk.ps1 -VersionCode 9 -VersionName 1.0.8
+.\android\scripts\Build-Apk.ps1 -VersionCode 10 -VersionName 1.0.9
 ```
 
 **Sauvegardez de manière privée tout le dossier `.runtime/android-signing/`.** Il contient la clé de signature et sa configuration. Cette même clé est indispensable pour installer de futures mises à jour par-dessus cette version. Elle n'est incluse ni dans Git, ni dans le package Synology, ni dans l'APK.

@@ -1,0 +1,23 @@
+myHome - Native Android scanner third-party notices
+
+ZXing Android Embedded 4.3.0
+ZXing authors and Journey Mobile
+https://github.com/journeyapps/zxing-android-embedded/tree/v4.3.0
+License: Apache License, Version 2.0
+Unmodified upstream license: journeyapps-zxing-4.3.0-LICENSE.txt
+Source: https://raw.githubusercontent.com/journeyapps/zxing-android-embedded/v4.3.0/COPYING
+
+ZXing Core 3.5.3
+ZXing authors
+https://github.com/zxing/zxing/tree/zxing-3.5.3
+License: Apache License, Version 2.0
+Unmodified upstream license and notices:
+  zxing-core-3.5.3-LICENSE.txt
+  zxing-core-3.5.3-NOTICE.txt
+Sources:
+  https://raw.githubusercontent.com/zxing/zxing/zxing-3.5.3/LICENSE
+  https://raw.githubusercontent.com/zxing/zxing/zxing-3.5.3/NOTICE
+
+The complete upstream ZXing repository license and notices are retained here.
+The native scanner links ZXing Core only; it does not include the repository's
+Java SE image I/O or command-line dependencies.

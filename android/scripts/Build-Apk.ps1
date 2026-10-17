@@ -2,8 +2,8 @@
 param(
     [string]$JavaHome,
     [string]$AndroidSdk,
-    [int]$VersionCode = 8,
-    [string]$VersionName = '1.0.7',
+    [int]$VersionCode = 9,
+    [string]$VersionName = '1.0.8',
     [string]$OutputDirectory
 )
 

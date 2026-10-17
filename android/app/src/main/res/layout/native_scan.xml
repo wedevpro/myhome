@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/native_scan_root"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/setup_background">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:padding="20dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:gravity="center_vertical" android:orientation="horizontal">
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="@string/native_scan_brand" android:textColor="@color/setup_accent_dark"
+                    android:textSize="12sp" android:textStyle="bold" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="@string/native_scan_title" android:textColor="@color/setup_text"
+                    android:textSize="22sp" android:textStyle="bold" android:layout_marginTop="4dp" />
+            </LinearLayout>
+            <Button android:id="@+id/native_scan_cancel"
+                android:layout_width="wrap_content" android:layout_height="48dp"
+                android:layout_marginStart="12dp" android:minWidth="88dp"
+                android:paddingStart="16dp" android:paddingEnd="16dp"
+                android:background="@drawable/setup_secondary_background"
+                android:text="@string/native_scan_cancel" android:textAllCaps="false"
+                android:textColor="@color/setup_accent_dark" android:textSize="14sp" />
+        </LinearLayout>
+        <TextView android:id="@+id/native_scan_camera"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="12dp" android:layout_marginBottom="12dp"
+            android:textColor="@color/setup_muted" android:textSize="14sp" />
+        <FrameLayout android:layout_width="match_parent" android:layout_height="0dp"
+            android:layout_weight="1" android:background="#000000">
+            <com.journeyapps.barcodescanner.BarcodeView android:id="@+id/native_scan_preview"
+                android:layout_width="match_parent" android:layout_height="match_parent"
+                app:zxing_use_texture_view="true" />
+            <com.journeyapps.barcodescanner.ViewfinderView android:id="@+id/native_scan_finder"
+                android:layout_width="match_parent" android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                app:zxing_viewfinder_laser="@color/setup_accent_dark"
+                app:zxing_viewfinder_mask="#60000000" />
+        </FrameLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" android:text="@string/native_scan_guide"
+            android:textColor="@color/setup_text" android:textSize="15sp" android:lineSpacingExtra="2dp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="6dp" android:text="@string/native_scan_return"
+            android:textColor="@color/setup_muted" android:textSize="12sp" />
+    </LinearLayout>
+</FrameLayout>
